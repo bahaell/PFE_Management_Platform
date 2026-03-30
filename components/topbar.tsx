@@ -1,40 +1,40 @@
-'use client'
+"use client"
 
-import { Bell, Search, User, ChevronDown, LogOut, Moon, Sun } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { useState, useRef, useEffect } from 'react'
-import { useAuth } from '@/providers/auth-provider'
-import { useTheme } from 'next-themes'
-import { MobileSidebar } from './mobile-sidebar'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Bell, User, ChevronDown, LogOut, Moon, Sun } from "lucide-react"
+import Link from "next/link"
+import { useState, useRef, useEffect } from "react"
+import { useAuth } from "@/providers/auth-provider"
+import { useTheme } from "next-themes"
+import { MobileSidebar } from "./mobile-sidebar"
+import { motion, AnimatePresence } from "framer-motion"
+import { AcademicYearSelect } from "@/components/common/academic-year-select"
 
 interface TopbarProps {
   title: string
-  role?: 'student' | 'teacher' | 'coordinator'
+  role?: "student" | "teacher" | "coordinator"
 }
 
 // Mock notifications data
 const mockNotifications = [
   {
     id: 1,
-    title: 'New Project Feedback',
-    message: 'Dr. Ahmed Hassan left feedback on your project',
-    time: '5 min ago',
+    title: "New Project Feedback",
+    message: "Dr. Ahmed Hassan left feedback on your project",
+    time: "5 min ago",
     unread: true,
   },
   {
     id: 2,
-    title: 'Deadline Reminder',
-    message: 'Project submission deadline is in 3 days',
-    time: '1 hour ago',
+    title: "Deadline Reminder",
+    message: "Project submission deadline is in 3 days",
+    time: "1 hour ago",
     unread: true,
   },
   {
     id: 3,
-    title: 'Defense Schedule',
-    message: 'Your defense has been scheduled for March 25',
-    time: '2 hours ago',
+    title: "Defense Schedule",
+    message: "Your defense has been scheduled for March 25",
+    time: "2 hours ago",
     unread: false,
   },
 ]
@@ -57,17 +57,17 @@ export function Topbar({ title, role }: TopbarProps) {
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const unreadCount = mockNotifications.filter(n => n.unread).length
+  const unreadCount = mockNotifications.filter((n) => n.unread).length
 
   return (
     <header className="bg-card border-b border-border h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6">
       <div className="flex items-center gap-2 sm:gap-4 flex-1">
         {role && <MobileSidebar role={role} />}
-        <motion.h2 
+        <motion.h2
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
@@ -78,22 +78,10 @@ export function Topbar({ title, role }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
-          className="hidden md:flex items-center gap-2 bg-secondary px-3 py-2 rounded-lg"
-        >
-          <Search className="w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="bg-transparent outline-none text-sm w-40 text-foreground placeholder:text-muted-foreground"
-          />
-        </motion.div>
+        <AcademicYearSelect />
 
         <div className="relative" ref={notificationsRef}>
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -101,9 +89,9 @@ export function Topbar({ title, role }: TopbarProps) {
           >
             <Bell className="w-5 h-5 text-foreground" />
             {unreadCount > 0 && (
-              <motion.span 
+              <motion.span
                 animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
                 className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"
               />
             )}
@@ -122,7 +110,7 @@ export function Topbar({ title, role }: TopbarProps) {
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-foreground">Notifications</h3>
                     {unreadCount > 0 && (
-                      <motion.span 
+                      <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full"
@@ -132,7 +120,7 @@ export function Topbar({ title, role }: TopbarProps) {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="divide-y divide-border">
                   {mockNotifications.map((notification, index) => (
                     <motion.div
@@ -141,17 +129,13 @@ export function Topbar({ title, role }: TopbarProps) {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05, duration: 0.2 }}
                       whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                      className={`p-4 transition-colors cursor-pointer ${
-                        notification.unread ? 'bg-primary/5' : ''
-                      }`}
+                      className={`p-4 transition-colors cursor-pointer ${notification.unread ? "bg-primary/5" : ""}`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-sm text-foreground">{notification.title}</p>
-                            {notification.unread && (
-                              <span className="w-2 h-2 bg-primary rounded-full" />
-                            )}
+                            {notification.unread && <span className="w-2 h-2 bg-primary rounded-full" />}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
                           <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
@@ -185,10 +169,7 @@ export function Topbar({ title, role }: TopbarProps) {
             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center">
               <User className="w-4 h-4 text-primary-foreground" />
             </div>
-            <motion.div
-              animate={{ rotate: dropdownOpen ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <motion.div animate={{ rotate: dropdownOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
               <ChevronDown className="hidden sm:block w-4 h-4 text-muted-foreground" />
             </motion.div>
           </motion.button>
@@ -216,12 +197,12 @@ export function Topbar({ title, role }: TopbarProps) {
                 <motion.button
                   whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
                   onClick={() => {
-                    setTheme(theme === 'dark' ? 'light' : 'dark')
+                    setTheme(theme === "dark" ? "light" : "dark")
                     setDropdownOpen(false)
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground transition-colors border-b border-border text-left"
                 >
-                  {theme === 'dark' ? (
+                  {theme === "dark" ? (
                     <>
                       <Sun className="w-4 h-4" />
                       Light Mode

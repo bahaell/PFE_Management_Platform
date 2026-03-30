@@ -1,7 +1,5 @@
 'use client'
 
-import { use } from 'react'
-
 import Link from 'next/link'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
@@ -15,8 +13,8 @@ import { AttachmentList } from '@/components/defense/attachment-list'
 import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-export default function DefenseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function DefenseDetailsPage({ params }: { params: { id: string } }) {
+  const { id } = params
   const defense = MOCK_TEACHER_DEFENSES.find(d => d.id === id)
 
   if (!defense) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Menu } from 'lucide-react'
 import { Sidebar } from './sidebar'
 import { useState } from 'react'
@@ -26,6 +26,8 @@ export function MobileSidebar({ role }: MobileSidebarProps) {
         </motion.button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-64 h-full">
+        <SheetTitle className="sr-only">Navigation</SheetTitle>
+        <SheetDescription className="sr-only">Navigate through the application</SheetDescription>
         <div onClick={() => setOpen(false)} className="h-full">
           <Sidebar role={role} />
         </div>

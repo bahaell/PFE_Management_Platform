@@ -1,14 +1,27 @@
-'use client'
+"use client"
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
-import { LayoutDashboard, BookOpen, FileText, Bell, Users, Plus, ClipboardList, Calendar, Settings, LogOut } from 'lucide-react'
-import { useAuth } from '@/providers/auth-provider'
-import { motion } from 'framer-motion'
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
+import {
+  LayoutDashboard,
+  BookOpen,
+  FileText,
+  Bell,
+  Users,
+  Plus,
+  ClipboardList,
+  Calendar,
+  Settings,
+  LogOut,
+  Building2,
+  Briefcase,
+} from "lucide-react"
+import { useAuth } from "@/providers/auth-provider"
+import { motion } from "framer-motion"
 
 interface SidebarProps {
-  role: 'student' | 'teacher' | 'coordinator'
+  role: "student" | "teacher" | "coordinator"
 }
 
 export function Sidebar({ role }: SidebarProps) {
@@ -18,45 +31,48 @@ export function Sidebar({ role }: SidebarProps) {
   const getMenuItems = () => {
     const baseItems = [
       {
-        label: 'Dashboard',
+        label: "Dashboard",
         href: `/${role}`,
         icon: LayoutDashboard,
       },
     ]
 
-    if (role === 'student') {
+    if (role === "student") {
       return [
         ...baseItems,
-        { label: 'Subjects', href: `/${role}/subjects`, icon: BookOpen },
-        { label: 'Applications', href: `/${role}/applications`, icon: FileText },
-        { label: 'My Project', href: `/${role}/project`, icon: ClipboardList },
-        { label: 'Documents', href: `/${role}/documents`, icon: FileText },
-        { label: 'Defense Timeline', href: `/${role}/defenses/timeline`, icon: Calendar },
-        { label: 'Notifications', href: `/${role}/notifications`, icon: Bell },
+        { label: "Subjects", href: `/${role}/subjects`, icon: BookOpen },
+        { label: "Applications", href: `/${role}/applications`, icon: FileText },
+        { label: "My Project", href: `/${role}/project`, icon: ClipboardList },
+        { label: "External Subject", href: `/${role}/free-subject`, icon: Briefcase },
+        { label: "Documents", href: `/${role}/documents`, icon: FileText },
+        { label: "Defense Timeline", href: `/${role}/defenses/timeline`, icon: Calendar },
+        { label: "Notifications", href: `/${role}/notifications`, icon: Bell },
       ]
-    } else if (role === 'teacher') {
+    } else if (role === "teacher") {
       return [
         ...baseItems,
-        { label: 'Subjects', href: `/${role}/subjects`, icon: BookOpen },
-        { label: 'New Subject', href: `/${role}/new-subject`, icon: Plus },
-        { label: 'Students', href: `/${role}/students`, icon: Users },
-        { label: 'Projects', href: `/${role}/projects`, icon: ClipboardList },
-        { label: 'Documents', href: `/${role}/documents`, icon: FileText },
-        { label: 'Defenses', href: `/${role}/defenses`, icon: Calendar },
-        { label: 'Defense Timeline', href: `/${role}/defenses/timeline`, icon: Calendar },
-        { label: 'Notifications', href: `/${role}/notifications`, icon: Bell },
+        { label: "Subjects", href: `/${role}/subjects`, icon: BookOpen },
+        { label: "New Subject", href: `/${role}/new-subject`, icon: Plus },
+        { label: "Students", href: `/${role}/students`, icon: Users },
+        { label: "Projects", href: `/${role}/projects`, icon: ClipboardList },
+        { label: "External Requests", href: `/${role}/free-requests`, icon: Briefcase },
+        { label: "Documents", href: `/${role}/documents`, icon: FileText },
+        { label: "Defenses", href: `/${role}/defenses`, icon: Calendar },
+        { label: "Defense Timeline", href: `/${role}/defenses/timeline`, icon: Calendar },
+        { label: "Notifications", href: `/${role}/notifications`, icon: Bell },
       ]
     } else {
       return [
         ...baseItems,
-        { label: 'Subjects', href: `/${role}/subjects`, icon: BookOpen },
-        { label: 'Projects', href: `/${role}/projects`, icon: ClipboardList },
-        { label: 'Documents', href: `/${role}/documents`, icon: FileText },
-        { label: 'Defenses', href: `/${role}/defenses`, icon: Calendar },
-        { label: 'Defense Timeline', href: `/${role}/defenses/timeline`, icon: Calendar },
-        { label: 'Rooms', href: `/${role}/rooms`, icon: Settings },
-        { label: 'Statistics', href: `/${role}/statistics`, icon: LayoutDashboard },
-        { label: 'Notifications', href: `/${role}/notifications`, icon: Bell },
+        { label: "Subjects", href: `/${role}/subjects`, icon: BookOpen },
+        { label: "Projects", href: `/${role}/projects`, icon: ClipboardList },
+        { label: "Companies", href: `/${role}/companies`, icon: Building2 },
+        { label: "Documents", href: `/${role}/documents`, icon: FileText },
+        { label: "Defenses", href: `/${role}/defenses`, icon: Calendar },
+        { label: "Defense Timeline", href: `/${role}/defenses/timeline`, icon: Calendar },
+        { label: "Rooms", href: `/${role}/rooms`, icon: Settings },
+        { label: "Statistics", href: `/${role}/statistics`, icon: LayoutDashboard },
+        { label: "Notifications", href: `/${role}/notifications`, icon: Bell },
       ]
     }
   }
@@ -89,16 +105,13 @@ export function Sidebar({ role }: SidebarProps) {
               <Link
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors relative overflow-hidden',
+                  "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors relative overflow-hidden",
                   isActive
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "text-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: isActive ? 0 : 5 }}
-                  transition={{ duration: 0.2 }}
-                >
+                <motion.div whileHover={{ scale: 1.1, rotate: isActive ? 0 : 5 }} transition={{ duration: 0.2 }}>
                   <Icon className="w-5 h-5" />
                 </motion.div>
                 <span>{item.label}</span>

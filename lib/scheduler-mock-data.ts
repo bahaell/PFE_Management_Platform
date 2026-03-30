@@ -2,7 +2,6 @@
 
 import type { Teacher } from '@/models/teacher.model'
 import type { Jury, ScheduledDefense } from '@/models/scheduler.model'
-export type { Jury, ScheduledDefense }
 import type { Room } from '@/models/room.model'
 
 export interface JuryMember {
@@ -40,7 +39,7 @@ export interface PendingRequest {
 }
 
 // Mock Rooms Data
-export const MOCK_ROOMS: any[] = [
+export const MOCK_ROOMS: Room[] = [
   {
     id: 'room-a',
     name: 'Room A - Amphitheater',
@@ -86,16 +85,7 @@ export const MOCK_TEACHERS: Teacher[] = [
       { start: '14:00', end: '16:00' }
     ],
     currentLoad: 3,
-    email: 'sami.ahmed@university.edu',
-    department: 'CS',
-    bio: '',
-    researchInterests: '',
-    yearsOfExperience: 10,
-    phone: '12345678',
-    gender: 'male',
-    birthdate: '1980-01-01',
-    avatar: '',
-    role: 'teacher'
+    email: 'sami.ahmed@university.edu'
   },
   {
     id: 'dr-hatem',
@@ -109,16 +99,7 @@ export const MOCK_TEACHERS: Teacher[] = [
       { start: '15:00', end: '17:00' }
     ],
     currentLoad: 2,
-    email: 'hatem.hassan@university.edu',
-    department: 'CS',
-    bio: '',
-    researchInterests: '',
-    yearsOfExperience: 8,
-    phone: '12345678',
-    gender: 'male',
-    birthdate: '1982-01-01',
-    avatar: '',
-    role: 'teacher'
+    email: 'hatem.hassan@university.edu'
   },
   {
     id: 'dr-mariem',
@@ -132,16 +113,7 @@ export const MOCK_TEACHERS: Teacher[] = [
       { start: '14:00', end: '18:00' }
     ],
     currentLoad: 4,
-    email: 'mariem.benali@university.edu',
-    department: 'SE',
-    bio: '',
-    researchInterests: '',
-    yearsOfExperience: 5,
-    phone: '12345678',
-    gender: 'female',
-    birthdate: '1985-01-01',
-    avatar: '',
-    role: 'teacher'
+    email: 'mariem.benali@university.edu'
   },
   {
     id: 'prof-ali',
@@ -155,16 +127,7 @@ export const MOCK_TEACHERS: Teacher[] = [
       { start: '14:00', end: '15:30' }
     ],
     currentLoad: 1,
-    email: 'ali.mohamed@university.edu',
-    department: 'Networks',
-    bio: '',
-    researchInterests: '',
-    yearsOfExperience: 20,
-    phone: '12345678',
-    gender: 'male',
-    birthdate: '1970-01-01',
-    avatar: '',
-    role: 'teacher'
+    email: 'ali.mohamed@university.edu'
   },
   {
     id: 'dr-ahmed',
@@ -178,16 +141,7 @@ export const MOCK_TEACHERS: Teacher[] = [
       { start: '13:00', end: '16:00' }
     ],
     currentLoad: 2,
-    email: 'ahmed.mansour@university.edu',
-    department: 'Security',
-    bio: '',
-    researchInterests: '',
-    yearsOfExperience: 3,
-    phone: '12345678',
-    gender: 'male',
-    birthdate: '1990-01-01',
-    avatar: '',
-    role: 'teacher'
+    email: 'ahmed.mansour@university.edu'
   },
   {
     id: 'dr-fatima',
@@ -201,16 +155,7 @@ export const MOCK_TEACHERS: Teacher[] = [
       { start: '15:00', end: '17:00' }
     ],
     currentLoad: 3,
-    email: 'fatima.zahra@university.edu',
-    department: 'HCI',
-    bio: '',
-    researchInterests: '',
-    yearsOfExperience: 7,
-    phone: '12345678',
-    gender: 'female',
-    birthdate: '1983-01-01',
-    avatar: '',
-    role: 'teacher'
+    email: 'fatima.zahra@university.edu'
   }
 ]
 
@@ -258,11 +203,11 @@ export const generateRecommendedSlots = (project?: Project): RecommendedSlot[] =
 
   // Find best président (highest grade, available, not encadrant)
   const presidentCandidates = MOCK_TEACHERS.filter(
-    t => t.id !== encadrant.id &&
-      (t.grade === 'Professor' || t.grade === 'Associate Professor' || t.grade === 'Dean')
+    t => t.id !== encadrant.id && 
+    (t.grade === 'Professor' || t.grade === 'Associate Professor' || t.grade === 'Dean')
   ).sort((a, b) => {
-    const gradeOrder: Record<string, number> = { 'Dean': 4, 'Professor': 3, 'Associate Professor': 2, 'Maitre Assistant': 1, 'Assistant': 0 }
-    return (gradeOrder[b.grade] || 0) - (gradeOrder[a.grade] || 0)
+    const gradeOrder = { 'Dean': 4, 'Professor': 3, 'Associate Professor': 2, 'Maitre Assistant': 1, 'Assistant': 0 }
+    return gradeOrder[b.grade] - gradeOrder[a.grade]
   })
 
   // Find best rapporteur (skill match, available, not encadrant, not président)
@@ -270,21 +215,19 @@ export const generateRecommendedSlots = (project?: Project): RecommendedSlot[] =
     return MOCK_TEACHERS.filter(
       t => t.id !== encadrant.id && t.id !== president.id
     ).sort((a, b) => {
-      const aSkills = a.skills as string[]
-      const bSkills = b.skills as string[]
-      const aSkillMatch = aSkills.filter(s => project.skills.includes(s)).length
-      const bSkillMatch = bSkills.filter(s => project.skills.includes(s)).length
+      const aSkillMatch = a.skills.filter(s => project.skills.includes(s)).length
+      const bSkillMatch = b.skills.filter(s => project.skills.includes(s)).length
       if (bSkillMatch !== aSkillMatch) return bSkillMatch - aSkillMatch
-      return (a.currentLoad || 0) - (b.currentLoad || 0)
+      return a.currentLoad - b.currentLoad
     })[0]
   }
 
   const slot1President = presidentCandidates[0]
   const slot1Rapporteur = findBestRapporteur(slot1President)
-
+  
   const slot2President = presidentCandidates[1] || presidentCandidates[0]
   const slot2Rapporteur = findBestRapporteur(slot2President)
-
+  
   const slot3President = presidentCandidates[2] || presidentCandidates[0]
   const slot3Rapporteur = findBestRapporteur(slot3President)
 
@@ -416,7 +359,7 @@ export const MOCK_STATISTICS = {
     'Room C': 72
   },
   teacherLoad: MOCK_TEACHERS.reduce((acc, teacher) => {
-    acc[teacher.name] = teacher.currentLoad || 0
+    acc[teacher.name] = teacher.currentLoad
     return acc
   }, {} as Record<string, number>)
 }

@@ -22,7 +22,7 @@ export function DataTable<T extends { id: string | number }>({ columns, data, on
           <thead className="bg-secondary border-b border-border">
             <tr>
               {columns.map((column) => (
-                <th key={column.id || String(column.accessor)} className="px-4 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-foreground">
+                <th key={column.id ?? String(column.accessor)} className="px-4 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-foreground">
                   {column.header}
                 </th>
               ))}
@@ -36,7 +36,7 @@ export function DataTable<T extends { id: string | number }>({ columns, data, on
                 className={cn('hover:bg-secondary transition-colors', onRowClick && 'cursor-pointer')}
               >
                 {columns.map((column) => (
-                  <td key={column.id || String(column.accessor)} className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground">
+                  <td key={column.id ?? String(column.accessor)} className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground">
                     {column.render ? column.render(row[column.accessor], row) : String(row[column.accessor])}
                   </td>
                 ))}

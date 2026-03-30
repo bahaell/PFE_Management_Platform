@@ -24,9 +24,6 @@ export interface SchedulerRecommendedSlot {
   aiReasoning: string[]
 }
 
-export type ScheduledDefense = ScheduledDefenseEntry
-export type Jury = JuryMember[]
-
 export interface ScheduledDefenseEntry {
   id: number
   projectName: string

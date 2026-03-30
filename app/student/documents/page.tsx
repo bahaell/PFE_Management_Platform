@@ -1,208 +1,120 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { AcademicDocumentsService } from "@/services/service_academic_documents";
-import { AcademicDocument } from "@/models/academic_document.model";
-import { DocumentTable } from "@/components/academic-documents/DocumentTable";
-import { DocumentFilters } from "@/components/academic-documents/DocumentFilters";
-import { DocumentPreviewModal } from "@/components/academic-documents/DocumentPreviewModal";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { PageHeader } from '@/components/page-header'
+import { Card } from '@/components/ui/card'
+import { Loader2 } from 'lucide-react'
+import { DocumentFilters } from '@/components/academic-documents/document-filters'
+import { StudentDocumentList } from '@/components/academic/student-document-list'
+import { PhaseLockBanner } from '@/components/academic/phase-lock-banner'
+import { RequestDocumentModal } from '@/components/academic/request-document-modal'
+import { PDFPreviewModal } from '@/components/academic/pdf-preview-modal'
+import { AcademicDocumentsService } from '@/services/service_academic_documents'
+import { AcademicRequestsService } from '@/services/service_academic_requests'
+import type { AdministrativeDocument, AcademicDocumentType } from '@/models/academic-document.model'
+
+// Mock current student ID - in real app would come from auth
+const CURRENT_STUDENT_ID = 'STU001'
 
 export default function StudentDocumentsPage() {
-  const [documents, setDocuments] = useState<AcademicDocument[]>([]);
-  const [filteredDocuments, setFilteredDocuments] = useState<AcademicDocument[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedDocument, setSelectedDocument] = useState<AdministrativeDocument | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTypes, setSelectedTypes] = useState<AcademicDocumentType[]>([])
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isRequestOpen, setIsRequestOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<AcademicDocument | null>(null);
-  const [requestType, setRequestType] = useState<AcademicDocument["type"]>("convention");
+  const { data: documents = [], isLoading } = useQuery({
+    queryKey: ['student-documents', CURRENT_STUDENT_ID],
+    queryFn: () => AcademicDocumentsService.getDocumentsForStudent(CURRENT_STUDENT_ID),
+  })
 
-  const { toast } = useToast();
+  const { data: phaseLockStatus } = useQuery({
+    queryKey: ['phase-lock-status', CURRENT_STUDENT_ID],
+    queryFn: () => AcademicRequestsService.getPhaseLockStatus(CURRENT_STUDENT_ID),
+  })
 
-  // Mock student ID - in a real app this would come from auth context
-  const currentStudentId = "STU001";
-
-  useEffect(() => {
-    loadDocuments();
-  }, []);
-
-  useEffect(() => {
-    filterDocuments();
-  }, [documents, searchQuery, typeFilter, statusFilter]);
-
-  const loadDocuments = async () => {
-    setLoading(true);
-    try {
-      const docs = await AcademicDocumentsService.getDocumentsForStudent(currentStudentId);
-      setDocuments(docs);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load documents.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterDocuments = () => {
-    let filtered = [...documents];
+  const filteredDocuments = useMemo(() => {
+    let filtered = documents
 
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((doc) =>
-        doc.type.toLowerCase().includes(query)
-      );
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        doc =>
+          doc.type.toLowerCase().includes(query) ||
+          doc.projectTitle?.toLowerCase().includes(query)
+      )
     }
 
-    if (typeFilter !== "all") {
-      filtered = filtered.filter((doc) => doc.type === typeFilter);
+    if (selectedTypes.length > 0) {
+      filtered = filtered.filter(doc => selectedTypes.includes(doc.type))
     }
 
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((doc) => doc.status === statusFilter);
+    if (selectedStatuses.length > 0) {
+      filtered = filtered.filter(doc => selectedStatuses.includes(doc.status))
     }
 
-    setFilteredDocuments(filtered);
-  };
+    return filtered
+  }, [documents, searchQuery, selectedTypes, selectedStatuses])
 
-  const handleRequestDocument = async () => {
-    try {
-      await AcademicDocumentsService.requestDocument(requestType, currentStudentId);
-      toast({
-        title: "Success",
-        description: "Document requested successfully.",
-      });
-      setIsRequestOpen(false);
-      loadDocuments();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to request document.",
-        variant: "destructive",
-      });
-    }
-  };
+  const handlePreview = (doc: AdministrativeDocument) => {
+    setSelectedDocument(doc)
+  }
 
-  const handlePreview = (doc: AcademicDocument) => {
-    setSelectedDocument(doc);
-    setIsPreviewOpen(true);
-  };
-
-  const handleDownload = (doc: AcademicDocument) => {
-    if (doc.fileUrl) {
-      window.open(doc.fileUrl, "_blank");
-    } else {
-      toast({
-        title: "Error",
-        description: "File not available.",
-        variant: "destructive",
-      });
-    }
-  };
+  const handleRequestDocument = () => {
+    setIsRequestModalOpen(true)
+  }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Documents</h1>
-          <p className="text-muted-foreground">
-            View and request your official academic documents.
-          </p>
-        </div>
-        <Button onClick={() => setIsRequestOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Request Document
-        </Button>
-      </div>
-
-      <DocumentFilters
-        onSearchChange={setSearchQuery}
-        onTypeChange={setTypeFilter}
-        onStatusChange={setStatusFilter}
-        showStudentFilter={false}
+    <div className="space-y-6">
+      <PageHeader
+        title="My Documents"
+        description="Download your official academic documents"
       />
 
-      {loading ? (
-        <div className="flex justify-center py-8">Loading...</div>
-      ) : (
-        <DocumentTable
-          documents={filteredDocuments}
-          role="student"
-          onPreview={handlePreview}
-          onDownload={handleDownload}
-        />
+      {phaseLockStatus && phaseLockStatus.isLocked && (
+        <PhaseLockBanner message={phaseLockStatus.message} />
       )}
 
-      {/* Simple Request Modal */}
-      <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Request Document</DialogTitle>
-            <DialogDescription>
-              Select the type of document you need.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="request-type">Document Type</Label>
-              <Select
-                value={requestType}
-                onValueChange={(val) => setRequestType(val as AcademicDocument["type"])}
-              >
-                <SelectTrigger id="request-type">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="convention">Convention de Stage</SelectItem>
-                  <SelectItem value="encadrement">Fiche d'Encadrement</SelectItem>
-                  <SelectItem value="demande_pfe">Demande de PFE</SelectItem>
-                  <SelectItem value="pv_soutenance">PV de Soutenance</SelectItem>
-                  <SelectItem value="affectation_encadrant">
-                    Affectation Encadrant
-                  </SelectItem>
-                  <SelectItem value="autre">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRequestOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleRequestDocument}>Submit Request</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Filters Sidebar */}
+        <Card className="lg:col-span-1 p-6 h-fit">
+          <h3 className="font-semibold text-foreground mb-4">Filters</h3>
+          <DocumentFilters
+            onSearchChange={setSearchQuery}
+            onTypeFilterChange={setSelectedTypes}
+            onStatusFilterChange={setSelectedStatuses}
+          />
+        </Card>
 
-      <DocumentPreviewModal
-        open={isPreviewOpen}
-        onOpenChange={setIsPreviewOpen}
+        {/* Documents Table */}
+        <div className="lg:col-span-3">
+          <Card className="p-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <StudentDocumentList
+                documents={filteredDocuments}
+                onPreview={handlePreview}
+              />
+            )}
+          </Card>
+        </div>
+      </div>
+
+      <PDFPreviewModal
         document={selectedDocument}
+        isOpen={!!selectedDocument}
+        onClose={() => setSelectedDocument(null)}
+      />
+
+      <RequestDocumentModal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+        studentId={CURRENT_STUDENT_ID}
       />
     </div>
-  );
+  )
 }

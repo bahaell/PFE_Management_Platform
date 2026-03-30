@@ -12,7 +12,7 @@ import { EnhancedSmartCalendar } from '@/components/scheduler/enhanced-smart-cal
 import { SchedulerSummarySidebar } from '@/components/scheduler/scheduler-summary-sidebar'
 import { PendingRequestsTable } from '@/components/scheduler/pending-requests-table'
 import { Card } from '@/components/ui/card'
-import { MOCK_SCHEDULED_DEFENSES, getJuryRoleBadgeColor, getJuryRoleLabel, type ScheduledDefense, type JuryMember } from '@/lib/scheduler-mock-data'
+import { MOCK_SCHEDULED_DEFENSES, getJuryRoleBadgeColor, getJuryRoleLabel, type ScheduledDefense } from '@/lib/scheduler-mock-data'
 
 export default function DefensesPage() {
   const [defenses, setDefenses] = useState<ScheduledDefense[]>(MOCK_SCHEDULED_DEFENSES)
@@ -92,12 +92,11 @@ export default function DefensesPage() {
             { header: 'Date', accessor: 'date' },
             { header: 'Time', accessor: 'time' },
             {
-              id: 'jury-president',
+              id: 'president',
               header: 'Président',
               accessor: 'jury',
-              render: (value) => {
-                const jury = value as JuryMember[]
-                const president = jury.find((m) => m.role === 'president')
+              render: (jury) => {
+                const president = jury.find((m: any) => m.role === 'president')
                 return president ? (
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{president.teacher.name}</span>
@@ -109,12 +108,11 @@ export default function DefensesPage() {
               }
             },
             {
-              id: 'jury-rapporteur',
+              id: 'rapporteur',
               header: 'Rapporteur',
               accessor: 'jury',
-              render: (value) => {
-                const jury = value as JuryMember[]
-                const rapporteur = jury.find((m) => m.role === 'rapporteur')
+              render: (jury) => {
+                const rapporteur = jury.find((m: any) => m.role === 'rapporteur')
                 return rapporteur ? (
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{rapporteur.teacher.name}</span>
@@ -126,12 +124,11 @@ export default function DefensesPage() {
               }
             },
             {
-              id: 'jury-encadrant',
+              id: 'encadrant',
               header: 'Encadrant',
               accessor: 'jury',
-              render: (value) => {
-                const jury = value as JuryMember[]
-                const encadrant = jury.find((m) => m.role === 'encadrant')
+              render: (jury) => {
+                const encadrant = jury.find((m: any) => m.role === 'encadrant')
                 return encadrant ? (
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{encadrant.teacher.name}</span>
@@ -145,30 +142,27 @@ export default function DefensesPage() {
             {
               header: 'Actions',
               accessor: 'id',
-              render: (value) => {
-                const id = value as number
-                return (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(id)}
-                      className="flex items-center gap-1"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setDeleteConfirm(id)}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                )
-              },
+              render: (id) => (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(id)}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setDeleteConfirm(id)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              ),
             },
           ]}
           data={defenses}

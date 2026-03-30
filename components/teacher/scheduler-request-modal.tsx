@@ -220,6 +220,23 @@ export function SchedulerRequestModal({ isOpen, onClose, student }: SchedulerReq
                   </SelectItem>
                 </SelectContent>
               </Select>
+              <div className={`p-2 rounded-md flex items-center gap-2 ${priorityColor.bg}`}>
+                <div className={`w-3 h-3 rounded-full ${priorityColor.circle}`}></div>
+                <span className={`text-xs font-medium uppercase ${priorityColor.label}`}>
+                  {formData.priority} Priority
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Comment (Optional)</label>
+              <Textarea
+                placeholder="Add a note for the coordinator..."
+                value={formData.comment}
+                onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
+                className="resize-none"
+                rows={3}
+              />
             </div>
           </div>
         </div>

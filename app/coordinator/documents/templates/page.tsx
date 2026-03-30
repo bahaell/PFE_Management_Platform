@@ -7,7 +7,7 @@ import { Plus } from 'lucide-react'
 import { TemplateTable } from '@/components/academic/template-table'
 import { TemplateEditorModal } from '@/components/academic/template-editor-modal'
 import { TemplatePreview } from '@/components/academic/template-preview'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AcademicTemplatesService } from '@/services/service_academic_templates'
 import type { AcademicTemplate } from '@/models/academic-template.model'
 import { useQuery, useMutation } from '@tanstack/react-query'
@@ -77,9 +77,6 @@ export default function CoordinatorTemplatesPage() {
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Aperçu du modèle</DialogTitle>
-          </DialogHeader>
           {selectedTemplate && <TemplatePreview template={selectedTemplate} />}
         </DialogContent>
       </Dialog>

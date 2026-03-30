@@ -1,9 +1,9 @@
-'use client'
+"use client"
 
-import { motion } from 'framer-motion'
-import { X } from 'lucide-react'
-import { CommitPanelChatGPT } from '@/components/collaboration/commit-panel-chatgpt'
-import { Button } from '@/components/ui/button'
+import { motion } from "framer-motion"
+import { X } from "lucide-react"
+import { CommitPanelChatGPT } from "@/components/collaboration/commit-panel-chatgpt"
+import { Button } from "@/components/ui/button"
 
 interface CommitsModalContentProps {
   projectId: string
@@ -18,22 +18,17 @@ export function CommitsModalContent({ projectId, onClose }: CommitsModalContentP
       exit={{ opacity: 0, scale: 0.95 }}
       className="fixed inset-0 flex items-center justify-center p-4"
     >
-      <div className="bg-card rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-card rounded-lg shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border flex-shrink-0">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Project Feedback</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
             <X className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Content - Updated to use CommitPanelChatGPT instead of CommitPanel */}
-        <div className="flex-1 overflow-hidden">
+        {/* Content - CommitPanelChatGPT manages its own internal scroll */}
+        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
           <CommitPanelChatGPT projectId={projectId} userRole="teacher" />
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -9,15 +9,13 @@ import { ArrowLeft, Edit2, MapPin, Users, AlertCircle } from 'lucide-react'
 import { RoomStatusBadge } from '@/components/rooms/room-status-badge'
 import { EquipmentSelector } from '@/components/rooms/equipment-selector'
 import { RoomCalendar } from '@/components/rooms/room-calendar'
-import { MOCK_ROOMS_WITH_EQUIPMENT, getRoomQualityScore } from '@/lib/room-mock-data'
-import type { Equipment } from '@/models/equipment.model'
+import { MOCK_ROOMS_WITH_EQUIPMENT, getRoomQualityScore, type Equipment } from '@/lib/room-mock-data'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RoomAvailabilitySection } from '@/components/availability/room-availability-section'
 
-export default function RoomDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function RoomDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const { id } = use(params)
-  const roomId = parseInt(id)
+  const roomId = parseInt(params.id)
   const [room] = useState(MOCK_ROOMS_WITH_EQUIPMENT.find(r => r.id === roomId))
 
   if (!room) {
@@ -112,7 +110,7 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
             <h2 className="text-lg font-semibold mb-4">Equipment & Facilities</h2>
             <EquipmentSelector
               equipment={room.equipment}
-              onChange={() => { }}
+              onChange={() => {}}
               readOnly={true}
             />
           </Card>

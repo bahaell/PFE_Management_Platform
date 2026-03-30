@@ -207,7 +207,7 @@ export const AcademicRequestsService = {
   ): Promise<AcademicDocumentRequest | null> {
     const request = MOCK_REQUESTS.find(r => r.id === id)
     if (!request) return Promise.resolve(null)
-
+    
     Object.assign(request, {
       status,
       respondedAt: new Date().toISOString().split('T')[0],
@@ -255,15 +255,5 @@ export const AcademicRequestsService = {
           r.projectTitle?.toLowerCase().includes(lowerQuery)
       )
     )
-  },
-
-  async getPhaseLockStatus(studentId: string): Promise<{ isLocked: boolean; message: string; phase: string; requiredPhase: string }> {
-    // Mock implementation - in real app would check student's current phase
-    return Promise.resolve({
-      isLocked: false,
-      message: '',
-      phase: 'after_supervisor',
-      requiredPhase: 'before'
-    })
   },
 }

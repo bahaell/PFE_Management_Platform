@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/data-table'
 import { Calendar, Eye, Zap, Users } from 'lucide-react'
-import { MOCK_PENDING_REQUESTS, type Project } from '@/lib/scheduler-mock-data'
+import { MOCK_PENDING_REQUESTS } from '@/lib/scheduler-mock-data'
 
 interface PendingRequestsTableProps {
   onAutoSchedule?: (id: number) => void
@@ -31,76 +31,61 @@ export function PendingRequestsTable({ onAutoSchedule }: PendingRequestsTablePro
       </h3>
       <DataTable
         columns={[
-          {
+          { 
             id: 'project-info',
-            header: 'Project',
+            header: 'Project', 
             accessor: 'project',
-            render: (value) => {
-              const project = value as Project
-              return (
-                <div className="flex flex-col">
-                  <span className="font-medium text-foreground">{project.subject}</span>
-                  <span className="text-xs text-muted-foreground">Student: {project.studentName}</span>
-                </div>
-              )
-            }
+            render: (project) => (
+              <div className="flex flex-col">
+                <span className="font-medium text-foreground">{project.subject}</span>
+                <span className="text-xs text-muted-foreground">Student: {project.studentName}</span>
+              </div>
+            )
           },
-          {
-            id: 'teacher-info',
-            header: 'Encadrant',
+          { 
+            id: 'encadrant',
+            header: 'Encadrant', 
             accessor: 'project',
-            render: (value) => {
-              const project = value as Project
-              return (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{project.assignedTeacher.name}</span>
-                </div>
-              )
-            }
+            render: (project) => (
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">{project.assignedTeacher.name}</span>
+              </div>
+            )
           },
           {
             header: 'Date Range',
             accessor: 'requestedDateRange',
-            render: (value) => {
-              const dateRange = value as { from: string; to: string }
-              return (
-                <span className="text-sm text-foreground">
-                  {new Date(dateRange.from).toLocaleDateString()} - {new Date(dateRange.to).toLocaleDateString()}
-                </span>
-              )
-            }
+            render: (dateRange) => (
+              <span className="text-sm text-foreground">
+                {new Date(dateRange.from).toLocaleDateString()} - {new Date(dateRange.to).toLocaleDateString()}
+              </span>
+            )
           },
           {
             header: 'Priority',
             accessor: 'priority',
-            render: (value) => {
-              const priority = value as string
-              return (
-                <Badge className={`${getPriorityColor(priority)} border`}>
-                  {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                </Badge>
-              )
-            }
+            render: (priority) => (
+              <Badge className={`${getPriorityColor(priority)} border`}>
+                {priority.charAt(0).toUpperCase() + priority.slice(1)}
+              </Badge>
+            )
           },
           {
             header: 'Actions',
             accessor: 'id',
-            render: (value) => {
-              const id = value as number
-              return (
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex items-center gap-1 bg-primary hover:bg-primary/90"
-                    onClick={() => onAutoSchedule?.(id)}
-                  >
-                    <Zap className="w-3 h-3" />
-                    Auto-Schedule & Assign Jury
-                  </Button>
-                </div>
-              )
-            }
+            render: (id) => (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="flex items-center gap-1 bg-primary hover:bg-primary/90"
+                  onClick={() => onAutoSchedule?.(id)}
+                >
+                  <Zap className="w-3 h-3" />
+                  Auto-Schedule & Assign Jury
+                </Button>
+              </div>
+            )
           }
         ]}
         data={MOCK_PENDING_REQUESTS}

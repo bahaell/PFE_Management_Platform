@@ -18,6 +18,5 @@ export interface AcademicDocumentRequest {
   responseMessage?: string
   coordinatorId?: string
   generatedDocumentId?: string
-  deliveredAt?: string
   phase: 'before_supervisor' | 'after_supervisor' | 'after_approval' | 'after_defense'
 }
