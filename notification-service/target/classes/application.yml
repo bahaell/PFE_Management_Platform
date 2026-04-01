@@ -17,3 +17,25 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+          multiplier: 2.0
+
+# RabbitMQ logical config
+rabbitmq:
+  exchange: pfe.events
+  queue:
+    notification: notification.queue
+    dlq: notification.queue.dlq
+  routing-key:
+    commit-created: commit.created

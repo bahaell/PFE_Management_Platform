@@ -1,7 +1,9 @@
+D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\config\RabbitMQConfig.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\controller\DeviceController.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\NotificationServiceApplication.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\service\DeviceTokenService.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\dto\NotificationResponse.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\event\CommitCreatedEvent.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\dto\DeviceTokenRequest.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\model\Notification.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\model\DeviceToken.java
@@ -11,7 +13,9 @@ D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\repository\DeviceTokenRepository.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\dto\CreateNotificationRequest.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\exception\GlobalExceptionHandler.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\messaging\CommitEventProducer.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\service\FirebaseService.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\service\NotificationService.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\config\FirebaseConfig.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\config\WebConfig.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\messaging\NotificationEventConsumer.java
