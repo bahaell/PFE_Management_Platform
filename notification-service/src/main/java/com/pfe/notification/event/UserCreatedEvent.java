@@ -11,11 +11,9 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CommitCreatedEvent extends BaseEvent {
-    private String projectId;
-    private String studentId;
-    private String supervisorId;
-    private String teacherName;
-    private String commitTitle;
-    private String message;
+public class UserCreatedEvent extends BaseEvent {
+    private String userId;
+    private String fullName;
+    private String email;
+    private String role; // STUDENT, SUPERVISOR, ADMIN
 }

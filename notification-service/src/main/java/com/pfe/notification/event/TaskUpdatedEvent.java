@@ -11,11 +11,11 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CommitCreatedEvent extends BaseEvent {
+public class TaskUpdatedEvent extends BaseEvent {
+    private String taskId;
+    private String taskTitle;
+    private String updatedByName;
+    private String assignedToUserId;
     private String projectId;
-    private String studentId;
-    private String supervisorId;
-    private String teacherName;
-    private String commitTitle;
-    private String message;
+    private String newStatus; // IN_PROGRESS, DONE, BLOCKED
 }

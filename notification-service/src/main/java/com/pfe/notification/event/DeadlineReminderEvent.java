@@ -11,11 +11,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CommitCreatedEvent extends BaseEvent {
+public class DeadlineReminderEvent extends BaseEvent {
+    private String targetUserId;
+    private String deadlineType; // DOCUMENT_SUBMISSION, PROJECT_MILESTONE, etc.
     private String projectId;
-    private String studentId;
-    private String supervisorId;
-    private String teacherName;
-    private String commitTitle;
-    private String message;
+    private String deadlineDate;
+    private int daysRemaining;
 }

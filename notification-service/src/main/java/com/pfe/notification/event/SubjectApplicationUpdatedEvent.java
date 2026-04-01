@@ -11,11 +11,10 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CommitCreatedEvent extends BaseEvent {
-    private String projectId;
+public class SubjectApplicationUpdatedEvent extends BaseEvent {
     private String studentId;
     private String supervisorId;
-    private String teacherName;
-    private String commitTitle;
-    private String message;
+    private String subjectTitle;
+    private String status; // APPROVED, REJECTED, PENDING
+    private String applicationId;
 }
