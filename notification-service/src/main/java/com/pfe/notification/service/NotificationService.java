@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final FirebaseService firebaseService;
 
     public NotificationResponse createNotification(CreateNotificationRequest request) {
         Notification notification = Notification.builder()
@@ -29,6 +30,10 @@ public class NotificationService {
                 .build();
 
         Notification savedNotification = notificationRepository.save(notification);
+        
+        // Push Notification via Firebase
+        firebaseService.sendNotificationToUser(savedNotification.getUserId(), savedNotification.getTitle(), savedNotification.getMessage());
+        
         return mapToResponse(savedNotification);
     }
 

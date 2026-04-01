@@ -25,3 +25,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 🔐 Firebase credentials - NEVER commit these!
+notification-service/src/main/resources/firebase-service-account.json
+notification-service/src/main/resources/firebase-service-account.json.json
+
+# Spring Boot sensitive files
+notification-service/src/main/resources/application-local.yml
+notification-service/logs.txt
+notification-service/target/
