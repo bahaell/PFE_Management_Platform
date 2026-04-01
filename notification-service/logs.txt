@@ -98,3 +98,398 @@ Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/mojo/
 2026-04-01T13:35:46.774+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
 2026-04-01T13:35:46.813+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8085 (http) with context path ''
 2026-04-01T13:35:46.821+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Started NotificationServiceApplication in 5.823 seconds (process running for 6.413)
+2026-04-01T13:42:23.352+01:00  INFO 24924 --- [notification-service] [   File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 12 class path changes (0 additions, 1 deletion, 11 modifications)
+2026-04-01T13:42:23.373+01:00  INFO 24924 --- [notification-service] [       Thread-5] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:42:23.379+01:00  INFO 24924 --- [notification-service] [       Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-04-01T13:42:23.391+01:00  INFO 24924 --- [notification-service] [       Thread-5] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-01T13:42:23.516+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Starting NotificationServiceApplication using Java 21.0.8 with PID 24924 (D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\target\classes started by USER in D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service)
+2026-04-01T13:42:23.516+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T13:42:23.742+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T13:42:23.758+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 15 ms. Found 1 JPA repository interface.
+2026-04-01T13:42:24.039+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-04-01T13:42:24.040+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T13:42:24.041+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T13:42:24.085+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-04-01T13:42:24.085+01:00  INFO 24924 --- [notification-service] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 566 ms
+2026-04-01T13:42:24.125+01:00  WARN 24924 --- [notification-service] [  restartedMain] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'dataSourceScriptDatabaseInitializer' defined in class path resource [org/springframework/boot/autoconfigure/sql/init/DataSourceInitializationConfiguration.class]: Unsatisfied dependency expressed through method 'dataSourceScriptDatabaseInitializer' parameter 0: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/autoconfigure/jdbc/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class
+2026-04-01T13:42:24.126+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2026-04-01T13:42:24.133+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-04-01T13:42:24.171+01:00 ERROR 24924 --- [notification-service] [  restartedMain] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.
+
+Reason: Failed to determine a suitable driver class
+
+
+Action:
+
+Consider the following:
+	If you want an embedded database (H2, HSQL or Derby), please put it on the classpath.
+	If you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).
+
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-01T13:44:30.696+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Starting NotificationServiceApplication using Java 21.0.8 with PID 24924 (D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\target\classes started by USER in D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service)
+2026-04-01T13:44:30.697+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T13:44:31.087+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T13:44:31.103+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 12 ms. Found 1 JPA repository interface.
+2026-04-01T13:44:31.356+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8085 (http)
+2026-04-01T13:44:31.361+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T13:44:31.362+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T13:44:31.489+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-04-01T13:44:31.489+01:00  INFO 24924 --- [notification-service] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 789 ms
+2026-04-01T13:44:31.610+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-01T13:44:31.621+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-01T13:44:31.629+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-01T13:44:31.631+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-04-01T13:44:31.916+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@6941c0d8
+2026-04-01T13:44:31.916+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-04-01T13:44:31.940+01:00  WARN 24924 --- [notification-service] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-01T13:44:32.089+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-01T13:44:32.136+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:44:32.408+01:00  WARN 24924 --- [notification-service] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-01T13:44:32.724+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-04-01T13:44:32.747+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8085 (http) with context path ''
+2026-04-01T13:44:32.754+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Started NotificationServiceApplication in 2.101 seconds (process running for 532.347)
+2026-04-01T13:44:32.758+01:00  INFO 24924 --- [notification-service] [  restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-04-01T13:44:40.331+01:00  INFO 24924 --- [notification-service] [   File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 16 class path changes (4 additions, 0 deletions, 12 modifications)
+2026-04-01T13:44:40.342+01:00  INFO 24924 --- [notification-service] [       Thread-7] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:44:40.343+01:00  INFO 24924 --- [notification-service] [       Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2026-04-01T13:44:40.349+01:00  INFO 24924 --- [notification-service] [       Thread-7] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-01T13:44:40.438+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Starting NotificationServiceApplication using Java 21.0.8 with PID 24924 (D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\target\classes started by USER in D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service)
+2026-04-01T13:44:40.438+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T13:44:40.633+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T13:44:40.648+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 15 ms. Found 2 JPA repository interfaces.
+2026-04-01T13:44:40.780+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8085 (http)
+2026-04-01T13:44:40.781+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T13:44:40.781+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T13:44:40.821+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-04-01T13:44:40.821+01:00  INFO 24924 --- [notification-service] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 380 ms
+2026-04-01T13:44:40.890+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-01T13:44:40.894+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-01T13:44:40.899+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-01T13:44:40.901+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-04-01T13:44:41.094+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@70e104c9
+2026-04-01T13:44:41.094+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-04-01T13:44:41.106+01:00  WARN 24924 --- [notification-service] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-01T13:44:41.190+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: 
+    create table device_tokens (
+        id bigserial not null,
+        created_at timestamp(6),
+        token varchar(255),
+        user_id bigint,
+        primary key (id)
+    )
+2026-04-01T13:44:41.255+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:44:41.262+01:00  WARN 24924 --- [notification-service] [  restartedMain] c.p.notification.config.FirebaseConfig   : Firebase configuration file 'firebase-service-account.json' not found. Real-time push notifications will be disabled.
+2026-04-01T13:44:41.387+01:00  WARN 24924 --- [notification-service] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-01T13:44:41.498+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-04-01T13:44:41.512+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8085 (http) with context path ''
+2026-04-01T13:44:41.515+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Started NotificationServiceApplication in 1.109 seconds (process running for 541.107)
+2026-04-01T13:44:41.516+01:00  INFO 24924 --- [notification-service] [  restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-04-01T13:46:28.650+01:00  INFO 24924 --- [notification-service] [   File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 16 class path changes (0 additions, 15 deletions, 1 modification)
+2026-04-01T13:46:28.661+01:00  INFO 24924 --- [notification-service] [      Thread-14] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:46:28.663+01:00  INFO 24924 --- [notification-service] [      Thread-14] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2026-04-01T13:46:28.666+01:00  INFO 24924 --- [notification-service] [      Thread-14] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-01T13:46:28.863+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Starting NotificationServiceApplication using Java 21.0.8 with PID 24924 (D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\target\classes started by USER in D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service)
+2026-04-01T13:46:28.863+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T13:46:29.006+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T13:46:29.006+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 0 ms. Found 0 JPA repository interfaces.
+2026-04-01T13:46:29.076+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8085 (http)
+2026-04-01T13:46:29.077+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T13:46:29.078+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T13:46:29.101+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-04-01T13:46:29.101+01:00  INFO 24924 --- [notification-service] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 236 ms
+2026-04-01T13:46:29.133+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-01T13:46:29.135+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-01T13:46:29.139+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-01T13:46:29.140+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2026-04-01T13:46:29.203+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-4 - Added connection org.postgresql.jdbc.PgConnection@e698f92
+2026-04-01T13:46:29.204+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2026-04-01T13:46:29.212+01:00  WARN 24924 --- [notification-service] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-01T13:46:29.222+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-01T13:46:29.222+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:46:29.239+01:00  WARN 24924 --- [notification-service] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-01T13:46:29.330+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-04-01T13:46:29.338+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8085 (http) with context path ''
+2026-04-01T13:46:29.340+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Started NotificationServiceApplication in 0.516 seconds (process running for 648.932)
+2026-04-01T13:46:29.341+01:00  INFO 24924 --- [notification-service] [  restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-04-01T13:46:31.772+01:00  INFO 24924 --- [notification-service] [   File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 15 class path changes (15 additions, 0 deletions, 0 modifications)
+2026-04-01T13:46:31.779+01:00  INFO 24924 --- [notification-service] [      Thread-18] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:46:31.779+01:00  INFO 24924 --- [notification-service] [      Thread-18] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown initiated...
+2026-04-01T13:46:31.781+01:00  INFO 24924 --- [notification-service] [      Thread-18] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-01T13:46:31.852+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Starting NotificationServiceApplication using Java 21.0.8 with PID 24924 (D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\target\classes started by USER in D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service)
+2026-04-01T13:46:31.853+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T13:46:31.964+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T13:46:31.971+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 6 ms. Found 2 JPA repository interfaces.
+2026-04-01T13:46:32.041+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8085 (http)
+2026-04-01T13:46:32.042+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T13:46:32.042+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T13:46:32.062+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-04-01T13:46:32.062+01:00  INFO 24924 --- [notification-service] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 208 ms
+2026-04-01T13:46:32.093+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-01T13:46:32.094+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-01T13:46:32.099+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-01T13:46:32.101+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Starting...
+2026-04-01T13:46:32.174+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-5 - Added connection org.postgresql.jdbc.PgConnection@64df84d6
+2026-04-01T13:46:32.175+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Start completed.
+2026-04-01T13:46:32.184+01:00  WARN 24924 --- [notification-service] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-01T13:46:32.264+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-01T13:46:32.286+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:46:32.296+01:00  WARN 24924 --- [notification-service] [  restartedMain] c.p.notification.config.FirebaseConfig   : Firebase configuration file 'firebase-service-account.json' not found. Real-time push notifications will be disabled.
+2026-04-01T13:46:32.488+01:00  WARN 24924 --- [notification-service] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-01T13:46:32.620+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-04-01T13:46:32.632+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8085 (http) with context path ''
+2026-04-01T13:46:32.635+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Started NotificationServiceApplication in 0.804 seconds (process running for 652.227)
+2026-04-01T13:46:32.637+01:00  INFO 24924 --- [notification-service] [  restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-04-01T13:54:04.309+01:00  INFO 24924 --- [notification-service] [   File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (1 addition, 0 deletions, 0 modifications)
+2026-04-01T13:54:04.317+01:00  INFO 24924 --- [notification-service] [      Thread-22] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:54:04.318+01:00  INFO 24924 --- [notification-service] [      Thread-22] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown initiated...
+2026-04-01T13:54:04.322+01:00  INFO 24924 --- [notification-service] [      Thread-22] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-01T13:54:04.401+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Starting NotificationServiceApplication using Java 21.0.8 with PID 24924 (D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\target\classes started by USER in D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service)
+2026-04-01T13:54:04.401+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T13:54:04.540+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T13:54:04.549+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 9 ms. Found 2 JPA repository interfaces.
+2026-04-01T13:54:04.627+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8085 (http)
+2026-04-01T13:54:04.627+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T13:54:04.628+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T13:54:04.650+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-04-01T13:54:04.650+01:00  INFO 24924 --- [notification-service] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 248 ms
+2026-04-01T13:54:04.684+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-01T13:54:04.687+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-01T13:54:04.689+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-01T13:54:04.690+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Starting...
+2026-04-01T13:54:04.758+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-6 - Added connection org.postgresql.jdbc.PgConnection@72f552b6
+2026-04-01T13:54:04.758+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Start completed.
+2026-04-01T13:54:04.766+01:00  WARN 24924 --- [notification-service] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-01T13:54:04.823+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-01T13:54:04.835+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:54:04.846+01:00  WARN 24924 --- [notification-service] [  restartedMain] c.p.notification.config.FirebaseConfig   : Firebase configuration file 'firebase-service-account.json' not found. Real-time push notifications will be disabled.
+2026-04-01T13:54:04.987+01:00  WARN 24924 --- [notification-service] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-01T13:54:05.097+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-04-01T13:54:05.105+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8085 (http) with context path ''
+2026-04-01T13:54:05.110+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Started NotificationServiceApplication in 0.731 seconds (process running for 1104.702)
+2026-04-01T13:54:05.111+01:00  INFO 24924 --- [notification-service] [  restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2026-04-01T13:57:23.771+01:00  INFO 24924 --- [notification-service] [   File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 2 class path changes (1 addition, 1 deletion, 0 modifications)
+2026-04-01T13:57:23.779+01:00  INFO 24924 --- [notification-service] [      Thread-26] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:57:23.780+01:00  INFO 24924 --- [notification-service] [      Thread-26] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Shutdown initiated...
+2026-04-01T13:57:23.781+01:00  INFO 24924 --- [notification-service] [      Thread-26] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Shutdown completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-01T13:57:23.853+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Starting NotificationServiceApplication using Java 21.0.8 with PID 24924 (D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\target\classes started by USER in D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service)
+2026-04-01T13:57:23.853+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T13:57:23.954+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T13:57:23.964+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 8 ms. Found 2 JPA repository interfaces.
+2026-04-01T13:57:24.026+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8085 (http)
+2026-04-01T13:57:24.027+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T13:57:24.027+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T13:57:24.044+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-04-01T13:57:24.044+01:00  INFO 24924 --- [notification-service] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 190 ms
+2026-04-01T13:57:24.074+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-01T13:57:24.075+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-01T13:57:24.077+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-01T13:57:24.077+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Starting...
+2026-04-01T13:57:24.140+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-7 - Added connection org.postgresql.jdbc.PgConnection@5ee1099e
+2026-04-01T13:57:24.140+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Start completed.
+2026-04-01T13:57:24.150+01:00  WARN 24924 --- [notification-service] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-01T13:57:24.196+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-01T13:57:24.208+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:57:24.215+01:00  WARN 24924 --- [notification-service] [  restartedMain] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'firebaseConfig': Invocation of init method failed
+2026-04-01T13:57:24.215+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:57:24.215+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Shutdown initiated...
+2026-04-01T13:57:24.216+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Shutdown completed.
+2026-04-01T13:57:24.217+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2026-04-01T13:57:24.221+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-04-01T13:57:24.223+01:00 ERROR 24924 --- [notification-service] [  restartedMain] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'firebaseConfig': Invocation of init method failed
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:222) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:422) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1778) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:600) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:326) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:324) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:962) ~[spring-context-6.1.5.jar:6.1.5]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:624) ~[spring-context-6.1.5.jar:6.1.5]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:334) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343) ~[spring-boot-3.2.4.jar:3.2.4]
+	at com.pfe.notification.NotificationServiceApplication.main(NotificationServiceApplication.java:10) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50) ~[spring-boot-devtools-3.2.4.jar:3.2.4]
+Caused by: java.lang.NoClassDefFoundError: com/google/firebase/FirebaseApp
+	at com.pfe.notification.config.FirebaseConfig.initialize(FirebaseConfig.java:27) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMethod.invoke(InitDestroyAnnotationBeanPostProcessor.java:457) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:401) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:219) ~[spring-beans-6.1.5.jar:6.1.5]
+	... 21 common frames omitted
+Caused by: java.lang.ClassNotFoundException: com.google.firebase.FirebaseApp
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641) ~[na:na]
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188) ~[na:na]
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526) ~[na:na]
+	at java.base/java.lang.Class.forName0(Native Method) ~[na:na]
+	at java.base/java.lang.Class.forName(Class.java:534) ~[na:na]
+	at java.base/java.lang.Class.forName(Class.java:513) ~[na:na]
+	at org.springframework.boot.devtools.restart.classloader.RestartClassLoader.loadClass(RestartClassLoader.java:121) ~[spring-boot-devtools-3.2.4.jar:3.2.4]
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526) ~[na:na]
+	... 27 common frames omitted
+
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-04-01T13:57:38.895+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : Starting NotificationServiceApplication using Java 21.0.8 with PID 24924 (D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\target\classes started by USER in D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service)
+2026-04-01T13:57:38.895+01:00  INFO 24924 --- [notification-service] [  restartedMain] c.p.n.NotificationServiceApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T13:57:38.991+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T13:57:38.998+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 8 ms. Found 2 JPA repository interfaces.
+2026-04-01T13:57:39.055+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8085 (http)
+2026-04-01T13:57:39.056+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T13:57:39.056+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T13:57:39.073+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.a.c.c.C.[Tomcat-2].[localhost].[/]     : Initializing Spring embedded WebApplicationContext
+2026-04-01T13:57:39.073+01:00  INFO 24924 --- [notification-service] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 175 ms
+2026-04-01T13:57:39.102+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-01T13:57:39.103+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-01T13:57:39.106+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-01T13:57:39.106+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-8 - Starting...
+2026-04-01T13:57:39.164+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-8 - Added connection org.postgresql.jdbc.PgConnection@517e4b4e
+2026-04-01T13:57:39.164+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-8 - Start completed.
+2026-04-01T13:57:39.172+01:00  WARN 24924 --- [notification-service] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-01T13:57:39.208+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-04-01T13:57:39.220+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:57:39.225+01:00  WARN 24924 --- [notification-service] [  restartedMain] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'firebaseConfig': Invocation of init method failed
+2026-04-01T13:57:39.225+01:00  INFO 24924 --- [notification-service] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T13:57:39.225+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-8 - Shutdown initiated...
+2026-04-01T13:57:39.226+01:00  INFO 24924 --- [notification-service] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-8 - Shutdown completed.
+2026-04-01T13:57:39.226+01:00  INFO 24924 --- [notification-service] [  restartedMain] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2026-04-01T13:57:39.230+01:00  INFO 24924 --- [notification-service] [  restartedMain] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-04-01T13:57:39.231+01:00 ERROR 24924 --- [notification-service] [  restartedMain] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'firebaseConfig': Invocation of init method failed
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:222) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:422) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1778) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:600) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:522) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:326) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:324) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:975) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:962) ~[spring-context-6.1.5.jar:6.1.5]
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:624) ~[spring-context-6.1.5.jar:6.1.5]
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:754) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:456) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:334) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354) ~[spring-boot-3.2.4.jar:3.2.4]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343) ~[spring-boot-3.2.4.jar:3.2.4]
+	at com.pfe.notification.NotificationServiceApplication.main(NotificationServiceApplication.java:10) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50) ~[spring-boot-devtools-3.2.4.jar:3.2.4]
+Caused by: java.lang.NoClassDefFoundError: com/google/firebase/FirebaseApp
+	at com.pfe.notification.config.FirebaseConfig.initialize(FirebaseConfig.java:27) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMethod.invoke(InitDestroyAnnotationBeanPostProcessor.java:457) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor$LifecycleMetadata.invokeInitMethods(InitDestroyAnnotationBeanPostProcessor.java:401) ~[spring-beans-6.1.5.jar:6.1.5]
+	at org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor.postProcessBeforeInitialization(InitDestroyAnnotationBeanPostProcessor.java:219) ~[spring-beans-6.1.5.jar:6.1.5]
+	... 21 common frames omitted
+Caused by: java.lang.ClassNotFoundException: com.google.firebase.FirebaseApp
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641) ~[na:na]
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188) ~[na:na]
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526) ~[na:na]
+	at java.base/java.lang.Class.forName0(Native Method) ~[na:na]
+	at java.base/java.lang.Class.forName(Class.java:534) ~[na:na]
+	at java.base/java.lang.Class.forName(Class.java:513) ~[na:na]
+	at org.springframework.boot.devtools.restart.classloader.RestartClassLoader.loadClass(RestartClassLoader.java:121) ~[spring-boot-devtools-3.2.4.jar:3.2.4]
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526) ~[na:na]
+	... 27 common frames omitted
+
