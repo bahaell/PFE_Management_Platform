@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "NotificationServiceApplication",
+            "request": "launch",
+            "mainClass": "com.pfe.notification.NotificationServiceApplication",
+            "projectName": "com.pfe-notification-service"
+        },
+        {
+            "type": "java",
+            "name": "DiscoveryApplication",
+            "request": "launch",
+            "mainClass": "com.example.discovery.DiscoveryApplication"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ConfigServerApplication<com.example-demo>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.configserver.ConfigServerApplication",
+            "projectName": "com.example-demo",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
