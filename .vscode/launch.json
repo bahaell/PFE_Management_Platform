@@ -2,6 +2,32 @@
     "configurations": [
         {
             "type": "java",
+            "name": "GatewayApplication",
+            "request": "launch",
+            "mainClass": "com.example.gateway.GatewayApplication"
+        },
+        {
+            "type": "java",
+            "name": "ConfigServerApplication",
+            "request": "launch",
+            "mainClass": "com.example.configserver.ConfigServerApplication",
+            "projectName": "config-server"
+        },
+        {
+            "type": "java",
+            "name": "UserServiceApplication",
+            "request": "launch",
+            "mainClass": "com.example.user_service.UserServiceApplication"
+        },
+        {
+            "type": "java",
+            "name": "ProjectsApplication",
+            "request": "launch",
+            "mainClass": "com.example.projects.ProjectsApplication",
+            "projectName": "projects"
+        },
+        {
+            "type": "java",
             "name": "NotificationServiceApplication",
             "request": "launch",
             "mainClass": "com.pfe.notification.NotificationServiceApplication",

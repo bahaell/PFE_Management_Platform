@@ -1,13 +1,24 @@
-export type TaskPriority = 'high' | 'medium' | 'low'
-export type TaskStatus = 'todo' | 'inProgress' | 'done'
+export enum TaskPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH'
+}
+
+export enum TaskStatus {
+  TODO = 'TODO',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DONE = 'DONE'
+}
 
 export interface Task {
-  id: number
-  title: string
-  description: string
-  priority: TaskPriority
-  assignee: string
-  dueDate: string
-  status: TaskStatus
-  completed: boolean
+  id: string;
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  assigneeId?: string;
+  dueDate?: string;
+  projectId: string;
+  createdAt: string;
+  updatedAt: string;
 }
