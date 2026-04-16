@@ -37,6 +37,10 @@ spring:
               uri: lb://projects-service
               predicates:
                 - Path=/api/comments/**
+            - id: defense-service
+              uri: lb://defense-service
+              predicates:
+                - Path=/api/defenses/**
 
 management:
   endpoint:

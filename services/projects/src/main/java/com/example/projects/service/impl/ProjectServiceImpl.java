@@ -100,6 +100,48 @@ public class ProjectServiceImpl implements ProjectService {
         return mapToResponse(projectRepository.save(project));
     }
 
+    @Override
+    @Transactional
+    public ProjectResponse updateProjectStatus(UUID id, ProjectStatus newStatus, String userRole) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
+
+        // Enforce Coordinator-only validation
+        if (newStatus == ProjectStatus.APPROVED && !"COORDINATOR".equalsIgnoreCase(userRole)) {
+            throw new RuntimeException("Only a Coordinator can approve/validate a project proposal.");
+        }
+
+        // State Machine validation
+        validateStatusTransition(project.getStatus(), newStatus);
+
+        project.setStatus(newStatus);
+        
+        // Auto-set progress if completed
+        if (newStatus == ProjectStatus.COMPLETED) {
+            project.setProgress(100);
+        }
+
+        return mapToResponse(projectRepository.save(project));
+    }
+
+    private void validateStatusTransition(ProjectStatus current, ProjectStatus next) {
+        if (current == next) return;
+        
+        boolean valid = switch (current) {
+            case PROPOSED -> next == ProjectStatus.APPROVED || next == ProjectStatus.CANCELLED;
+            case APPROVED -> next == ProjectStatus.ASSIGNED || next == ProjectStatus.CANCELLED;
+            case ASSIGNED -> next == ProjectStatus.IN_PROGRESS || next == ProjectStatus.CANCELLED;
+            case IN_PROGRESS -> next == ProjectStatus.SUBMITTED || next == ProjectStatus.CANCELLED;
+            case SUBMITTED -> next == ProjectStatus.COMPLETED || next == ProjectStatus.CANCELLED;
+            case COMPLETED -> false; // Final state
+            case CANCELLED -> false; // Final state
+        };
+
+        if (!valid) {
+            throw new RuntimeException("Invalid project status transition from " + current + " to " + next);
+        }
+    }
+
     private ProjectResponse mapToResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())

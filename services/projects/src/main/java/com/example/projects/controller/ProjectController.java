@@ -64,4 +64,12 @@ public class ProjectController {
             @RequestParam Integer progress) {
         return ResponseEntity.ok(projectService.updateProgress(id, progress));
     }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ProjectResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam ProjectStatus status,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        return ResponseEntity.ok(projectService.updateProjectStatus(id, status, userRole));
+    }
 }

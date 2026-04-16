@@ -1,17 +1,18 @@
-package com.example.projects;
+package com.example.defense;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
-public class ProjectsApplication {
+public class DefenseApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ProjectsApplication.class, args);
+		SpringApplication.run(DefenseApplication.class, args);
 	}
 
 }

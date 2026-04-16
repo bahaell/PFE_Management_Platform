@@ -2,6 +2,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "DefenseApplication",
+            "request": "launch",
+            "mainClass": "com.example.defense.DefenseApplication",
+            "projectName": "defense-service"
+        },
+        {
+            "type": "java",
+            "name": "DefenseApplication",
+            "request": "launch",
+            "mainClass": "com.example.defense.DefenseApplication",
+            "projectName": "Defense"
+        },
+        {
+            "type": "java",
             "name": "GatewayApplication",
             "request": "launch",
             "mainClass": "com.example.gateway.GatewayApplication"

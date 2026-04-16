@@ -16,4 +16,5 @@ public interface ProjectService {
     List<ProjectResponse> getProjectsByStatus(ProjectStatus status);
     void deleteProject(UUID id);
     ProjectResponse updateProgress(UUID id, Integer progress);
+    ProjectResponse updateProjectStatus(UUID id, ProjectStatus status, String userRole);
 }
