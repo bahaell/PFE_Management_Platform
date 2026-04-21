@@ -41,6 +41,18 @@ spring:
               uri: lb://defense-service
               predicates:
                 - Path=/api/defenses/**
+            - id: resource-service-equipment
+              uri: lb://resource-service
+              predicates:
+                - Path=/api/equipment/**
+            - id: resource-service-rooms
+              uri: lb://resource-service
+              predicates:
+                - Path=/api/rooms/**
+            - id: scheduling-service
+              uri: lb://scheduling-service
+              predicates:
+                - Path=/api/schedule/**
 
 management:
   endpoint:

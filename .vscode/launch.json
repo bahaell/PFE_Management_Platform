@@ -2,6 +2,19 @@
     "configurations": [
         {
             "type": "java",
+            "name": "SchedulingServiceApplication",
+            "request": "launch",
+            "mainClass": "com.pfe.scheduling.SchedulingServiceApplication",
+            "projectName": "scheduling-service"
+        },
+        {
+            "type": "java",
+            "name": "ResourceServiceApplication",
+            "request": "launch",
+            "mainClass": "com.pfe.resource.ResourceServiceApplication"
+        },
+        {
+            "type": "java",
             "name": "DefenseApplication",
             "request": "launch",
             "mainClass": "com.example.defense.DefenseApplication",
