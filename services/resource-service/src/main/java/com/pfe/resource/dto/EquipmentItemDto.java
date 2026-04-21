@@ -6,15 +6,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EquipmentResponse {
-
-    private Long id;
-    private String type;
+public class EquipmentItemDto {
     private boolean present;
     private String status;
     private String code;
-
-    // Flat room info — no nested object
-    private Long roomId;
-    private String roomName;
 }

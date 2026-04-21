@@ -1,17 +1,8 @@
-interface ProjectBasic {
-  id: number
-  title: string
-  subject: string
-  description: string
-  startDate: string
-  deadline: string
-  progress: number
-  status: string
-}
+import type { ProjectBasic, ProjectMatch } from "@/models/project.model"
 
 let MOCK_PROJECTS: ProjectBasic[] = [
   {
-    id: 1,
+    id: "1",
     title: 'AI in Healthcare',
     subject: 'Artificial Intelligence Applications',
     description: 'Building an intelligent system for early disease detection using machine learning',
@@ -21,7 +12,7 @@ let MOCK_PROJECTS: ProjectBasic[] = [
     status: 'In Progress'
   },
   {
-    id: 2,
+    id: "2",
     title: 'Blockchain Voting',
     subject: 'Decentralized Systems',
     description: 'Secure voting platform using blockchain technology',
@@ -34,15 +25,16 @@ let MOCK_PROJECTS: ProjectBasic[] = [
 
 export const ProjectsService = {
   async createProject(project: ProjectBasic): Promise<ProjectBasic> {
+    const nextId = (Math.max(...MOCK_PROJECTS.map(p => Number(p.id)), 0) + 1).toString()
     const newProject = { 
       ...project, 
-      id: Math.max(...MOCK_PROJECTS.map(p => p.id), 0) + 1 
+      id: nextId 
     }
     MOCK_PROJECTS.push(newProject)
     return Promise.resolve(newProject)
   },
 
-  async getProjectById(id: number): Promise<ProjectBasic | null> {
+  async getProjectById(id: string): Promise<ProjectBasic | null> {
     return Promise.resolve(MOCK_PROJECTS.find(p => p.id === id) || null)
   },
 
@@ -50,14 +42,14 @@ export const ProjectsService = {
     return Promise.resolve(MOCK_PROJECTS)
   },
 
-  async updateProject(id: number, updates: Partial<ProjectBasic>): Promise<ProjectBasic | null> {
+  async updateProject(id: string, updates: Partial<ProjectBasic>): Promise<ProjectBasic | null> {
     const project = MOCK_PROJECTS.find(p => p.id === id)
     if (!project) return Promise.resolve(null)
     Object.assign(project, updates, { id })
     return Promise.resolve(project)
   },
 
-  async deleteProject(id: number): Promise<boolean> {
+  async deleteProject(id: string): Promise<boolean> {
     const initialLength = MOCK_PROJECTS.length
     MOCK_PROJECTS = MOCK_PROJECTS.filter(p => p.id !== id)
     return Promise.resolve(MOCK_PROJECTS.length < initialLength)
@@ -76,7 +68,7 @@ export const ProjectsService = {
     return Promise.resolve(MOCK_PROJECTS.filter(p => p.status === status))
   },
 
-  async updateProjectProgress(id: number, progress: number): Promise<ProjectBasic | null> {
+  async updateProjectProgress(id: string, progress: number): Promise<ProjectBasic | null> {
     const project = MOCK_PROJECTS.find(p => p.id === id)
     if (!project) return Promise.resolve(null)
     project.progress = Math.min(100, Math.max(0, progress))
@@ -90,9 +82,37 @@ export const ProjectsService = {
   },
 
   async updateProgress(projectId: string, newProgress: number, byTeacherId?: string): Promise<ProjectBasic | null> {
-    const project = MOCK_PROJECTS.find(p => p.id === Number(projectId))
+    const project = MOCK_PROJECTS.find(p => p.id === projectId)
     if (!project) return Promise.resolve(null)
     project.progress = Math.min(100, Math.max(0, newProgress))
     return Promise.resolve(project)
+  },
+
+  async getProjectMatches(studentSkills: string[]): Promise<ProjectMatch[]> {
+    const normalized = studentSkills.map(s => s.toLowerCase().trim()).filter(Boolean)
+    const matches = MOCK_PROJECTS.map((project) => {
+      const requiredSkills = project.subject
+        .split(/[,\s]+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 2)
+      const matchedSkills = requiredSkills.filter((skill) =>
+        normalized.some((s) => s.includes(skill.toLowerCase()) || skill.toLowerCase().includes(s)),
+      )
+      const matchScore = requiredSkills.length === 0
+        ? 0
+        : Math.round((matchedSkills.length * 100) / requiredSkills.length)
+
+      return {
+        projectId: project.id,
+        title: project.title,
+        description: project.description,
+        subject: project.subject,
+        requiredSkills,
+        matchedSkills,
+        matchScore,
+      }
+    }).sort((a, b) => b.matchScore - a.matchScore)
+
+    return Promise.resolve(matches)
   },
 }

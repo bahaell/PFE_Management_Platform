@@ -6,12 +6,12 @@ import java.util.List;
 
 public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
 
-    // All available equipment
-    List<Equipment> findByAvailableTrue();
+    // All present equipment
+    List<Equipment> findByPresentTrue();
 
     // All equipment in a specific room
     List<Equipment> findByRoomId(Long roomId);
 
-    // Available equipment of a specific type (e.g. all free projectors)
-    List<Equipment> findByTypeAndAvailableTrue(String type);
+    // Present equipment of a specific type
+    List<Equipment> findByTypeAndPresentTrue(String type);
 }

@@ -28,7 +28,7 @@ import { ProjectsService } from '@/services/service_projects'
 import { StudentsService } from '@/services/service_students'
 
 interface Subject {
-  id: number
+  id: string
   title: string
   description: string
   domain: string

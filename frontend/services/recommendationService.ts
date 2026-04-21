@@ -1,4 +1,5 @@
-import type { TeacherRecommendation } from "@/models/recommendation.model"
+import type { ProjectRecommendation, TeacherRecommendation } from "@/models/recommendation.model"
+import { apiClient } from "@/lib/api-client"
 
 const mockTeachers = [
   {
@@ -88,4 +89,12 @@ export async function generateTeacherRecommendations(
 
 export async function getAllTeachers() {
   return mockTeachers
+}
+
+export async function generateProjectRecommendations(studentSkills: string[]): Promise<ProjectRecommendation[]> {
+  try {
+    return await apiClient.post<ProjectRecommendation[]>("/api/projects/matching", { studentSkills })
+  } catch {
+    return []
+  }
 }

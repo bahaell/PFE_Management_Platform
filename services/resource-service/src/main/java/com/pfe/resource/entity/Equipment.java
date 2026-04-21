@@ -13,9 +13,10 @@ public class Equipment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name; // e.g. "Projecteur Epson"
-    private String type; // PROJECTOR / LAPTOP / SCREEN
-    private boolean available;
+    private String type; // projector/smartBoard/... (frontend keys)
+    private boolean present;
+    private String status; // ok | maintenance | missing
+    private String code; // optional (wifi)
     @ManyToOne
     @JoinColumn(name = "room_id")
     private Room room;

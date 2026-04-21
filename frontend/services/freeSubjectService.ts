@@ -1,4 +1,5 @@
 import type { FreeSubjectRequest } from "@/models/freeSubject.model"
+import { apiClient } from "@/lib/api-client"
 
 const mockRequests: FreeSubjectRequest[] = [
   {
@@ -60,22 +61,53 @@ const mockRequests: FreeSubjectRequest[] = [
 ]
 
 export async function getStudentRequests(studentId: string) {
-  return mockRequests.filter((r) => r.studentId === studentId)
+  try {
+    const items = await apiClient.get<any[]>(`/api/projects/external-subjects/student/${studentId}`)
+    return items.map(mapApiToModel)
+  } catch {
+    return mockRequests.filter((r) => r.studentId === studentId)
+  }
 }
 
 export async function getTeacherRequests(teacherId: string) {
-  return mockRequests.filter((r) => !r.teacherId || r.teacherId === teacherId || r.status === "pending")
+  try {
+    const items = await apiClient.get<any[]>(`/api/projects/external-subjects/teacher/${teacherId}`)
+    return items.map(mapApiToModel)
+  } catch {
+    return mockRequests.filter((r) => !r.teacherId || r.teacherId === teacherId || r.status === "pending")
+  }
 }
 
 export async function submitFreeSubjectRequest(data: Omit<FreeSubjectRequest, "id" | "createdAt" | "updatedAt">) {
-  const newRequest: FreeSubjectRequest = {
-    ...data,
-    id: `fs${Date.now()}`,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+  try {
+    const payload = {
+      studentName: data.studentName,
+      teacherId: data.teacherId,
+      teacherName: data.teacherName,
+      status: data.status.toUpperCase(),
+      subjectTitle: data.subjectTitle,
+      subjectDescription: data.subjectDescription,
+      motivation: data.motivation,
+      companyId: data.company.id,
+      companyName: data.company.name,
+      companyDescription: data.company.description,
+      companyPhone: data.companyPhone,
+      companyEmail: data.companyEmail,
+      companySupervisorName: data.companySupervisorName,
+      companySupervisorEmail: data.companySupervisorEmail,
+    }
+    const created = await apiClient.post<any>("/api/projects/external-subjects", payload)
+    return mapApiToModel(created)
+  } catch {
+    const newRequest: FreeSubjectRequest = {
+      ...data,
+      id: `fs${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    mockRequests.push(newRequest)
+    return newRequest
   }
-  mockRequests.push(newRequest)
-  return newRequest
 }
 
 export async function updateRequestStatus(
@@ -84,16 +116,62 @@ export async function updateRequestStatus(
   teacherId?: string,
   teacherName?: string,
 ) {
-  const request = mockRequests.find((r) => r.id === requestId)
-  if (request) {
-    request.status = status
-    if (teacherId) request.teacherId = teacherId
-    if (teacherName) request.teacherName = teacherName
-    request.updatedAt = new Date().toISOString()
+  try {
+    const updated = await apiClient.patch<any>(
+      `/api/projects/external-subjects/${requestId}/status?status=${status.toUpperCase()}`,
+      {},
+      { headers: { "X-User-Id": teacherId ?? "", "X-User-Name": teacherName ?? "" } },
+    )
+    return mapApiToModel(updated)
+  } catch {
+    const request = mockRequests.find((r) => r.id === requestId)
+    if (request) {
+      request.status = status
+      if (teacherId) request.teacherId = teacherId
+      if (teacherName) request.teacherName = teacherName
+      request.updatedAt = new Date().toISOString()
+    }
+    return request
   }
-  return request
 }
 
 export async function getAllRequests() {
-  return mockRequests
+  try {
+    const items = await apiClient.get<any[]>("/api/projects/external-subjects")
+    return items.map(mapApiToModel)
+  } catch {
+    return mockRequests
+  }
+}
+
+function mapApiToModel(item: any): FreeSubjectRequest {
+  return {
+    id: item.id,
+    studentId: item.studentId,
+    studentName: item.studentName,
+    teacherId: item.teacherId,
+    teacherName: item.teacherName,
+    status: (item.status?.toLowerCase?.() ?? "pending") as FreeSubjectRequest["status"],
+    subjectTitle: item.subjectTitle,
+    subjectDescription: item.subjectDescription,
+    motivation: item.motivation,
+    company: {
+      id: item.companyId,
+      name: item.companyName,
+      description: item.companyDescription ?? "",
+      email: item.companyEmail,
+      phone: item.companyPhone,
+      country: "",
+      city: "",
+      status: "approved",
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    },
+    companyPhone: item.companyPhone,
+    companyEmail: item.companyEmail,
+    companySupervisorName: item.companySupervisorName,
+    companySupervisorEmail: item.companySupervisorEmail,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }
 }

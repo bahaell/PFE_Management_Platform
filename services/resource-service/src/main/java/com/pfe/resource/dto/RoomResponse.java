@@ -11,8 +11,12 @@ public class RoomResponse {
     private Long id;
     private String name;
     private int capacity;
-    private boolean hasProjector;
-    private boolean hasWhiteboard;
+    private String location;
     private String building;
-    private boolean available;
+    private String floor;
+    private String status;
+    private String description;
+    private EquipmentMapDto equipment;
+    private java.util.List<RoomBookingResponse> bookings;
+    private java.util.List<MaintenanceScheduleItemDto> maintenanceSchedule;
 }

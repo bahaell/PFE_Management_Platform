@@ -9,13 +9,13 @@ import lombok.*;
 @Builder
 public class EquipmentRequest {
 
-    @NotBlank(message = "Name is required")
-    private String name; // e.g. "Projecteur Epson EB-X51"
-
     @NotBlank(message = "Type is required")
-    private String type; // PROJECTOR | LAPTOP | SCREEN | OTHER
+    private String type; // projector/smartBoard/speakers/...
 
-    private boolean available;
+    private boolean present;
+    @NotBlank(message = "Status is required")
+    private String status; // ok/maintenance/missing
+    private String code;
 
     private Long roomId; // nullable — can be unassigned
 }

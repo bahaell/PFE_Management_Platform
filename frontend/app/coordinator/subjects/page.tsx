@@ -14,7 +14,7 @@ import { ProjectsService } from '@/services/service_projects'
 import { useToast } from '@/hooks/use-toast'
 
 interface Subject {
-  id: number
+  id: string
   title: string
   description: string
   teacher: string
@@ -65,7 +65,7 @@ export default function CoordinatorSubjectsPage() {
     })
   }, [subjects, searchQuery, selectedStatus, selectedDomain])
 
-  const handleAccept = (id: number) => {
+  const handleAccept = (id: string) => {
     toast({
       title: 'Subject Accepted',
       description: 'The subject has been validated.',
@@ -73,7 +73,7 @@ export default function CoordinatorSubjectsPage() {
     queryClient.invalidateQueries({ queryKey: ['coordinator-subjects'] })
   }
 
-  const handleReject = (id: number) => {
+  const handleReject = (id: string) => {
     toast({
       title: 'Subject Rejected',
       description: 'The subject has been rejected.',

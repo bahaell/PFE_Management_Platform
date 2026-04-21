@@ -1,61 +1,85 @@
-# 🗺️ PFE Management Platform - Microservices Roadmap
+# 🗺️ PFE Management Platform - Execution Plan (Updated)
 
-This plan outlines the remaining services required to achieve full functional parity with the frontend models and provide a premium user experience.
+This roadmap is aligned with the current backend state and frontend service expectations.
 
 ---
 
-## Phase 2: Administrative Excellence (Document Service)
-**Objective:** Replace manual paperwork with automated PDF generation.
+## Phase 1 (NOW): Scheduling Contract Stabilization
+**Objective:** Make `scheduling-service` work end-to-end with existing backend contracts.
+
+### 🧠 Scheduling Service (Top Priority)
+* **Responsibility:** Generate valid defense planning using Timefold and real microservice data.
+* **Must Fix First:**
+  1. **Contracts with Projects Service**
+     * Use `UUID/String` IDs (remove `Long` assumptions).
+     * Use `title` (or agreed alias) consistently.
+     * Consume correct project endpoints (`/api/projects/status/{status}` or `/api/projects/scheduling-candidates`).
+  2. **Request/Response DTO Alignment**
+     * Update solver request IDs (`projectId`, `juryMemberIds`) to match system-wide ID strategy.
+     * Return a frontend-ready schedule result schema.
+  3. **Operational Flow**
+     * Validate: fetch candidates -> solve -> get result.
+     * Add clear error handling for unavailable rooms/projects and solver failures.
+
+### 🏢 Resource Service
+* **Responsibility:** Room/equipment availability source for scheduling.
+* **Current Status:** Mostly aligned.
+* **Next Actions:** Add/verify availability windows and conflict checks for scheduling inputs.
+
+---
+
+## Phase 2: Defense Scheduling Integration
+**Objective:** Connect generated schedules to real defense records.
+
+### 🛡️ Defense Service
+* **Responsibility:** Source of truth for defense entities and outcomes.
+* **Required Additions:**
+  * Endpoint to apply approved schedule (e.g. update date/time/room/jury from scheduling output).
+  * Preserve existing result finalization flow (`COMPLETED` + project update).
+* **Optional Enhancements (after apply endpoint):**
+  * Jury assignment APIs
+  * Timeline/progress APIs
+  * Attachment management APIs
+
+---
+
+## Phase 3: Frontend Integration (After Backend Stabilization)
+**Objective:** Replace mock services safely without contract churn.
+
+* Wire frontend scheduler-related services to real APIs only after Phases 1-2 pass.
+* Keep temporary compatibility fields (`subject` alias from project title) until UI migration is complete.
+* Normalize enum/display mappings in frontend service layer.
+
+---
+
+## Phase 4: Projects Service Final Consistency Pass
+**Objective:** Finish cross-domain consistency after scheduling is stable.
+
+* Keep token-based ownership enforcement (`X-User-Id`, `X-User-Role`) strict.
+* Keep project matching endpoint on explicit `requiredSkills`.
+* Align remaining user-linked IDs in tasks/comments/documents to string-based IDs if still UUID-bound.
+* Expand collaboration APIs as needed (messages/activities already added).
+
+---
+
+## Phase 5: Administrative Documents & Production Readiness
+**Objective:** Institutional readiness and operational quality.
 
 ### 📄 Academic Document Service
-*   **Responsibility:** Lifecycle of internship conventions, defense authorizations, and PVs.
-*   **Key Features:**
-    *   **PDF Generation:** Use **Thymeleaf + iText/OpenHTMLToPDF** to generate professional documents from templates.
-    *   **Digital Trail:** Track when a student requests a document and when it's "Signed/Validated."
-    *   **Integration:** Pulls project data from `projects-service` and jury results from `defense-service`.
+* PDF generation (Thymeleaf + iText/OpenHTMLToPDF)
+* Request/validation lifecycle
+* Integrations with projects/defense
 
----
-
-## Phase 3: The Logistics Layer (Resource & Scheduling)
-**Objective:** Automate the complex "Defense Week" organization.
-
-### 🏢 Resource Service (Inventory)
-*   **Responsibility:** Manage the physical inventory.
-*   **Models:** `Room`, `Equipment`.
-*   **Actions:** Track room capacities, projector availability, and technical specs.
-
-### 🧠 Scheduling Service (The "Brain")
-*   **Responsibility:** Solve the Constraint Satisfaction Problem (CSP) of scheduling.
-*   **Action:** Suggest optimal slots by crossing:
-    1.  **Teacher Availability** (via User Service / Calendar).
-    2.  **Room Availability** (via Resource Service).
-    3.  **Project Readiness** (via Projects Service).
-*   **Tech Recommendation:** Use **Timefold (OptaPlanner)** for automated scheduling.
-
----
-
-## Phase 4: Engagement & Feedback
-
-### 💬 Collaboration Service (Real-time)
-*   **Objective:** Move beyond static comments.
-*   **Features:**
-    *   **Live Chat:** Socket.io or Spring WebFlux (WebSockets) for real-time mentor-student talk.
-    *   **Annotations:** Ability to pin comments to specific file versions.
-
-### 📊 Subject Service (Marketplace)
-*   **Objective:** Marketplace for "Free Subjects" proposed by companies or teachers.
-*   **Features:**
-    *   **Bidding System:** Students can apply for subjects.
-    *   **Validation:** Coordinators approve subjects before they enter the `projects-service`.
-
----
-
-## Phase 5: Production Readiness (Cross-Cutting)
-*   **Security:** Implement Centralized Auth (Keycloak or Spring Security OAuth2) at the **Gateway** level.
-*   **Analytics:** A dashboard service to track "Global Progress" (e.g., % of students who found a PFE).
-*   **File Storage:** Integrate **MinIO** or **AWS S3** for persistent document storage (replacing local mock URLs).
+### 🔐 Cross-Cutting
+* Gateway auth hardening (OAuth2/JWT propagation headers)
+* Object storage (MinIO/S3) for documents
+* Monitoring/observability and analytics dashboards
 
 ---
 
 > [!TIP]
-> **Suggested Priority:** Phase 2 (Academic Documents) is the most immediate pain point for university administration. We should start there.
+> **Current Priority Order:**  
+> 1) Scheduling-Service contract fixes  
+> 2) Defense apply-schedule endpoint  
+> 3) Frontend integration  
+> 4) Remaining consistency hardening

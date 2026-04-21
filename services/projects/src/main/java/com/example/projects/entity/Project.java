@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,15 +37,20 @@ public class Project {
     private Integer progress = 0;
 
     @Column(name = "supervisor_id")
-    private UUID supervisorId;
+    private String supervisorId;
 
     @ElementCollection
     @CollectionTable(name = "project_students", joinColumns = @JoinColumn(name = "project_id"))
     @Column(name = "student_id")
-    private Set<UUID> studentIds;
+    private Set<String> studentIds = new HashSet<>();
 
     @Column(name = "company_id")
-    private UUID companyId;
+    private String companyId;
+
+    @ElementCollection
+    @CollectionTable(name = "project_required_skills", joinColumns = @JoinColumn(name = "project_id"))
+    @Column(name = "skill")
+    private Set<String> requiredSkills = new HashSet<>();
 
     @Column(name = "start_date")
     private LocalDateTime startDate;

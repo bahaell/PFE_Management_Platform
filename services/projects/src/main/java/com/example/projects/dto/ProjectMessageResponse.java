@@ -12,11 +12,13 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActivityResponse {
+public class ProjectMessageResponse {
     private UUID id;
-    private String type;
-    private String action;
-    private String authorId;
-    private LocalDateTime timestamp;
     private UUID projectId;
+    private String authorId;
+    private String authorName;
+    private String authorRole;
+    private String content;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

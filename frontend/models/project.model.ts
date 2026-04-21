@@ -8,17 +8,28 @@ export enum ProjectStatus {
   CANCELLED = 'CANCELLED'
 }
 
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: ProjectStatus;
-  progress: number;
-  supervisorId?: string;
-  studentIds?: string[];
-  companyId?: string;
-  startDate?: string;
-  endDate?: string;
-  createdAt: string;
-  updatedAt: string;
+export interface ProjectBasic {
+  id: string
+  title: string
+  subject: string
+  description: string
+  startDate: string
+  deadline: string
+  progress: number
+  status: string
+  supervisorId?: string
+  studentIds?: string[]
+  companyId?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface ProjectMatch {
+  projectId: string
+  title: string
+  description: string
+  subject: string
+  requiredSkills: string[]
+  matchedSkills: string[]
+  matchScore: number
 }

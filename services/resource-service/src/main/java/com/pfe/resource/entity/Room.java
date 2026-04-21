@@ -18,8 +18,10 @@ public class Room {
     private String name; // e.g. "Salle A101"
 
     private int capacity;
-    private boolean hasProjector;
-    private boolean hasWhiteboard;
+    private String location;
     private String building;
-    private boolean available; // global toggle
+    private String floor;
+    private String status; // available | occupied | maintenance | unavailable
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }

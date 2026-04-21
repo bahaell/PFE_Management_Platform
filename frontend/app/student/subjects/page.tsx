@@ -16,28 +16,26 @@ import {
 import { SkillMatchBar } from '@/components/recommendations/skill-match-bar'
 import { RecommendedSubjectsPanel } from '@/components/recommendations/recommended-subjects-panel'
 import { ProjectsService } from '@/services/service_projects'
-import type { ProjectBasic } from '@/models/project.model'
-
 export default function SubjectsPage() {
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterTeacher, setFilterTeacher] = useState('all')
   const [filterDomain, setFilterDomain] = useState('all')
-  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => ProjectsService.getAllProjects(),
   })
 
-  const [appliedIds, setAppliedIds] = useState<number[]>([])
+  const [appliedIds, setAppliedIds] = useState<string[]>([])
 
-  const handleApply = (id: number) => {
+  const handleApply = (id: string) => {
     setAppliedIds([...appliedIds, id])
     queryClient.invalidateQueries({ queryKey: ['projects'] })
   }
 
-  const handleWithdraw = (id: number) => {
+  const handleWithdraw = (id: string) => {
     setAppliedIds(appliedIds.filter(aid => aid !== id))
     setDeleteId(null)
     queryClient.invalidateQueries({ queryKey: ['projects'] })

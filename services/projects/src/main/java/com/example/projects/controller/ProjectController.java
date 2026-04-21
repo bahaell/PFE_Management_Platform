@@ -1,7 +1,10 @@
 package com.example.projects.controller;
 
 import com.example.projects.dto.ProjectRequest;
+import com.example.projects.dto.ProjectMatchingRequest;
+import com.example.projects.dto.ProjectMatchingResponse;
 import com.example.projects.dto.ProjectResponse;
+import com.example.projects.dto.SchedulingProjectResponse;
 import com.example.projects.entity.ProjectStatus;
 import com.example.projects.service.ProjectService;
 import jakarta.validation.Valid;
@@ -21,8 +24,11 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @PostMapping
-    public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody ProjectRequest request) {
-        return new ResponseEntity<>(projectService.createProject(request), HttpStatus.CREATED);
+    public ResponseEntity<ProjectResponse> createProject(
+            @Valid @RequestBody ProjectRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        return new ResponseEntity<>(projectService.createProject(request, userId, userRole), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
@@ -49,13 +55,25 @@ public class ProjectController {
     }
 
     @GetMapping("/supervisor/{supervisorId}")
-    public ResponseEntity<List<ProjectResponse>> getProjectsBySupervisor(@PathVariable UUID supervisorId) {
+    public ResponseEntity<List<ProjectResponse>> getProjectsBySupervisor(@PathVariable String supervisorId) {
         return ResponseEntity.ok(projectService.getProjectsBySupervisor(supervisorId));
     }
 
     @GetMapping("/status/{status}")
     public ResponseEntity<List<ProjectResponse>> getProjectsByStatus(@PathVariable ProjectStatus status) {
         return ResponseEntity.ok(projectService.getProjectsByStatus(status));
+    }
+
+    @GetMapping("/scheduling-candidates")
+    public ResponseEntity<List<SchedulingProjectResponse>> getSchedulingCandidates(
+            @RequestParam(defaultValue = "SUBMITTED") ProjectStatus status) {
+        return ResponseEntity.ok(projectService.getSchedulingCandidates(status));
+    }
+
+    @PostMapping("/matching")
+    public ResponseEntity<List<ProjectMatchingResponse>> getProjectMatching(
+            @Valid @RequestBody ProjectMatchingRequest request) {
+        return ResponseEntity.ok(projectService.calculateProjectMatching(request));
     }
 
     @PatchMapping("/{id}/progress")

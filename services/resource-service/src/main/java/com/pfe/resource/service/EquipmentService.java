@@ -23,7 +23,7 @@ public class EquipmentService {
     }
 
     public List<EquipmentResponse> getAvailable() {
-        return equipmentRepository.findByAvailableTrue()
+        return equipmentRepository.findByPresentTrue()
                 .stream().map(this::toResponse).toList();
     }
 
@@ -33,7 +33,7 @@ public class EquipmentService {
     }
 
     public List<EquipmentResponse> getByType(String type) {
-        return equipmentRepository.findByTypeAndAvailableTrue(type)
+        return equipmentRepository.findByTypeAndPresentTrue(type)
                 .stream().map(this::toResponse).toList();
     }
 
@@ -47,9 +47,10 @@ public class EquipmentService {
         Room room = resolveRoom(req.getRoomId());
 
         Equipment e = Equipment.builder()
-                .name(req.getName())
                 .type(req.getType())
-                .available(req.isAvailable())
+                .present(req.isPresent())
+                .status(req.getStatus())
+                .code(req.getCode())
                 .room(room)
                 .build();
 
@@ -62,9 +63,10 @@ public class EquipmentService {
         Equipment e = findOrThrow(id);
         Room room = resolveRoom(req.getRoomId());
 
-        e.setName(req.getName());
         e.setType(req.getType());
-        e.setAvailable(req.isAvailable());
+        e.setPresent(req.isPresent());
+        e.setStatus(req.getStatus());
+        e.setCode(req.getCode());
         e.setRoom(room);
 
         return toResponse(equipmentRepository.save(e));
@@ -95,9 +97,10 @@ public class EquipmentService {
     private EquipmentResponse toResponse(Equipment e) {
         return EquipmentResponse.builder()
                 .id(e.getId())
-                .name(e.getName())
                 .type(e.getType())
-                .available(e.isAvailable())
+                .present(e.isPresent())
+                .status(e.getStatus())
+                .code(e.getCode())
                 .roomId(e.getRoom() != null ? e.getRoom().getId() : null)
                 .roomName(e.getRoom() != null ? e.getRoom().getName() : null)
                 .build();

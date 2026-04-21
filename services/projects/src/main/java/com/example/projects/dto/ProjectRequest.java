@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Set;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -32,9 +31,10 @@ public class ProjectRequest {
     @Max(100)
     private Integer progress;
 
-    private UUID supervisorId;
-    private Set<UUID> studentIds;
-    private UUID companyId;
+    private String supervisorId;
+    private Set<String> studentIds;
+    private String companyId;
+    private Set<String> requiredSkills;
     
     private LocalDateTime startDate;
     private LocalDateTime endDate;
