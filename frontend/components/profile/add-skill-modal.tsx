@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { skillCategories, suggestedSkills } from '@/lib/profile-mock-data'
+import { ProfileService } from '@/services/service_profile'
 
 interface Skill {
   id: string
@@ -21,16 +21,28 @@ interface AddSkillModalProps {
 
 export function AddSkillModal({ isOpen, onClose, onAddSkill }: AddSkillModalProps) {
   const [skillName, setSkillName] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState(skillCategories[0].id)
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [relevance, setRelevance] = useState(70)
   const [suggestions, setSuggestions] = useState<string[]>([])
+  const [skillCategories, setSkillCategories] = useState<any[]>([])
+  const [suggestedSkills, setSuggestedSkills] = useState<Record<string, string[]>>({})
+
+  useEffect(() => {
+    if (isOpen) {
+      ProfileService.getSkillCategories().then(cats => {
+        setSkillCategories(cats)
+        if (cats.length > 0) setSelectedCategory(cats[0].id || cats[0].name)
+      })
+      ProfileService.getSuggestedSkills().then(setSuggestedSkills)
+    }
+  }, [isOpen])
 
   const handleInputChange = (value: string) => {
     setSkillName(value)
     if (value.length > 0) {
       const allSkills = Object.values(suggestedSkills).flat()
       setSuggestions(
-        allSkills.filter((s) => s.toLowerCase().includes(value.toLowerCase())).slice(0, 5)
+        allSkills.filter((s: string) => s.toLowerCase().includes(value.toLowerCase())).slice(0, 5)
       )
     } else {
       setSuggestions([])
@@ -39,7 +51,7 @@ export function AddSkillModal({ isOpen, onClose, onAddSkill }: AddSkillModalProp
 
   const handleAdd = () => {
     if (skillName.trim()) {
-      const category = skillCategories.find((c) => c.id === selectedCategory)?.name || 'General'
+      const category = skillCategories.find((c) => (c.id === selectedCategory || c.name === selectedCategory))?.name || 'General'
       onAddSkill({
         id: `skill-${Date.now()}`,
         name: skillName.trim(),
@@ -93,7 +105,7 @@ export function AddSkillModal({ isOpen, onClose, onAddSkill }: AddSkillModalProp
               className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {skillCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
+                <option key={cat.id || cat.name} value={cat.id || cat.name}>
                   {cat.name}
                 </option>
               ))}

@@ -9,6 +9,7 @@ public class TeacherProfileDto extends UserDto {
     private String bio;
     private String researchInterests;
     private Integer yearsOfExperience;
+    private Integer yearsOfService;
     private List<SkillDto> skills;
 
     public TeacherProfileDto() {
@@ -60,6 +61,14 @@ public class TeacherProfileDto extends UserDto {
 
     public void setYearsOfExperience(Integer yearsOfExperience) {
         this.yearsOfExperience = yearsOfExperience;
+    }
+
+    public Integer getYearsOfService() {
+        return yearsOfService;
+    }
+
+    public void setYearsOfService(Integer yearsOfService) {
+        this.yearsOfService = yearsOfService;
     }
 
     public List<SkillDto> getSkills() {

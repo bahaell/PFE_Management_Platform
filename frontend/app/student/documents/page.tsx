@@ -12,12 +12,13 @@ import { RequestDocumentModal } from '@/components/academic/request-document-mod
 import { PDFPreviewModal } from '@/components/academic/pdf-preview-modal'
 import { AcademicDocumentsService } from '@/services/service_academic_documents'
 import { AcademicRequestsService } from '@/services/service_academic_requests'
+import { UserDocumentsService } from '@/services/service_user_documents'
 import type { AdministrativeDocument, AcademicDocumentType } from '@/models/academic-document.model'
-
-// Mock current student ID - in real app would come from auth
-const CURRENT_STUDENT_ID = 'STU001'
+import { useAuth } from '@/providers/auth-provider'
 
 export default function StudentDocumentsPage() {
+  const { user } = useAuth()
+  const currentStudentId = user?.id || ''
   const [selectedDocument, setSelectedDocument] = useState<AdministrativeDocument | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTypes, setSelectedTypes] = useState<AcademicDocumentType[]>([])
@@ -25,13 +26,20 @@ export default function StudentDocumentsPage() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
 
   const { data: documents = [], isLoading } = useQuery({
-    queryKey: ['student-documents', CURRENT_STUDENT_ID],
-    queryFn: () => AcademicDocumentsService.getDocumentsForStudent(CURRENT_STUDENT_ID),
+    queryKey: ['student-documents', currentStudentId],
+    queryFn: () => AcademicDocumentsService.getDocumentsForStudent(currentStudentId),
+    enabled: !!currentStudentId,
   })
 
   const { data: phaseLockStatus } = useQuery({
-    queryKey: ['phase-lock-status', CURRENT_STUDENT_ID],
-    queryFn: () => AcademicRequestsService.getPhaseLockStatus(CURRENT_STUDENT_ID),
+    queryKey: ['phase-lock-status', currentStudentId],
+    queryFn: () => AcademicRequestsService.getPhaseLockStatus(currentStudentId),
+    enabled: !!currentStudentId,
+  })
+
+  const { data: coordinatorDocuments = [], isLoading: coordinatorDocsLoading } = useQuery({
+    queryKey: ['student-coordinator-documents'],
+    queryFn: () => UserDocumentsService.getMyStudentDocuments(),
   })
 
   const filteredDocuments = useMemo(() => {
@@ -97,6 +105,7 @@ export default function StudentDocumentsPage() {
             ) : (
               <StudentDocumentList
                 documents={filteredDocuments}
+                onRequest={handleRequestDocument}
                 onPreview={handlePreview}
               />
             )}
@@ -106,14 +115,42 @@ export default function StudentDocumentsPage() {
 
       <PDFPreviewModal
         document={selectedDocument}
-        isOpen={!!selectedDocument}
+        open={!!selectedDocument}
         onClose={() => setSelectedDocument(null)}
       />
+
+      <Card className="p-6">
+        <h3 className="font-semibold text-foreground mb-4">Coordinator PDF Documents</h3>
+        {coordinatorDocsLoading ? (
+          <div className="text-sm text-muted-foreground">Loading coordinator documents...</div>
+        ) : coordinatorDocuments.length === 0 ? (
+          <div className="text-sm text-muted-foreground">No coordinator documents available yet.</div>
+        ) : (
+          <div className="space-y-3">
+            {coordinatorDocuments.map((doc) => (
+              <div key={doc.id} className="border rounded-lg p-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{doc.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{doc.fileName}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                    <button className="px-3 py-1 border rounded text-sm">Consult</button>
+                  </a>
+                  <a href={doc.fileUrl} download={doc.fileName}>
+                    <button className="px-3 py-1 border rounded text-sm">Download</button>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       <RequestDocumentModal
         isOpen={isRequestModalOpen}
         onClose={() => setIsRequestModalOpen(false)}
-        studentId={CURRENT_STUDENT_ID}
+        studentId={currentStudentId}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/providers/auth-provider'
 import { PageHeader } from '@/components/page-header'
 import { ProfileHeader } from '@/components/profile/profile-header'
@@ -8,7 +8,7 @@ import { SkillsPanel } from '@/components/profile/skills-panel'
 import { InfoSection } from '@/components/profile/info-section'
 import { ProfileCard } from '@/components/profile/profile-card'
 import { SkillMatchBar } from '@/components/profile/skill-match-bar'
-import { profileMockData } from '@/lib/profile-mock-data'
+import { ProfileService } from '@/services/service_profile'
 import { FileText, Sparkles } from 'lucide-react'
 
 interface Skill {
@@ -20,8 +20,22 @@ interface Skill {
 
 export default function TeacherProfilePage() {
   const { user } = useAuth()
-  const profile = profileMockData.teacher
-  const [skills] = useState<Skill[]>(profile.skills)
+  const [profile, setProfile] = useState<any>(null)
+  const [skills, setSkills] = useState<Skill[]>([])
+
+  useEffect(() => {
+    Promise.all([
+      ProfileService.getProfile('teacher'),
+      ProfileService.getAllSkills('teacher')
+    ]).then(([profileData, skillsData]) => {
+      if (profileData) setProfile(profileData)
+      if (skillsData) setSkills(skillsData)
+    })
+  }, [])
+
+  if (!profile) {
+    return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>
+  }
 
   return (
     <div>
@@ -31,10 +45,11 @@ export default function TeacherProfilePage() {
       />
 
       <ProfileHeader
-        name={profile.name}
-        email={profile.email}
-        phone={profile.phone}
+        name={user?.name || profile?.name || ''}
+        email={user?.email || profile?.email || ''}
+        phone={(user as any)?.phone || profile?.phone || ''}
         role="teacher"
+        avatar={profile?.avatar}
       />
 
       <InfoSection
@@ -44,6 +59,7 @@ export default function TeacherProfilePage() {
           { label: 'Speciality', value: profile.speciality },
           { label: 'Department', value: profile.department },
           { label: 'Years of Experience', value: `${profile.yearsOfExperience} years` },
+          { label: 'Years of Service', value: `${profile.yearsOfService ?? 0} years` },
         ]}
       />
 

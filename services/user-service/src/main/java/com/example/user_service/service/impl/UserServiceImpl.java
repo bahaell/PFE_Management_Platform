@@ -11,15 +11,21 @@ import com.example.user_service.dto.SkillCategoryDto;
 import com.example.user_service.dto.SkillDto;
 import com.example.user_service.dto.StudentProfileDto;
 import com.example.user_service.dto.SuggestedSkillsDto;
+import com.example.user_service.dto.TeacherAvailabilityDto;
 import com.example.user_service.dto.TeacherProfileDto;
 import com.example.user_service.dto.UserDto;
+import com.example.user_service.dto.UserDocumentDto;
 import com.example.user_service.dto.UserUpdateRequest;
 import com.example.user_service.entity.Skill;
+import com.example.user_service.entity.TeacherAvailability;
 import com.example.user_service.entity.User;
+import com.example.user_service.entity.UserDocument;
 import com.example.user_service.entity.UserRole;
 import com.example.user_service.entity.UserSkill;
 import com.example.user_service.exception.ResourceNotFoundException;
 import com.example.user_service.repository.SkillRepository;
+import com.example.user_service.repository.TeacherAvailabilityRepository;
+import com.example.user_service.repository.UserDocumentRepository;
 import com.example.user_service.repository.UserRepository;
 import com.example.user_service.repository.UserSkillRepository;
 import com.example.user_service.security.JwtTokenProvider;
@@ -28,6 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,17 +49,23 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
     private final UserSkillRepository userSkillRepository;
+    private final TeacherAvailabilityRepository teacherAvailabilityRepository;
+    private final UserDocumentRepository userDocumentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
     public UserServiceImpl(UserRepository userRepository,
                            SkillRepository skillRepository,
                            UserSkillRepository userSkillRepository,
+                           TeacherAvailabilityRepository teacherAvailabilityRepository,
+                           UserDocumentRepository userDocumentRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
         this.skillRepository = skillRepository;
         this.userSkillRepository = userSkillRepository;
+        this.teacherAvailabilityRepository = teacherAvailabilityRepository;
+        this.userDocumentRepository = userDocumentRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
     }
@@ -164,6 +177,127 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<TeacherAvailabilityDto> getCurrentTeacherAvailabilities() {
+        User teacher = getAuthenticatedTeacher();
+        return teacherAvailabilityRepository.findByTeacherIdOrderByStartTimeAsc(teacher.getId()).stream()
+            .map(this::toTeacherAvailabilityDto)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public TeacherAvailabilityDto addCurrentTeacherAvailability(TeacherAvailabilityDto request) {
+        User teacher = getAuthenticatedTeacher();
+        validateAvailabilityInput(request);
+        validateNoOverlap(teacher.getId(), request.getStart(), request.getEnd(), null);
+
+        TeacherAvailability availability = new TeacherAvailability();
+        availability.setTeacher(teacher);
+        availability.setStartTime(request.getStart());
+        availability.setEndTime(request.getEnd());
+        availability.setRecurrent(Boolean.TRUE.equals(request.getIsRecurrent()));
+        availability.setOnlyDuringPfe(Boolean.TRUE.equals(request.getOnlyDuringPFE()));
+        return toTeacherAvailabilityDto(teacherAvailabilityRepository.save(availability));
+    }
+
+    @Override
+    public TeacherAvailabilityDto updateCurrentTeacherAvailability(Long id, TeacherAvailabilityDto request) {
+        User teacher = getAuthenticatedTeacher();
+        validateAvailabilityInput(request);
+        TeacherAvailability availability = teacherAvailabilityRepository.findByIdAndTeacherId(id, teacher.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Availability not found with id: " + id));
+
+        validateNoOverlap(teacher.getId(), request.getStart(), request.getEnd(), id);
+
+        availability.setStartTime(request.getStart());
+        availability.setEndTime(request.getEnd());
+        availability.setRecurrent(Boolean.TRUE.equals(request.getIsRecurrent()));
+        availability.setOnlyDuringPfe(Boolean.TRUE.equals(request.getOnlyDuringPFE()));
+        return toTeacherAvailabilityDto(teacherAvailabilityRepository.save(availability));
+    }
+
+    @Override
+    public void deleteCurrentTeacherAvailability(Long id) {
+        User teacher = getAuthenticatedTeacher();
+        TeacherAvailability availability = teacherAvailabilityRepository.findByIdAndTeacherId(id, teacher.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Availability not found with id: " + id));
+        teacherAvailabilityRepository.delete(availability);
+    }
+
+    @Override
+    public List<UserDocumentDto> getCurrentStudentDocuments() {
+        User student = getAuthenticatedUser();
+        if (student.getRole() != UserRole.STUDENT) {
+            throw new IllegalArgumentException("Only students can access their documents");
+        }
+        return userDocumentRepository.findByStudentIdOrderByCreatedAtDesc(student.getId()).stream()
+            .map(this::toUserDocumentDto)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserDocumentDto> getCoordinatorManagedDocuments(String studentId) {
+        User coordinator = getAuthenticatedCoordinator();
+        List<UserDocument> docs = (studentId == null || studentId.isBlank())
+            ? userDocumentRepository.findByCoordinatorIdOrderByCreatedAtDesc(coordinator.getId())
+            : userDocumentRepository.findByStudentIdAndCoordinatorIdOrderByCreatedAtDesc(studentId, coordinator.getId());
+        return docs.stream().map(this::toUserDocumentDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public UserDocumentDto createCoordinatorDocument(UserDocumentDto request) {
+        User coordinator = getAuthenticatedCoordinator();
+        validateDocumentRequest(request);
+        User student = getStudentByIdOrThrow(request.getStudentId());
+
+        UserDocument document = new UserDocument();
+        document.setTitle(request.getTitle());
+        document.setDescription(request.getDescription());
+        document.setFileUrl(request.getFileUrl());
+        document.setFileName(request.getFileName());
+        document.setMimeType(request.getMimeType() == null || request.getMimeType().isBlank() ? "application/pdf" : request.getMimeType());
+        document.setCreatedAt(LocalDateTime.now().toString());
+        document.setStudent(student);
+        document.setCoordinator(coordinator);
+        return toUserDocumentDto(userDocumentRepository.save(document));
+    }
+
+    @Override
+    public UserDocumentDto updateCoordinatorDocument(Long id, UserDocumentDto request) {
+        User coordinator = getAuthenticatedCoordinator();
+        UserDocument document = userDocumentRepository.findByIdAndCoordinatorId(id, coordinator.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + id));
+
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            document.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            document.setDescription(request.getDescription());
+        }
+        if (request.getFileUrl() != null && !request.getFileUrl().isBlank()) {
+            document.setFileUrl(request.getFileUrl());
+        }
+        if (request.getFileName() != null && !request.getFileName().isBlank()) {
+            document.setFileName(request.getFileName());
+        }
+        if (request.getMimeType() != null && !request.getMimeType().isBlank()) {
+            document.setMimeType(request.getMimeType());
+        }
+        if (request.getStudentId() != null && !request.getStudentId().isBlank() && !request.getStudentId().equals(document.getStudent().getId())) {
+            document.setStudent(getStudentByIdOrThrow(request.getStudentId()));
+        }
+
+        return toUserDocumentDto(userDocumentRepository.save(document));
+    }
+
+    @Override
+    public void deleteCoordinatorDocument(Long id) {
+        User coordinator = getAuthenticatedCoordinator();
+        UserDocument document = userDocumentRepository.findByIdAndCoordinatorId(id, coordinator.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + id));
+        userDocumentRepository.delete(document);
+    }
+
+    @Override
     public ProfileSkillMetaDto getProfileSkillMeta() {
         SuggestedSkillsDto suggestedSkills = new SuggestedSkillsDto(
             List.of("React", "Vue.js", "Angular", "Svelte", "Next.js", "Tailwind CSS"),
@@ -241,6 +375,9 @@ public class UserServiceImpl implements UserService {
             throw new ResourceNotFoundException("User not found with id: " + id);
         }
         userSkillRepository.findByUserId(id).forEach(userSkillRepository::delete);
+        teacherAvailabilityRepository.findByTeacherIdOrderByStartTimeAsc(id).forEach(teacherAvailabilityRepository::delete);
+        userDocumentRepository.findByStudentIdOrderByCreatedAtDesc(id).forEach(userDocumentRepository::delete);
+        userDocumentRepository.findByCoordinatorIdOrderByCreatedAtDesc(id).forEach(userDocumentRepository::delete);
         userRepository.deleteById(id);
     }
 
@@ -252,6 +389,30 @@ public class UserServiceImpl implements UserService {
 
         return userRepository.findByEmail(authentication.getName())
             .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
+    }
+
+    private User getAuthenticatedTeacher() {
+        User user = getAuthenticatedUser();
+        if (user.getRole() != UserRole.TEACHER) {
+            throw new IllegalArgumentException("Only teachers can manage availability");
+        }
+        return user;
+    }
+
+    private User getAuthenticatedCoordinator() {
+        User user = getAuthenticatedUser();
+        if (user.getRole() != UserRole.COORDINATOR) {
+            throw new IllegalArgumentException("Only coordinators can manage documents");
+        }
+        return user;
+    }
+
+    private User getStudentByIdOrThrow(String studentId) {
+        User student = getUserByIdOrThrow(studentId);
+        if (student.getRole() != UserRole.STUDENT) {
+            throw new IllegalArgumentException("Target user must be a student");
+        }
+        return student;
     }
 
     private User getUserByIdOrThrow(String userId) {
@@ -394,6 +555,7 @@ public class UserServiceImpl implements UserService {
         dto.setBio(user.getBio());
         dto.setResearchInterests(user.getResearchInterests());
         dto.setYearsOfExperience(user.getYearsOfExperience());
+        dto.setYearsOfService(user.getYearsOfService());
         dto.setSkills(getSkillsByUserId(user.getId()));
         return dto;
     }
@@ -421,6 +583,21 @@ public class UserServiceImpl implements UserService {
     }
 
     private void applyProfileUpdates(User user, ProfileUpdateRequest request) {
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        if (request.getGender() != null) {
+            user.setGender(request.getGender());
+        }
+        if (request.getBirthdate() != null) {
+            user.setBirthdate(request.getBirthdate());
+        }
+        if (request.getAvatar() != null) {
+            user.setAvatar(request.getAvatar());
+        }
         if (request.getLevel() != null) {
             user.setLevel(request.getLevel());
         }
@@ -451,14 +628,14 @@ public class UserServiceImpl implements UserService {
         if (request.getYearsOfExperience() != null) {
             user.setYearsOfExperience(request.getYearsOfExperience());
         }
+        if (request.getYearsOfService() != null) {
+            user.setYearsOfService(request.getYearsOfService());
+        }
         if (request.getOffice() != null) {
             user.setOffice(request.getOffice());
         }
         if (request.getResponsibilities() != null) {
             user.setResponsibilities(request.getResponsibilities());
-        }
-        if (request.getYearsOfService() != null) {
-            user.setYearsOfService(request.getYearsOfService());
         }
         if (request.getSkills() != null) {
             replaceUserSkills(user, request.getSkills());
@@ -534,6 +711,90 @@ public class UserServiceImpl implements UserService {
         Skill savedSkill = skillRepository.save(skill);
         Integer relevance = dto.getRelevance() == null ? 0 : dto.getRelevance();
         userSkillRepository.save(new UserSkill(user, savedSkill, relevance));
+    }
+
+    private TeacherAvailabilityDto toTeacherAvailabilityDto(TeacherAvailability availability) {
+        return new TeacherAvailabilityDto(
+            availability.getId(),
+            availability.getStartTime(),
+            availability.getEndTime(),
+            availability.getRecurrent(),
+            availability.getOnlyDuringPfe()
+        );
+    }
+
+    private UserDocumentDto toUserDocumentDto(UserDocument document) {
+        UserDocumentDto dto = new UserDocumentDto();
+        dto.setId(document.getId());
+        dto.setTitle(document.getTitle());
+        dto.setDescription(document.getDescription());
+        dto.setFileUrl(document.getFileUrl());
+        dto.setFileName(document.getFileName());
+        dto.setMimeType(document.getMimeType());
+        dto.setCreatedAt(document.getCreatedAt());
+        dto.setStudentId(document.getStudent().getId());
+        dto.setStudentName(document.getStudent().getName());
+        dto.setCoordinatorId(document.getCoordinator().getId());
+        dto.setCoordinatorName(document.getCoordinator().getName());
+        return dto;
+    }
+
+    private void validateDocumentRequest(UserDocumentDto request) {
+        if (request.getTitle() == null || request.getTitle().isBlank()) {
+            throw new IllegalArgumentException("Document title is required");
+        }
+        if (request.getStudentId() == null || request.getStudentId().isBlank()) {
+            throw new IllegalArgumentException("Student id is required");
+        }
+        if (request.getFileUrl() == null || request.getFileUrl().isBlank()) {
+            throw new IllegalArgumentException("Document file url is required");
+        }
+        if (request.getFileName() == null || request.getFileName().isBlank()) {
+            throw new IllegalArgumentException("Document file name is required");
+        }
+    }
+
+    private void validateAvailabilityInput(TeacherAvailabilityDto request) {
+        if (request.getStart() == null || request.getStart().isBlank()) {
+            throw new IllegalArgumentException("Availability start is required");
+        }
+        if (request.getEnd() == null || request.getEnd().isBlank()) {
+            throw new IllegalArgumentException("Availability end is required");
+        }
+
+        int startMinutes = toMinutes(request.getStart());
+        int endMinutes = toMinutes(request.getEnd());
+        if (startMinutes >= endMinutes) {
+            throw new IllegalArgumentException("Availability end must be after start");
+        }
+    }
+
+    private void validateNoOverlap(String teacherId, String start, String end, Long excludeId) {
+        int startMinutes = toMinutes(start);
+        int endMinutes = toMinutes(end);
+        boolean hasOverlap = teacherAvailabilityRepository.findByTeacherIdOrderByStartTimeAsc(teacherId).stream()
+            .filter(slot -> excludeId == null || !slot.getId().equals(excludeId))
+            .anyMatch(slot -> startMinutes < toMinutes(slot.getEndTime()) && endMinutes > toMinutes(slot.getStartTime()));
+        if (hasOverlap) {
+            throw new IllegalArgumentException("Availability overlaps with an existing slot");
+        }
+    }
+
+    private int toMinutes(String time) {
+        String[] parts = time.split(":");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid time format. Expected HH:mm");
+        }
+        try {
+            int hours = Integer.parseInt(parts[0]);
+            int minutes = Integer.parseInt(parts[1]);
+            if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+                throw new IllegalArgumentException("Invalid time value. Expected HH:mm");
+            }
+            return hours * 60 + minutes;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid time format. Expected HH:mm");
+        }
     }
 
     private Long parseSkillId(String skillId) {

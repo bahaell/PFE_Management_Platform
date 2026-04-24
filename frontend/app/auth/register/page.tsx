@@ -6,14 +6,52 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { UserPlus } from 'lucide-react'
+import { registerUser } from '@/lib/auth'
 
 export default function RegisterPage() {
-  const [role, setRole] = useState('student')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [phone, setPhone] = useState('')
+  const [gender, setGender] = useState('Male')
+  const [birthdate, setBirthdate] = useState('')
+  const [role, setRole] = useState('STUDENT')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  
   const router = useRouter()
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    router.push(`/auth/login`)
+    setError('')
+    
+    if (password !== confirmPassword) {
+      setError("Passwords don't match")
+      return
+    }
+
+    setLoading(true)
+    const userData = {
+      name: `${firstName} ${lastName}`.trim(),
+      email,
+      password,
+      phone: phone || "+21600000000",
+      gender,
+      birthdate: birthdate || "2000-01-01",
+      avatar: null,
+      role
+    }
+
+    const result = await registerUser(userData)
+    setLoading(false)
+
+    if (result) {
+      router.push(`/auth/login`)
+    } else {
+      setError('Registration failed. Please check your information.')
+    }
   }
 
   return (
@@ -28,31 +66,37 @@ export default function RegisterPage() {
             <p className="text-muted-foreground text-xs sm:text-sm mt-2">Join the PFE Platform</p>
           </div>
 
+          {error && (
+            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md mb-4 text-center">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">First Name</label>
-                <Input placeholder="John" required />
+                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Last Name</label>
-                <Input placeholder="Doe" required />
+                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" required />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Email</label>
-              <Input type="email" placeholder="name@example.com" required />
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Password</label>
-              <Input type="password" placeholder="••••••••" required />
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Confirm Password</label>
-              <Input type="password" placeholder="••••••••" required />
+              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required />
             </div>
 
             <div>
@@ -62,14 +106,14 @@ export default function RegisterPage() {
                 onChange={(e) => setRole(e.target.value)}
                 className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground"
               >
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-                <option value="coordinator">Coordinator</option>
+                <option value="STUDENT">Student</option>
+                <option value="TEACHER">Teacher</option>
+                <option value="COORDINATOR">Coordinator</option>
               </select>
             </div>
 
-            <Button type="submit" className="w-full">
-              Create Account
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>
 

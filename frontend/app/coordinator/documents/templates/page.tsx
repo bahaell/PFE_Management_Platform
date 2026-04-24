@@ -7,16 +7,18 @@ import { Plus } from 'lucide-react'
 import { TemplateTable } from '@/components/academic/template-table'
 import { TemplateEditorModal } from '@/components/academic/template-editor-modal'
 import { TemplatePreview } from '@/components/academic/template-preview'
+import { TemplateUseModal } from '@/components/academic/template-use-modal'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { AcademicTemplatesService } from '@/services/service_academic_templates'
 import type { AcademicTemplate } from '@/models/academic-template.model'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 export default function CoordinatorTemplatesPage() {
+  const queryClient = useQueryClient()
   const [editorOpen, setEditorOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [useModalOpen, setUseModalOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<AcademicTemplate | null>(null)
-  const [cloneModalOpen, setCloneModalOpen] = useState(false)
 
   const { data: templates = [] } = useQuery({
     queryKey: ['academic-templates'],
@@ -40,14 +42,28 @@ export default function CoordinatorTemplatesPage() {
   const handleCreate = (template: Omit<AcademicTemplate, 'id' | 'createdAt' | 'updatedAt' | 'version'>) => {
     createMutation.mutate(template, {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['academic-templates'] })
         setEditorOpen(false)
       },
     })
   }
 
   const handleClone = (id: string) => {
-    setSelectedTemplate(templates.find(t => t.id === id) || null)
-    setCloneModalOpen(true)
+    const current = templates.find(t => t.id === id)
+    if (!current) return
+    cloneMutation.mutate(
+      { id, name: `${current.name} (clone)` },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['academic-templates'] })
+        },
+      }
+    )
+  }
+
+  const handleUseSuccess = () => {
+    // Optionally trigger a success notification or invalidate documents query if we show them here
+    console.log('Document successfully generated and sent to student!')
   }
 
   return (
@@ -63,8 +79,13 @@ export default function CoordinatorTemplatesPage() {
       <TemplateTable
         templates={templates}
         onEdit={(template) => { setSelectedTemplate(template); setEditorOpen(true); }}
-        onDelete={(id) => deleteMutation.mutate(id)}
+        onDelete={(id) =>
+          deleteMutation.mutate(id, {
+            onSuccess: () => queryClient.invalidateQueries({ queryKey: ['academic-templates'] }),
+          })
+        }
         onClone={handleClone}
+        onUse={(template) => { setSelectedTemplate(template); setUseModalOpen(true); }}
         onPreview={(template) => { setSelectedTemplate(template); setPreviewOpen(true); }}
       />
 
@@ -75,6 +96,13 @@ export default function CoordinatorTemplatesPage() {
         onSave={handleCreate}
       />
 
+      <TemplateUseModal
+        open={useModalOpen}
+        template={selectedTemplate}
+        onClose={() => { setUseModalOpen(false); setSelectedTemplate(null); }}
+        onSuccess={handleUseSuccess}
+      />
+
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl">
           {selectedTemplate && <TemplatePreview template={selectedTemplate} />}
@@ -83,3 +111,4 @@ export default function CoordinatorTemplatesPage() {
     </div>
   )
 }
+

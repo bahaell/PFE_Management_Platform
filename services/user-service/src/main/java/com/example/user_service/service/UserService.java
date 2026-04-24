@@ -8,8 +8,10 @@ import com.example.user_service.dto.ProfileUpdateRequest;
 import com.example.user_service.dto.RegistrationRequest;
 import com.example.user_service.dto.SkillDto;
 import com.example.user_service.dto.StudentProfileDto;
+import com.example.user_service.dto.TeacherAvailabilityDto;
 import com.example.user_service.dto.TeacherProfileDto;
 import com.example.user_service.dto.UserDto;
+import com.example.user_service.dto.UserDocumentDto;
 import com.example.user_service.dto.UserUpdateRequest;
 import java.util.List;
 
@@ -38,6 +40,24 @@ public interface UserService {
     List<StudentProfileDto> getStudents(String query, String level, String department, String academicYear);
 
     List<TeacherProfileDto> getTeachers(String query, String grade, String speciality, String department, Integer minYears);
+
+    List<TeacherAvailabilityDto> getCurrentTeacherAvailabilities();
+
+    TeacherAvailabilityDto addCurrentTeacherAvailability(TeacherAvailabilityDto request);
+
+    TeacherAvailabilityDto updateCurrentTeacherAvailability(Long id, TeacherAvailabilityDto request);
+
+    void deleteCurrentTeacherAvailability(Long id);
+
+    List<UserDocumentDto> getCurrentStudentDocuments();
+
+    List<UserDocumentDto> getCoordinatorManagedDocuments(String studentId);
+
+    UserDocumentDto createCoordinatorDocument(UserDocumentDto request);
+
+    UserDocumentDto updateCoordinatorDocument(Long id, UserDocumentDto request);
+
+    void deleteCoordinatorDocument(Long id);
 
     ProfileSkillMetaDto getProfileSkillMeta();
 
