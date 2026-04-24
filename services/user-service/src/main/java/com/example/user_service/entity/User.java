@@ -47,9 +47,9 @@ public class User {
     private String bio;
     private String researchInterests;
     private Integer yearsOfExperience;
+    private Integer yearsOfService;
     private String office;
     private String responsibilities;
-    private Integer yearsOfService;
 
     @Column(columnDefinition = "TEXT")
     private String skillsJson;
@@ -225,6 +225,14 @@ public class User {
         this.yearsOfExperience = yearsOfExperience;
     }
 
+    public Integer getYearsOfService() {
+        return yearsOfService;
+    }
+
+    public void setYearsOfService(Integer yearsOfService) {
+        this.yearsOfService = yearsOfService;
+    }
+
     public String getOffice() {
         return office;
     }
@@ -239,14 +247,6 @@ public class User {
 
     public void setResponsibilities(String responsibilities) {
         this.responsibilities = responsibilities;
-    }
-
-    public Integer getYearsOfService() {
-        return yearsOfService;
-    }
-
-    public void setYearsOfService(Integer yearsOfService) {
-        this.yearsOfService = yearsOfService;
     }
 
     public String getSkillsJson() {

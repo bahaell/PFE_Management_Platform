@@ -1,45 +1,54 @@
-// Mock authentication data with test accounts
+import { apiClient } from './api-client';
+
 export type UserRole = 'student' | 'teacher' | 'coordinator';
 
 export interface User {
   id: string;
   email: string;
-  password: string;
   role: UserRole;
   name: string;
 }
 
-// Test accounts for development
-export const MOCK_USERS: User[] = [
-  {
-    id: 'std001',
-    email: 'student@example.com',
-    password: 'password123',
-    role: 'student',
-    name: 'Ahmed Ben Ali',
-  },
-  {
-    id: 'tch001',
-    email: 'teacher@example.com',
-    password: 'password123',
-    role: 'teacher',
-    name: 'Dr. Fatima Zahra',
-  },
-  {
-    id: 'coo001',
-    email: 'coordinator@example.com',
-    password: 'password123',
-    role: 'coordinator',
-    name: 'Coordinator Admin',
-  },
-];
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
 
-// Validate user credentials
-export function validateUser(email: string, password: string): User | null {
-  const user = MOCK_USERS.find(
-    (u) => u.email === email && u.password === password
-  );
-  return user || null;
+// Validate user credentials via backend API
+export async function validateUser(email: string, password: string): Promise<User | null> {
+  try {
+    const data = await apiClient.post<AuthResponse>('/api/auth/login', { email, password });
+    if (data && data.token && data.user) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', data.token);
+      }
+      if (data.user.role) data.user.role = data.user.role.toLowerCase() as UserRole;
+      return data.user;
+    }
+    return null;
+  } catch (error) {
+    console.error('Login failed', error);
+    return null;
+  }
+}
+
+// Register a new user via backend API
+export async function registerUser(userData: any): Promise<User | null> {
+  try {
+    const data = await apiClient.post<AuthResponse>('/api/auth/register', userData);
+    if (data && data.token && data.user) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', data.token);
+      }
+      if (data.user.role) data.user.role = data.user.role.toLowerCase() as UserRole;
+      console.log(data.user);
+      return data.user;
+    }
+    return null;
+  } catch (error) {
+    console.error('Registration failed', error);
+    return null;
+  }
 }
 
 // Store/retrieve auth state from localStorage
@@ -58,5 +67,6 @@ export function getAuthState(): User | null {
 export function clearAuthState() {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_token');
   }
 }

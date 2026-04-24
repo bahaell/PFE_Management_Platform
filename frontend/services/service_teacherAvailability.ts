@@ -1,48 +1,21 @@
 import type { TeacherAvailability } from '@/models/availability.model'
-
-let teacherAvailabilityMockData: TeacherAvailability[] = [
-  {
-    id: 1,
-    start: '09:00',
-    end: '12:00',
-    isRecurrent: true,
-    onlyDuringPFE: false,
-  },
-  {
-    id: 2,
-    start: '14:00',
-    end: '16:00',
-    isRecurrent: false,
-    onlyDuringPFE: true,
-  },
-]
+import { apiClient } from '@/lib/api-client'
 
 export const TeacherAvailabilityService = {
   async getAvailableSlots(): Promise<TeacherAvailability[]> {
-    return Promise.resolve(teacherAvailabilityMockData)
+    return apiClient.get<TeacherAvailability[]>('/api/users/me/availability')
   },
 
   async addSlot(slot: Omit<TeacherAvailability, 'id'>): Promise<TeacherAvailability> {
-    const newSlot: TeacherAvailability = {
-      ...slot,
-      id: Math.max(...teacherAvailabilityMockData.map(s => typeof s.id === 'number' ? s.id : 0), 0) + 1,
-    }
-    teacherAvailabilityMockData.push(newSlot)
-    return Promise.resolve(newSlot)
+    return apiClient.post<TeacherAvailability>('/api/users/me/availability', slot)
   },
 
   async updateSlot(id: string | number, slot: Partial<TeacherAvailability>): Promise<TeacherAvailability> {
-    const index = teacherAvailabilityMockData.findIndex(s => s.id === id)
-    if (index === -1) throw new Error('Slot not found')
-    
-    const updatedSlot = { ...teacherAvailabilityMockData[index], ...slot, id }
-    teacherAvailabilityMockData[index] = updatedSlot
-    return Promise.resolve(updatedSlot)
+    return apiClient.put<TeacherAvailability>(`/api/users/me/availability/${id}`, slot)
   },
 
   async deleteSlot(id: string | number): Promise<void> {
-    teacherAvailabilityMockData = teacherAvailabilityMockData.filter(s => s.id !== id)
-    return Promise.resolve()
+    await apiClient.delete<void>(`/api/users/me/availability/${id}`)
   },
 
   async validateNoOverlap(start: string, end: string, excludeId?: string | number): Promise<boolean> {
@@ -54,8 +27,9 @@ export const TeacherAvailabilityService = {
     const newStart = timeToMinutes(start)
     const newEnd = timeToMinutes(end)
 
-    for (const slot of teacherAvailabilityMockData) {
-      if (excludeId && slot.id === excludeId) continue
+    const slots = await TeacherAvailabilityService.getAvailableSlots()
+    for (const slot of slots) {
+      if (excludeId !== undefined && String(slot.id) === String(excludeId)) continue
       
       const slotStart = timeToMinutes(slot.start)
       const slotEnd = timeToMinutes(slot.end)

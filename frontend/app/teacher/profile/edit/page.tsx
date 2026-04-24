@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/providers/auth-provider'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Upload, Eye, EyeOff } from 'lucide-react'
-import { profileMockData } from '@/lib/profile-mock-data'
+import { ProfileService } from '@/services/service_profile'
 import { SkillsPanel } from '@/components/profile/skills-panel'
+import { uploadImageToCloudinary } from '@/lib/cloudinary'
 
 interface Skill {
   id: string
@@ -21,26 +22,80 @@ export default function EditTeacherProfilePage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
-  const [skills, setSkills] = useState<Skill[]>(profileMockData.teacher?.skills || [])
-
-  const profile = profileMockData.teacher
+  const [profile, setProfile] = useState<any>(null)
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   const [formData, setFormData] = useState({
     fullName: user?.name || '',
     email: user?.email || '',
-    phone: profile?.phone || '',
+    phone: '',
     gender: 'Male',
     birthdate: '1975-03-20',
-    grade: profile?.grade || '',
-    speciality: profile?.speciality || '',
-    department: profile?.department || '',
-    bio: profile?.bio || '',
-    researchInterests: profile?.researchInterests || '',
+    grade: '',
+    speciality: '',
+    department: '',
+    bio: '',
+    researchInterests: '',
+    yearsOfService: 0,
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
     twoFactor: false,
   })
+
+  useEffect(() => {
+    if (user) {
+      Promise.all([
+        ProfileService.getProfile('teacher'),
+        ProfileService.getAllSkills('teacher')
+      ]).then(([profileData, skillsData]) => {
+        if (profileData) {
+          setProfile(profileData)
+          setFormData({
+            fullName: user.name || '',
+            email: user.email || '',
+            phone: (user as any).phone || (profileData as any).phone || '',
+            gender: (user as any).gender || (profileData as any).gender || 'Male',
+            birthdate: (user as any).birthdate || (profileData as any).birthdate || '1975-03-20',
+            grade: (profileData as any).grade || '',
+            speciality: (profileData as any).speciality || '',
+            department: (profileData as any).department || '',
+            bio: (profileData as any).bio || '',
+            researchInterests: (profileData as any).researchInterests || '',
+            yearsOfService: Number((profileData as any).yearsOfService || 0),
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+            twoFactor: false,
+          })
+        }
+        if (skillsData) {
+          setSkills(skillsData)
+        }
+      })
+    }
+  }, [user])
+
+  if (!profile) {
+    return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setIsUploadingAvatar(true)
+      const uploadedUrl = await uploadImageToCloudinary(file)
+      setAvatarUrl(uploadedUrl)
+      alert('Photo uploaded successfully.')
+    } catch {
+      alert('Avatar upload failed. Check Cloudinary configuration.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -52,15 +107,43 @@ export default function EditTeacherProfilePage() {
     }))
   }
 
-  const handleAddSkill = (skill: Skill) => {
-    setSkills([...skills, skill])
+  const handleAddSkill = async (skill: Skill) => {
+    const newSkill = await ProfileService.addSkill('teacher', {
+      name: skill.name,
+      category: skill.category,
+      relevance: skill.relevance
+    } as any)
+    if (newSkill) {
+      setSkills([...skills, newSkill])
+    } else {
+      setSkills([...skills, skill])
+    }
   }
 
-  const handleRemoveSkill = (skillId: string) => {
-    setSkills(skills.filter((s) => s.id !== skillId))
+  const handleRemoveSkill = async (skillId: string) => {
+    const success = await ProfileService.removeSkill('teacher', skillId)
+    if (success) {
+      setSkills(skills.filter((s) => s.id !== skillId))
+    } else {
+      setSkills(skills.filter((s) => s.id !== skillId))
+    }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const profileUpdates = {
+      grade: formData.grade,
+      speciality: formData.speciality,
+      department: formData.department,
+      bio: formData.bio,
+      researchInterests: formData.researchInterests,
+      yearsOfService: Number(formData.yearsOfService || 0),
+      name: formData.fullName,
+      phone: formData.phone,
+      gender: formData.gender,
+      birthdate: formData.birthdate,
+      avatar: avatarUrl || (profile as any)?.avatar || ''
+    }
+    await ProfileService.updateProfile('teacher', profileUpdates)
     alert('Profile changes saved successfully!')
     router.push('/teacher/profile')
   }
@@ -87,18 +170,34 @@ export default function EditTeacherProfilePage() {
 
           <div className="space-y-4 mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary-foreground">
-                  {user?.name.charAt(0).toUpperCase()}
-                </span>
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center overflow-hidden">
+                {avatarUrl || (profile as any)?.avatar ? (
+                  <img
+                    src={avatarUrl || (profile as any)?.avatar}
+                    alt="Profile avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-primary-foreground">
+                    {user?.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 cursor-pointer transition-colors">
                   <Upload className="w-4 h-4" />
                   Upload Photo
-                  <input type="file" className="hidden" accept="image/*" />
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    disabled={isUploadingAvatar}
+                  />
                 </label>
-                <p className="text-xs text-muted-foreground mt-2">JPG, PNG up to 5MB</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {isUploadingAvatar ? 'Uploading...' : 'JPG, PNG up to 5MB'}
+                </p>
               </div>
             </div>
 
@@ -227,6 +326,17 @@ export default function EditTeacherProfilePage() {
                 placeholder="Describe your research interests..."
                 rows={2}
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Years of Service</label>
+              <Input
+                name="yearsOfService"
+                type="number"
+                min={0}
+                value={formData.yearsOfService}
+                onChange={handleInputChange}
+                className="bg-secondary border-border"
               />
             </div>
           </div>

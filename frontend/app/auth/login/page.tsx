@@ -29,7 +29,7 @@ export default function LoginPage() {
     setIsLoading(true)
 
     // Validate credentials
-    const validUser = validateUser(email, password)
+    const validUser = await validateUser(email, password)
 
     if (validUser) {
       setAuthState(validUser)

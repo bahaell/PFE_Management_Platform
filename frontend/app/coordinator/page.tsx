@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/providers/auth-provider'
 import { PageHeader } from '@/components/page-header'
 import { DashboardCard } from '@/components/dashboard-card'
 import { ActivityFeed } from '@/components/activity-feed'
@@ -10,6 +11,9 @@ import { ProjectsService } from '@/services/service_projects'
 import { StudentsService } from '@/services/service_students'
 
 export default function CoordinatorDashboard() {
+  const { user } = useAuth()
+  const coordinatorName = user?.name || 'Coordinator'
+  const coordinatorRole = user?.role ? `${user.role.charAt(0).toUpperCase()}${user.role.slice(1)}` : 'Coordinator'
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => ProjectsService.getAllProjects(),
@@ -62,7 +66,7 @@ export default function CoordinatorDashboard() {
   return (
     <div>
       <PageHeader
-        title="Coordinator Dashboard"
+        title={`Welcome, ${coordinatorName} (${coordinatorRole})`}
         description="Global overview of all PFE activity"
       />
 

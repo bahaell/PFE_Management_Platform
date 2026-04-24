@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/providers/auth-provider'
 import { PageHeader } from '@/components/page-header'
 import { DashboardCard } from '@/components/dashboard-card'
 import { DataTable } from '@/components/data-table'
@@ -11,6 +12,9 @@ import Link from 'next/link'
 import { ProjectsService } from '@/services/service_projects'
 
 export default function TeacherDashboard() {
+  const { user } = useAuth()
+  const teacherName = user?.name || 'Teacher'
+  const teacherRole = user?.role ? `${user.role.charAt(0).toUpperCase()}${user.role.slice(1)}` : 'Teacher'
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => ProjectsService.getAllProjects(),
@@ -27,7 +31,7 @@ export default function TeacherDashboard() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Teacher Dashboard" description="Loading..." />
+        <PageHeader title="Loading..." description="Loading your dashboard..." />
         <div className="text-center py-12">
           <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
         </div>
@@ -38,7 +42,7 @@ export default function TeacherDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
-        title="Teacher Dashboard"
+        title={`Welcome, ${teacherName} (${teacherRole})`}
         description="Overview of your PFE activity"
         action={
           <div className="flex gap-2 flex-col sm:flex-row">
