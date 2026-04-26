@@ -66,6 +66,13 @@ public class UserController {
         return ResponseEntity.ok(userService.getTeachers(q, grade, speciality, department, minYears));
     }
 
+
+    @GetMapping("/{id}/availability")
+    public ResponseEntity<List<TeacherAvailabilityDto>> getTeacherAvailabilitiesById(
+        @PathVariable String id) {
+        return ResponseEntity.ok(userService.getTeacherAvailabilitiesById(id));
+    }
+
     @GetMapping("/me/availability")
     public ResponseEntity<List<TeacherAvailabilityDto>> getCurrentTeacherAvailabilities() {
         return ResponseEntity.ok(userService.getCurrentTeacherAvailabilities());

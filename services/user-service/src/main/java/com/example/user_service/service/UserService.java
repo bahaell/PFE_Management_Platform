@@ -82,4 +82,6 @@ public interface UserService {
     void removeUserSkillById(String userId, String skillId);
 
     void deleteUser(String id);
+    List<TeacherAvailabilityDto> getTeacherAvailabilitiesById(String teacherId);
+
 }

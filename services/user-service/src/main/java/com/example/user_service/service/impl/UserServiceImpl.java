@@ -818,4 +818,25 @@ public class UserServiceImpl implements UserService {
             UserRole.from(request.getRole())
         );
     }
+
+    @Override
+public List<TeacherAvailabilityDto> getTeacherAvailabilitiesById(String teacherId) {
+    // Vérifie que le user existe et est bien un teacher
+    User teacher = userRepository.findById(teacherId)
+        .orElseThrow(() -> new ResourceNotFoundException(
+                "User not found with id: " + teacherId));
+
+    if (teacher.getRole() != UserRole.TEACHER) {
+        throw new IllegalArgumentException(
+                "User " + teacherId + " is not a teacher");
+    }
+
+    // Même logique que getCurrentTeacherAvailabilities()
+    // mais avec teacherId au lieu du current user
+    return teacherAvailabilityRepository
+        .findByTeacherIdOrderByStartTimeAsc(teacherId)
+        .stream()
+        .map(this::toTeacherAvailabilityDto)
+        .collect(Collectors.toList());
+}
 }

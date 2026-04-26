@@ -11,14 +11,21 @@ import java.util.List;
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class DefenseSession {
 
-    @PlanningId                          // ← AJOUT — identifiant unique obligatoire
-    private Long         projectId;
+    @PlanningId
+    private Long projectId;
 
-    private String       projectName;
-    private String       supervisorName;
+    private String projectName;
+    private String supervisorName;
+
     private List<Long>   juryMemberIds;
-    private int          durationMinutes;
-    private Long         preferredRoomId;
+    private List<String> juryMemberNames;       // ← noms récupérés via UserClient
+
+    // disponibilités de chaque juré : "MONDAY_08:00_12:00"
+    // format simple pour que Timefold puisse comparer
+    private List<String> juryAvailabilities;    // ← nouveau
+
+    private int  durationMinutes;
+    private Long preferredRoomId;
 
     @PlanningVariable(valueRangeProviderRefs = "timeSlotRange")
     private TimeSlot timeSlot;
