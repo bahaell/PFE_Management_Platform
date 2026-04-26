@@ -72,13 +72,12 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder());
-        provider.setUserDetailsService(userDetailsService);
-        return new ProviderManager(provider);
-    }
-
+        @Bean
+        public AuthenticationManager authenticationManager() {
+            DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder());
+            provider.setUserDetailsService(userDetailsService);
+            return new ProviderManager(provider);
+        }
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();

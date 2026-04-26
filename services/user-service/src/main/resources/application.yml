@@ -1,4 +1,6 @@
 spring:
+  jmx:
+    enabled: true
   application:
     name: user-service
   config:
