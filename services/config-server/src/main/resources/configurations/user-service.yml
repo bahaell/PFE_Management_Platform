@@ -4,11 +4,9 @@ server:
 spring:
   application:
     name: user-service
-  config:
-    import: optional:configserver:http://localhost:8888
   datasource:
-    url: jdbc:postgresql://localhost:5432/user_db
-    username: postgres
+    url: jdbc:postgresql://localhost:5433/user_db?sslmode=disable
+    username: admin
     password: admin        
   jpa:
     hibernate:
