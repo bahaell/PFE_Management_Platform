@@ -26,4 +26,5 @@ public class RoomRequest {
     private String status;
     @NotBlank(message = "Description is required")
     private String description;
+
 }

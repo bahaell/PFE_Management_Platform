@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "NotificationServiceApplication",
+            "request": "launch",
+            "mainClass": "com.pfe.notification.NotificationServiceApplication",
+            "projectName": "notification-service"
+        },
+        {
+            "type": "java",
             "name": "SchedulingServiceApplication",
             "request": "launch",
             "mainClass": "com.pfe.scheduling.SchedulingServiceApplication",

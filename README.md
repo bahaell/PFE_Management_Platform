@@ -15,6 +15,8 @@ The platform consists of several specialized microservices, each handling a dist
 | **Projects** | `8083` | PostgreSQL | **Workflow Engine**: Tasks, Status & Progress. |
 | **Defense** | `8084` | PostgreSQL | **Results Engine**: Jury management & Grading. |
 | **Notification**| `8085` | MongoDB | Real-time alerts and comms. |
+| **Resource Service**| `8086` | PostgreSQL | **Resource Management**: Allocation & Availability. |
+| **Scheduling Service**| `8087` | PostgreSQL | **Optimization Engine**: Timefold-powered scheduling. |
 
 ---
 

@@ -174,3 +174,111 @@ GET /api/projects/123
 GET /api/projects/00000000-0000-0000-0000-000000000001
 
 > Attendu: 404 Not Found.
+
+10) Gestion des Entreprises Externes (Company CRUD)
+10.1 Créer une entreprise
+POST /api/companies
+{
+  "name": "Global Tech",
+  "description": "Innovative software house.",
+  "email": "contact@globaltech.com",
+  "phone": "+213 555 12 34 56",
+  "country": "Algeria",
+  "city": "Algiers"
+}
+
+> Attendu: 200 OK + `id` généré (garder `companyId1`).
+
+10.2 Lire les entreprises
+GET /api/companies
+
+10.3 Approuver une entreprise
+PUT /api/companies/{companyId1}/approve
+
+> Attendu: `status = APPROVED`.
+
+10.4 Blacklister une entreprise
+PUT /api/companies/{companyId1}/blacklist
+{
+  "reason": "Non-compliance with academic standards"
+}
+
+> Attendu: `status = BLACKLISTED` + `blacklistReason` mis à jour.
+
+11) Validation de la non-mise à jour de l'entreprise lors d'un update projet
+11.1 Mise à jour du titre du projet
+PUT /api/projects/{projectIdTeacher}
+{
+  "title": "AI-Powered Attendance System v2",
+  "description": "Updated description",
+  "status": "PROPOSED",
+  "companyName": "HackerCorp",
+  "companyEmail": "hack@hack.com"
+}
+
+> Attendu:
+- 200 OK.
+- `title` est mis à jour.
+- L'entreprise liée au projet RESTE `TechInnovate` (l'entreprise originale). Les champs `companyName` et `companyEmail` dans la requête d'update ont été IGNORÉS.
+
+12) Propositions de Sujets Externes (External Subjects)
+12.1 Créer une proposition (avec nouvelle entreprise)
+POST /api/projects/external-subjects
+Header: X-User-Id: student-001
+{
+  "studentName": "Amine Benali",
+  "subjectTitle": "IoT Smart Agriculture",
+  "subjectDescription": "Using sensors to optimize irrigation.",
+  "motivation": "Personal interest in AgTech.",
+  "companyName": "AgroSmart",
+  "companyEmail": "hr@agrosmart.dz",
+  "companyPhone": "+213 21 00 11 22",
+  "companySupervisorName": "M. Karim",
+  "companySupervisorEmail": "karim@agrosmart.dz"
+}
+
+> Attendu:
+- 201 Created.
+- Une nouvelle entreprise `AgroSmart` est créée automatiquement en `PENDING`.
+- Le sujet est lié à cette entreprise.
+
+12.2 Créer une proposition (avec entreprise existante)
+POST /api/projects/external-subjects
+Header: X-User-Id: student-001
+{
+  "studentName": "Amine Benali",
+  "subjectTitle": "Cloud Migration Strategy",
+  "companyId": "{companyId1}",
+  "companySupervisorName": "Mme. Sarah",
+  "companySupervisorEmail": "sarah@globaltech.com"
+}
+
+> Attendu: Le sujet est lié à l'entreprise existante `Global Tech`.
+
+12.3 Valider/Assigner un enseignant
+PATCH /api/projects/external-subjects/{subjectId}/status?status=APPROVED
+Header: X-User-Id: teacher-001
+Header: X-User-Name: Dr. Ahmed
+
+> Attendu:
+- `status = APPROVED`.
+- `teacherId = teacher-001` et `teacherName = Dr. Ahmed`.
+
+13) Validation Blacklist Company lors d'une proposition
+13.1 Créer un projet pour une entreprise déjà blacklistée
+POST /api/projects
+Header: X-User-Id: student-001
+Header: X-User-Role: STUDENT
+{
+  "title": "Forbidden Project",
+  "description": "Trying to link with a blacklisted company.",
+  "status": "PROPOSED",
+  "companyName": "BlacklistedCorp",
+  "companyEmail": "bad@evil.com"
+}
+
+> Pré-requis: `BlacklistedCorp` avec email `bad@evil.com` doit déjà exister avec le statut `BLACKLISTED`.
+
+> Attendu:
+- 200 OK (ou 201).
+- `status` dans la réponse = `CANCELLED` (le projet est directement rejeté).

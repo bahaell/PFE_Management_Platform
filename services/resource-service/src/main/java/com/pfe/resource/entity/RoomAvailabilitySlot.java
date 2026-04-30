@@ -15,7 +15,7 @@ public class RoomAvailabilitySlot {
     private Long id;
 
     private String start;
-    private String end;
+    private String end_date;
     private boolean isMaintenance;
     private String reason;
 

@@ -34,6 +34,13 @@ public class ProjectRequest {
     private String supervisorId;
     private Set<String> studentIds;
     private String companyId;
+    private String companyName;
+    private String companyDescription;
+    private String companyEmail;
+    private String companyPhone;
+    private String companyCountry;
+    private String companyCity;
+
     private Set<String> requiredSkills;
     
     private LocalDateTime startDate;

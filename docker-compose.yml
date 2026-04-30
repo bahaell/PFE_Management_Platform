@@ -2,13 +2,14 @@ services:
   # --- SQL LAYER ---
   postgresql:
     container_name: ms_pg_sql
-    image: postgres:16-alpine # Using alpine for smaller footprint
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${DB_USER:-admin}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data/pgdata
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql # <--- ADD THIS LINE
     ports:
       - "5433:5432"
     networks:
@@ -72,6 +73,18 @@ services:
     ports:
       - "1080:1080"
       - "1025:1025"
+    networks:
+      - microservices-net
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ms_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     networks:
       - microservices-net
 

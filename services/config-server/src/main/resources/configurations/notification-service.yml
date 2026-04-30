@@ -2,6 +2,8 @@ server:
   port: 8085
 
 spring:
+  application:
+    name: notification-service
   datasource:
     url: jdbc:postgresql://localhost:5433/notification_db
     username: admin
@@ -15,6 +17,51 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+          multiplier: 2.0
+
+# ─── RabbitMQ logical config ───────────────────────────────────────────────
+rabbitmq:
+  exchange: pfe.events.exchange
+  queue:
+    # Commit
+    notification: notification.queue
+    # Subject
+    subject: subject.application.created.queue
+    subject-updated: subject.application.updated.queue
+    # Project
+    project: project.created.queue
+    # Message
+    message: message.sent.queue
+    # Task
+    task-assigned: task.assigned.queue
+    task-updated: task.updated.queue
+    # Document
+    document-uploaded: document.uploaded.queue
+    doc-generated: academic.document.generated.queue
+    doc-requested: academic.document.requested.queue
+    # Defense
+    defense-request: defense.request.created.queue
+    defense-scheduled: defense.scheduled.queue
+    jury: jury.assigned.queue
+    # System
+    user: user.created.queue
+    deadline: deadline.reminder.queue
+    # Dead Letter Queue
+    dlq: notification.queue.dlq
+  routing-key:
+    commit-created: commit.created
+
 
 eureka:
   client:

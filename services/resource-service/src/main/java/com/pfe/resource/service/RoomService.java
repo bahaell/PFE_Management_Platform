@@ -91,7 +91,8 @@ public class RoomService {
 
     private EquipmentMapDto buildEquipment(Long roomId) {
         java.util.Map<String, EquipmentItemDto> map = new java.util.HashMap<>();
-        java.util.List<String> keys = java.util.List.of("projector", "smartBoard", "speakers", "microphone", "hdmiSystem",
+        java.util.List<String> keys = java.util.List.of("projector", "smartBoard", "speakers", "microphone",
+                "hdmiSystem",
                 "recordingCamera", "airConditioning", "ethernet", "wifi", "screen");
         for (String key : keys) {
             map.put(key, EquipmentItemDto.builder().present(false).status("missing").build());
@@ -126,7 +127,8 @@ public class RoomService {
     private java.util.List<MaintenanceScheduleItemDto> buildMaintenance(Long roomId) {
         return roomBookingRepository.findByRoomId(roomId).stream()
                 .filter(b -> "maintenance".equalsIgnoreCase(b.getType()))
-                .map(b -> MaintenanceScheduleItemDto.builder().date(b.getDate()).reason("Scheduled maintenance").build())
+                .map(b -> MaintenanceScheduleItemDto.builder().date(b.getDate()).reason("Scheduled maintenance")
+                        .build())
                 .toList();
     }
 
@@ -135,7 +137,7 @@ public class RoomService {
                 .id(b.getId())
                 .date(b.getDate())
                 .start(b.getStart())
-                .end(b.getEnd())
+                .end(b.getEnd_date())
                 .type(b.getType())
                 .project(b.getProject())
                 .studentName(b.getStudentName())

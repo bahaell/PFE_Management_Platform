@@ -5,14 +5,20 @@ import com.example.projects.dto.ProjectMatchingRequest;
 import com.example.projects.dto.ProjectMatchingResponse;
 import com.example.projects.dto.ProjectResponse;
 import com.example.projects.dto.SchedulingProjectResponse;
+import com.example.projects.entity.Company;
+import com.example.projects.entity.CompanyStatus;
 import com.example.projects.entity.Project;
 import com.example.projects.entity.ProjectStatus;
 import com.example.projects.exception.BadRequestException;
 import com.example.projects.exception.ForbiddenException;
 import com.example.projects.exception.NotFoundException;
+
+import com.example.projects.repository.CompanyRepository;
 import com.example.projects.repository.ProjectRepository;
 import com.example.projects.service.ProjectService;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,21 +34,29 @@ import java.util.stream.Collectors;
 public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final CompanyRepository companyRepository;
 
     @Override
     @Transactional
     public ProjectResponse createProject(ProjectRequest request, String userId, String userRole) {
-        String normalizedRole = userRole != null ? userRole.trim().toUpperCase(Locale.ROOT) : "";
+        String normalizedRole = userRole != null ? userRole.toUpperCase(Locale.ROOT) : null;
         validateIdentityHeaders(userId, normalizedRole);
+
+        Company company = resolveCompany(request);
+
+        ProjectStatus initialStatus = request.getStatus() != null ? request.getStatus() : ProjectStatus.PROPOSED;
+        if (company != null && company.getStatus() == CompanyStatus.BLACKLISTED) {
+            initialStatus = ProjectStatus.CANCELLED;
+        }
 
         Project project = Project.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .status(request.getStatus())
+                .status(initialStatus)
                 .progress(request.getProgress() != null ? request.getProgress() : 0)
                 .supervisorId(request.getSupervisorId())
                 .studentIds(request.getStudentIds() != null ? request.getStudentIds() : new HashSet<>())
-                .companyId(request.getCompanyId())
+                .company(company)
                 .requiredSkills(normalizeSkills(request.getRequiredSkills()))
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
@@ -74,7 +88,6 @@ public class ProjectServiceImpl implements ProjectService {
         project.setProgress(request.getProgress());
         project.setSupervisorId(request.getSupervisorId());
         project.setStudentIds(request.getStudentIds());
-        project.setCompanyId(request.getCompanyId());
         project.setRequiredSkills(normalizeSkills(request.getRequiredSkills()));
         project.setStartDate(request.getStartDate());
         project.setEndDate(request.getEndDate());
@@ -193,7 +206,7 @@ public class ProjectServiceImpl implements ProjectService {
         validateStatusTransition(project.getStatus(), newStatus);
 
         project.setStatus(newStatus);
-        
+
         // Auto-set progress if completed
         if (newStatus == ProjectStatus.COMPLETED) {
             project.setProgress(100);
@@ -203,8 +216,9 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private void validateStatusTransition(ProjectStatus current, ProjectStatus next) {
-        if (current == next) return;
-        
+        if (current == next)
+            return;
+
         boolean valid = switch (current) {
             case PROPOSED -> next == ProjectStatus.APPROVED || next == ProjectStatus.CANCELLED;
             case APPROVED -> next == ProjectStatus.ASSIGNED || next == ProjectStatus.CANCELLED;
@@ -230,7 +244,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .progress(project.getProgress())
                 .supervisorId(project.getSupervisorId())
                 .studentIds(project.getStudentIds())
-                .companyId(project.getCompanyId())
+                .companyId(project.getCompany() != null ? project.getCompany().getId().toString() : null)
                 .requiredSkills(project.getRequiredSkills())
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())
@@ -262,11 +276,49 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private Set<String> normalizeSkills(Set<String> skills) {
-        if (skills == null) return new HashSet<>();
+        if (skills == null)
+            return new HashSet<>();
         return skills.stream()
                 .filter(skill -> skill != null && !skill.isBlank())
                 .map(String::trim)
                 .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    private Company resolveCompany(ProjectRequest request) {
+        if (request.getCompanyId() != null && !request.getCompanyId().isBlank()) {
+            try {
+                return companyRepository.findById(UUID.fromString(request.getCompanyId())).orElse(null);
+            } catch (IllegalArgumentException e) {
+                // Not a valid UUID
+            }
+        }
+
+        // Try to find by name and email to avoid duplicates and check blacklist
+        if (request.getCompanyName() != null && !request.getCompanyName().isBlank() &&
+                request.getCompanyEmail() != null && !request.getCompanyEmail().isBlank()) {
+
+            Optional<Company> existing = companyRepository.findByNameAndEmail(
+                    request.getCompanyName(), request.getCompanyEmail());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
+        if (request.getCompanyName() != null && !request.getCompanyName().isBlank()) {
+            // Create a new company if it doesn't exist but name is provided
+            Company company = Company.builder()
+                    .name(request.getCompanyName())
+                    .description(request.getCompanyDescription())
+                    .email(request.getCompanyEmail())
+                    .phone(request.getCompanyPhone())
+                    .country(request.getCompanyCountry())
+                    .city(request.getCompanyCity())
+                    .status(CompanyStatus.PENDING)
+                    .build();
+            return companyRepository.save(company);
+        }
+
+        return null;
     }
 
     private void validateIdentityHeaders(String userId, String normalizedRole) {

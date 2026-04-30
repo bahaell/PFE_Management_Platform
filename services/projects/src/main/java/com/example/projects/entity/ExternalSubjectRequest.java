@@ -44,20 +44,9 @@ public class ExternalSubjectRequest {
     @Column(columnDefinition = "TEXT")
     private String motivation;
 
-    @Column(nullable = false)
-    private String companyId;
-
-    @Column(nullable = false)
-    private String companyName;
-
-    @Column(columnDefinition = "TEXT")
-    private String companyDescription;
-
-    @Column(nullable = false)
-    private String companyPhone;
-
-    @Column(nullable = false)
-    private String companyEmail;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Column(nullable = false)
     private String companySupervisorName;

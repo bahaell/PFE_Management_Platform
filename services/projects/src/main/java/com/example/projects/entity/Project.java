@@ -44,8 +44,9 @@ public class Project {
     @Column(name = "student_id")
     private Set<String> studentIds = new HashSet<>();
 
-    @Column(name = "company_id")
-    private String companyId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @ElementCollection
     @CollectionTable(name = "project_required_skills", joinColumns = @JoinColumn(name = "project_id"))

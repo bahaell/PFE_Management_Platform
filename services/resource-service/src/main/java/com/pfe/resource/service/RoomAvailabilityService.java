@@ -31,7 +31,7 @@ public class RoomAvailabilityService {
         RoomAvailabilitySlot slot = RoomAvailabilitySlot.builder()
                 .room(room)
                 .start(req.getStart())
-                .end(req.getEnd())
+                .end_date(req.getEnd())
                 .isMaintenance(req.isMaintenance())
                 .reason(req.getReason())
                 .build();
@@ -45,10 +45,13 @@ public class RoomAvailabilityService {
         if (!slot.getRoom().getId().equals(roomId)) {
             throw new ResourceNotFoundException("Slot not found in room: " + roomId);
         }
-        if (req.getStart() != null) slot.setStart(req.getStart());
-        if (req.getEnd() != null) slot.setEnd(req.getEnd());
+        if (req.getStart() != null)
+            slot.setStart(req.getStart());
+        if (req.getEnd() != null)
+            slot.setEnd_date(req.getEnd());
         slot.setMaintenance(req.isMaintenance());
-        if (req.getReason() != null) slot.setReason(req.getReason());
+        if (req.getReason() != null)
+            slot.setReason(req.getReason());
         return toDto(slotRepository.save(slot));
     }
 
@@ -68,10 +71,12 @@ public class RoomAvailabilityService {
         int newEnd = timeToMinutes(end);
         List<RoomAvailabilitySlot> slots = slotRepository.findByRoomId(roomId);
         for (RoomAvailabilitySlot slot : slots) {
-            if (excludeId != null && slot.getId().equals(excludeId)) continue;
+            if (excludeId != null && slot.getId().equals(excludeId))
+                continue;
             int slotStart = timeToMinutes(slot.getStart());
-            int slotEnd = timeToMinutes(slot.getEnd());
-            if (newStart < slotEnd && newEnd > slotStart) return false;
+            int slotEnd = timeToMinutes(slot.getEnd_date());
+            if (newStart < slotEnd && newEnd > slotStart)
+                return false;
         }
         return true;
     }
@@ -90,7 +95,7 @@ public class RoomAvailabilityService {
         return RoomAvailabilityDto.builder()
                 .id(slot.getId())
                 .start(slot.getStart())
-                .end(slot.getEnd())
+                .end(slot.getEnd_date())
                 .isMaintenance(slot.isMaintenance())
                 .reason(slot.getReason())
                 .build();

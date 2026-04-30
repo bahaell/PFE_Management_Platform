@@ -16,7 +16,7 @@ public class RoomBooking {
 
     private String date;
     private String start;
-    private String end;
+    private String end_date;
     private String type; // defense | maintenance | reserved
     private String project;
     private String studentName;

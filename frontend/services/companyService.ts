@@ -60,19 +60,39 @@ export async function getCompanyById(id: string) {
   return mockCompanies.find((c) => c.id === id)
 }
 
+export async function createCompany(company: ExternalCompany) {
+  mockCompanies.push(company)
+  return company
+}
+
+export async function updateCompany(id: string, company: ExternalCompany) {
+  const existingCompany = mockCompanies.find((c) => c.id === id)
+  if (existingCompany) {
+    existingCompany.name = company.name
+    existingCompany.description = company.description
+    existingCompany.email = company.email
+    existingCompany.phone = company.phone
+    existingCompany.country = company.country
+    existingCompany.city = company.city
+    existingCompany.status = company.status
+    existingCompany.updatedAt = new Date().toISOString()
+  }
+  return existingCompany
+}
+
+export async function deleteCompany(id: string) {
+  const company = mockCompanies.find((c) => c.id === id)
+  if (company) {
+    mockCompanies = mockCompanies.filter((c) => c.id !== id)
+  }
+  return company
+}
+
 export async function approveCompany(id: string) {
   const company = mockCompanies.find((c) => c.id === id)
   if (company) {
     company.status = "approved"
     company.updatedAt = new Date().toISOString()
-  }
-  return company
-}
-
-export async function rejectCompany(id: string) {
-  const company = mockCompanies.find((c) => c.id === id)
-  if (company) {
-    mockCompanies = mockCompanies.filter((c) => c.id !== id)
   }
   return company
 }
