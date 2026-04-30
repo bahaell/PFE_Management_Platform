@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -16,6 +16,7 @@ interface DocumentGenerationModalProps {
   templates: AcademicTemplate[]
   onClose: () => void
   onGenerate: (requestId: string, templateId: string, filledData: Record<string, any>) => void
+  initialTemplateId?: string
 }
 
 export function DocumentGenerationModal({
@@ -24,9 +25,20 @@ export function DocumentGenerationModal({
   templates,
   onClose,
   onGenerate,
+  initialTemplateId,
 }: DocumentGenerationModalProps) {
   const [templateId, setTemplateId] = useState<string>("")
   const [filledData, setFilledData] = useState<Record<string, any>>({})
+
+  useEffect(() => {
+    if (!open) return
+    if (initialTemplateId) {
+      setTemplateId(initialTemplateId)
+    } else {
+      setTemplateId("")
+    }
+    setFilledData({})
+  }, [open, initialTemplateId])
 
   const selectedTemplate = templates.find((t) => t.id === templateId)
 

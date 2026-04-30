@@ -46,6 +46,10 @@ Manual database creation is required in **pgAdmin**:
 - `projects_db`
 - `defense_db` (New)
 
+frontend>.env:
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=deolw9gwm
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=unsigned_upload
+
 ---
 
 ## 🚀 Execution Order

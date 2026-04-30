@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/providers/auth-provider'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Upload, Eye, EyeOff } from 'lucide-react'
-import { profileMockData } from '@/lib/profile-mock-data'
+import { ProfileService } from '@/services/service_profile'
 import { SkillsPanel } from '@/components/profile/skills-panel'
+import { uploadImageToCloudinary } from '@/lib/cloudinary'
 
 interface Skill {
   id: string
@@ -21,27 +22,76 @@ export default function EditStudentProfilePage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
-  const [skills, setSkills] = useState<Skill[]>(
-    profileMockData.student?.skills || []
-  )
-
-  const profile = profileMockData.student
+  const [profile, setProfile] = useState<any>(null)
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   const [formData, setFormData] = useState({
     fullName: user?.name || '',
     email: user?.email || '',
-    phone: profile?.phone || '',
+    phone: '',
     gender: 'Male',
     birthdate: '1998-05-15',
-    level: profile?.level || '',
-    department: profile?.department || '',
-    studentId: profile?.studentId || '',
-    interests: profile?.interests || '',
+    level: '',
+    department: '',
+    studentId: '',
+    interests: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
     twoFactor: false,
   })
+
+  useEffect(() => {
+    if (user) {
+      Promise.all([
+        ProfileService.getProfile('student'),
+        ProfileService.getAllSkills('student')
+      ]).then(([profileData, skillsData]) => {
+        if (profileData) {
+          setProfile(profileData)
+          setFormData({
+            fullName: user.name || '',
+            email: user.email || '',
+            phone: (user as any).phone || (profileData as any).phone || '',
+            gender: (user as any).gender || (profileData as any).gender || 'Male',
+            birthdate: (user as any).birthdate || (profileData as any).birthdate || '1998-05-15',
+            level: (profileData as any).level || '',
+            department: (profileData as any).department || '',
+            studentId: (profileData as any).studentId || '',
+            interests: (profileData as any).interests || '',
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+            twoFactor: false,
+          })
+        }
+        if (skillsData) {
+          setSkills(skillsData)
+        }
+      })
+    }
+  }, [user])
+
+  if (!profile) {
+    return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setIsUploadingAvatar(true)
+      const uploadedUrl = await uploadImageToCloudinary(file)
+      setAvatarUrl(uploadedUrl)
+      alert('Photo uploaded successfully.')
+    } catch {
+      alert('Avatar upload failed. Check Cloudinary configuration.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -53,15 +103,46 @@ export default function EditStudentProfilePage() {
     }))
   }
 
-  const handleAddSkill = (skill: Skill) => {
-    setSkills([...skills, skill])
+  const handleAddSkill = async (skill: Skill) => {
+    // API Call
+    const newSkill = await ProfileService.addSkill('student', {
+      name: skill.name,
+      category: skill.category,
+      relevance: skill.relevance
+    } as any)
+    if (newSkill) {
+      setSkills([...skills, newSkill])
+    } else {
+      // Fallback if API fails but we still want optimistic UI
+      setSkills([...skills, skill])
+    }
   }
 
-  const handleRemoveSkill = (skillId: string) => {
-    setSkills(skills.filter((s) => s.id !== skillId))
+  const handleRemoveSkill = async (skillId: string) => {
+    // API Call
+    const success = await ProfileService.removeSkill('student', skillId)
+    if (success) {
+      setSkills(skills.filter((s) => s.id !== skillId))
+    } else {
+      // Fallback for optimistic UI
+      setSkills(skills.filter((s) => s.id !== skillId))
+    }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const profileUpdates = {
+      level: formData.level,
+      department: formData.department,
+      studentId: formData.studentId,
+      academicYear: "2024-2025",
+      interests: formData.interests,
+      name: formData.fullName,
+      phone: formData.phone,
+      gender: formData.gender,
+      birthdate: formData.birthdate,
+      avatar: avatarUrl || (profile as any)?.avatar || ''
+    }
+    await ProfileService.updateProfile('student', profileUpdates)
     alert('Profile changes saved successfully!')
     router.push('/student/profile')
   }
@@ -89,18 +170,34 @@ export default function EditStudentProfilePage() {
           <div className="space-y-4 mb-6">
             {/* Profile Picture Upload */}
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary-foreground">
-                  {user?.name.charAt(0).toUpperCase()}
-                </span>
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center overflow-hidden">
+                {avatarUrl || (profile as any)?.avatar ? (
+                  <img
+                    src={avatarUrl || (profile as any)?.avatar}
+                    alt="Profile avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-primary-foreground">
+                    {user?.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 cursor-pointer transition-colors">
                   <Upload className="w-4 h-4" />
                   Upload Photo
-                  <input type="file" className="hidden" accept="image/*" />
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    disabled={isUploadingAvatar}
+                  />
                 </label>
-                <p className="text-xs text-muted-foreground mt-2">JPG, PNG up to 5MB</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {isUploadingAvatar ? 'Uploading...' : 'JPG, PNG up to 5MB'}
+                </p>
               </div>
             </div>
 

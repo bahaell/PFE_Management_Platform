@@ -1,7 +1,8 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Lightbulb } from 'lucide-react'
-import { suggestedSkills } from '@/lib/profile-mock-data'
+import { ProfileService } from '@/services/service_profile'
 import { Button } from '@/components/ui/button'
 
 interface SuggestedSkillsSectionProps {
@@ -9,6 +10,12 @@ interface SuggestedSkillsSectionProps {
 }
 
 export function SuggestedSkillsSection({ onSelectSkill }: SuggestedSkillsSectionProps) {
+  const [suggestedSkills, setSuggestedSkills] = useState<Record<string, string[]>>({})
+
+  useEffect(() => {
+    ProfileService.getSuggestedSkills().then(setSuggestedSkills)
+  }, [])
+
   const categories = Object.entries(suggestedSkills).slice(0, 3)
 
   return (

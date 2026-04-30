@@ -3,3 +3,10 @@ spring:
     name: scheduling-service
   config:
     import: optional:configserver:http://localhost:8888
+services:
+  resource:
+    url: http://localhost:8086
+  projects:
+    url: http://localhost:8083
+  user:
+    url: http://localhost:8082   # ← ajouter

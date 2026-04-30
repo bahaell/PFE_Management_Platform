@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/providers/auth-provider'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Upload, Eye, EyeOff } from 'lucide-react'
-import { profileMockData } from '@/lib/profile-mock-data'
+import { ProfileService } from '@/services/service_profile'
 import { SkillsPanel } from '@/components/profile/skills-panel'
+import { uploadImageToCloudinary } from '@/lib/cloudinary'
 
 interface Skill {
   id: string
@@ -21,24 +22,76 @@ export default function EditCoordinatorProfilePage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
-  const [skills, setSkills] = useState<Skill[]>(profileMockData.coordinator?.skills || [])
-
-  const profile = profileMockData.coordinator
+  const [profile, setProfile] = useState<any>(null)
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   const [formData, setFormData] = useState({
     fullName: user?.name || '',
     email: user?.email || '',
-    phone: profile?.phone || '',
+    phone: '',
     gender: 'Male',
     birthdate: '1970-08-10',
-    department: profile?.department || '',
-    office: profile?.office || '',
-    responsibilities: profile?.responsibilities || '',
+    department: '',
+    office: '',
+    responsibilities: '',
+    yearsOfService: 0,
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
     twoFactor: false,
   })
+
+  useEffect(() => {
+    if (user) {
+      Promise.all([
+        ProfileService.getProfile('coordinator'),
+        ProfileService.getAllSkills('coordinator')
+      ]).then(([profileData, skillsData]) => {
+        if (profileData) {
+          setProfile(profileData)
+          setFormData({
+            fullName: user.name || '',
+            email: user.email || '',
+            phone: (user as any).phone || (profileData as any).phone || '',
+            gender: (user as any).gender || (profileData as any).gender || 'Male',
+            birthdate: (user as any).birthdate || (profileData as any).birthdate || '1970-08-10',
+            department: (profileData as any).department || '',
+            office: (profileData as any).office || '',
+            responsibilities: (profileData as any).responsibilities || '',
+            yearsOfService: Number((profileData as any).yearsOfService || 0),
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+            twoFactor: false,
+          })
+        }
+        if (skillsData) {
+          setSkills(skillsData)
+        }
+      })
+    }
+  }, [user])
+
+  if (!profile) {
+    return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setIsUploadingAvatar(true)
+      const uploadedUrl = await uploadImageToCloudinary(file)
+      setAvatarUrl(uploadedUrl)
+      alert('Photo uploaded successfully.')
+    } catch {
+      alert('Avatar upload failed. Check Cloudinary configuration.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -50,15 +103,41 @@ export default function EditCoordinatorProfilePage() {
     }))
   }
 
-  const handleAddSkill = (skill: Skill) => {
-    setSkills([...skills, skill])
+  const handleAddSkill = async (skill: Skill) => {
+    const newSkill = await ProfileService.addSkill('coordinator', {
+      name: skill.name,
+      category: skill.category,
+      relevance: skill.relevance
+    } as any)
+    if (newSkill) {
+      setSkills([...skills, newSkill])
+    } else {
+      setSkills([...skills, skill])
+    }
   }
 
-  const handleRemoveSkill = (skillId: string) => {
-    setSkills(skills.filter((s) => s.id !== skillId))
+  const handleRemoveSkill = async (skillId: string) => {
+    const success = await ProfileService.removeSkill('coordinator', skillId)
+    if (success) {
+      setSkills(skills.filter((s) => s.id !== skillId))
+    } else {
+      setSkills(skills.filter((s) => s.id !== skillId))
+    }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const profileUpdates = {
+      department: formData.department,
+      office: formData.office,
+      responsibilities: formData.responsibilities,
+      yearsOfService: Number(formData.yearsOfService || 0),
+      name: formData.fullName,
+      phone: formData.phone,
+      gender: formData.gender,
+      birthdate: formData.birthdate,
+      avatar: avatarUrl || (profile as any)?.avatar || ''
+    }
+    await ProfileService.updateProfile('coordinator', profileUpdates)
     alert('Profile changes saved successfully!')
     router.push('/coordinator/profile')
   }
@@ -85,18 +164,34 @@ export default function EditCoordinatorProfilePage() {
 
           <div className="space-y-4 mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary-foreground">
-                  {user?.name.charAt(0).toUpperCase()}
-                </span>
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center overflow-hidden">
+                {avatarUrl || (profile as any)?.avatar ? (
+                  <img
+                    src={avatarUrl || (profile as any)?.avatar}
+                    alt="Profile avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-primary-foreground">
+                    {user?.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 cursor-pointer transition-colors">
                   <Upload className="w-4 h-4" />
                   Upload Photo
-                  <input type="file" className="hidden" accept="image/*" />
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    disabled={isUploadingAvatar}
+                  />
                 </label>
-                <p className="text-xs text-muted-foreground mt-2">JPG, PNG up to 5MB</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {isUploadingAvatar ? 'Uploading...' : 'JPG, PNG up to 5MB'}
+                </p>
               </div>
             </div>
 
@@ -197,6 +292,17 @@ export default function EditCoordinatorProfilePage() {
                 placeholder="List your key responsibilities..."
                 rows={3}
                 className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Years of Service</label>
+              <Input
+                name="yearsOfService"
+                type="number"
+                min={0}
+                value={formData.yearsOfService}
+                onChange={handleInputChange}
+                className="bg-secondary border-border"
               />
             </div>
           </div>

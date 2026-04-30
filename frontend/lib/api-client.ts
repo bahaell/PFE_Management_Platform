@@ -3,7 +3,7 @@
  * Handles authentication, base URLs, and error reporting.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082';
 
 export interface ApiError {
   message: string;
@@ -21,7 +21,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
       status: response.status,
       errors: data?.errors,
     };
-    
+
     // Global handling for specific status codes
     if (response.status === 401) {
       // Logic for unauthorized (e.g., clear tokens, redirect to login)
@@ -31,7 +31,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
         // window.location.href = '/login';
       }
     }
-    
+
     throw error;
   }
 
@@ -73,7 +73,7 @@ export const apiClient = {
 
   async request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
-    
+
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
 
     const headers = new Headers(options.headers);

@@ -8,5 +8,6 @@ export interface Teacher extends BaseUser {
   bio: string
   researchInterests: string
   yearsOfExperience: number
+  yearsOfService: number
   skills: Skill[]
 }

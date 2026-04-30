@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Pencil, Trash2, Copy, Eye } from 'lucide-react'
+import { Pencil, Trash2, FileText, Eye, Copy } from 'lucide-react'
 import type { AcademicTemplate } from '@/models/academic-template.model'
 
 interface TemplateTableProps {
   templates: AcademicTemplate[]
   onEdit: (template: AcademicTemplate) => void
   onDelete: (id: string) => void
+  onUse: (template: AcademicTemplate) => void
   onClone: (id: string) => void
   onPreview: (template: AcademicTemplate) => void
 }
@@ -20,6 +21,7 @@ export function TemplateTable({
   templates,
   onEdit,
   onDelete,
+  onUse,
   onClone,
   onPreview,
 }: TemplateTableProps) {
@@ -113,6 +115,14 @@ export function TemplateTable({
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => onUse(template)}
+                      title="Générer pour un étudiant"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => onDelete(template.id)}
                       className="text-destructive hover:text-destructive"
                       title="Supprimer"
@@ -135,3 +145,5 @@ export function TemplateTable({
     </div>
   )
 }
+
+

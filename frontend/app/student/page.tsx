@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/providers/auth-provider'
 import { PageHeader } from '@/components/page-header'
 import { DashboardCard } from '@/components/dashboard-card'
 import { Button } from '@/components/ui/button'
@@ -13,12 +14,15 @@ import { projectMockData } from '@/lib/collaboration-mock-data'
 import { ProjectsService } from '@/services/service_projects'
 
 export default function StudentDashboard() {
+  const { user } = useAuth()
+  
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => ProjectsService.getAllProjects(),
   })
 
-  const studentName = 'Ahmed Mohamed'
+  const studentName = user?.name || 'Student'
+  const studentRole = user?.role ? `${user.role.charAt(0).toUpperCase()}${user.role.slice(1)}` : 'Student'
 
   const recentNotifications = [
     { id: 1, title: 'Feedback from advisor', description: 'Your report has been reviewed', timestamp: '2 hours ago', icon: '📝' },
@@ -67,7 +71,7 @@ export default function StudentDashboard() {
         transition={{ duration: 0.4, delay: 0.1 }}
         className="mb-6 sm:mb-8"
       >
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">Welcome, {studentName}</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2">Welcome, {studentName} ({studentRole})</h1>
         <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">Overview of your PFE activities</p>
       </motion.div>
 

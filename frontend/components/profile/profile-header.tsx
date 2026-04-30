@@ -37,13 +37,17 @@ export function ProfileHeader({ name, email, phone, role, avatar }: ProfileHeade
     <div className="rounded-xl border border-border bg-card p-8 mb-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-6 w-full md:w-auto">
-          <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-3xl font-bold text-primary-foreground">{name.charAt(0).toUpperCase()}</span>
+          <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {avatar ? (
+              <img src={avatar} alt={`${name} avatar`} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-3xl font-bold text-primary-foreground">{name ? name.charAt(0).toUpperCase() : '?'}</span>
+            )}
           </div>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-foreground mb-2">{name}</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{name || 'User'}</h1>
             <Badge className={`mb-3 ${getRoleColor()}`}>
-              {role.charAt(0).toUpperCase() + role.slice(1)}
+              {role ? role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() : ''}
             </Badge>
             <div className="flex flex-col gap-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">

@@ -6,8 +6,10 @@ import com.example.user_service.dto.ProfileUpdateRequest;
 import com.example.user_service.dto.RegistrationRequest;
 import com.example.user_service.dto.SkillDto;
 import com.example.user_service.dto.StudentProfileDto;
+import com.example.user_service.dto.TeacherAvailabilityDto;
 import com.example.user_service.dto.TeacherProfileDto;
 import com.example.user_service.dto.UserDto;
+import com.example.user_service.dto.UserDocumentDto;
 import com.example.user_service.dto.UserUpdateRequest;
 import com.example.user_service.service.UserService;
 import jakarta.validation.Valid;
@@ -62,6 +64,68 @@ public class UserController {
         @RequestParam(required = false) Integer minYears
     ) {
         return ResponseEntity.ok(userService.getTeachers(q, grade, speciality, department, minYears));
+    }
+
+
+    @GetMapping("/{id}/availability")
+    public ResponseEntity<List<TeacherAvailabilityDto>> getTeacherAvailabilitiesById(
+        @PathVariable String id) {
+        return ResponseEntity.ok(userService.getTeacherAvailabilitiesById(id));
+    }
+
+    @GetMapping("/me/availability")
+    public ResponseEntity<List<TeacherAvailabilityDto>> getCurrentTeacherAvailabilities() {
+        return ResponseEntity.ok(userService.getCurrentTeacherAvailabilities());
+    }
+
+    @PostMapping("/me/availability")
+    public ResponseEntity<TeacherAvailabilityDto> addCurrentTeacherAvailability(@RequestBody TeacherAvailabilityDto request) {
+        return ResponseEntity.ok(userService.addCurrentTeacherAvailability(request));
+    }
+
+    @PutMapping("/me/availability/{id}")
+    public ResponseEntity<TeacherAvailabilityDto> updateCurrentTeacherAvailability(
+        @PathVariable Long id,
+        @RequestBody TeacherAvailabilityDto request
+    ) {
+        return ResponseEntity.ok(userService.updateCurrentTeacherAvailability(id, request));
+    }
+
+    @DeleteMapping("/me/availability/{id}")
+    public ResponseEntity<Void> deleteCurrentTeacherAvailability(@PathVariable Long id) {
+        userService.deleteCurrentTeacherAvailability(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me/documents")
+    public ResponseEntity<List<UserDocumentDto>> getCurrentStudentDocuments() {
+        return ResponseEntity.ok(userService.getCurrentStudentDocuments());
+    }
+
+    @GetMapping("/documents")
+    public ResponseEntity<List<UserDocumentDto>> getCoordinatorManagedDocuments(
+        @RequestParam(required = false) String studentId
+    ) {
+        return ResponseEntity.ok(userService.getCoordinatorManagedDocuments(studentId));
+    }
+
+    @PostMapping("/documents")
+    public ResponseEntity<UserDocumentDto> createCoordinatorDocument(@RequestBody UserDocumentDto request) {
+        return ResponseEntity.ok(userService.createCoordinatorDocument(request));
+    }
+
+    @PutMapping("/documents/{id}")
+    public ResponseEntity<UserDocumentDto> updateCoordinatorDocument(
+        @PathVariable Long id,
+        @RequestBody UserDocumentDto request
+    ) {
+        return ResponseEntity.ok(userService.updateCoordinatorDocument(id, request));
+    }
+
+    @DeleteMapping("/documents/{id}")
+    public ResponseEntity<Void> deleteCoordinatorDocument(@PathVariable Long id) {
+        userService.deleteCoordinatorDocument(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")

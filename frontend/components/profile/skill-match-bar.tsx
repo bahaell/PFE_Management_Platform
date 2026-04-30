@@ -8,15 +8,15 @@ interface SkillMatchBarProps {
 }
 
 export function SkillMatchBar({ skills }: SkillMatchBarProps) {
-  const topSkills = skills
+  const topSkills = [...skills]
     .sort((a, b) => b.relevance - a.relevance)
     .slice(0, 5)
 
   return (
     <div className="space-y-3">
       <h4 className="text-sm font-semibold text-foreground mb-3">Skill Proficiency</h4>
-      {topSkills.map((skill) => (
-        <div key={skill.name} className="space-y-1">
+      {topSkills.map((skill, index) => (
+        <div key={`${skill.name}-${index}`} className="space-y-1">
           <div className="flex items-center justify-between text-sm">
             <span className="text-foreground font-medium">{skill.name}</span>
             <span className="text-muted-foreground text-xs">{skill.relevance}%</span>
