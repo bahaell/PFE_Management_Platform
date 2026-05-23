@@ -29,13 +29,12 @@ public class SchedulingService {
     private final SolverManager<DefenseTimetable, Long> solverManager;
     private final ResourceClient resourceClient;
     private final ProjectsClient projectsClient;
-    private final UserClient     userClient;
+    private final UserClient userClient;
 
-    private final Map<Long, SolverJob<DefenseTimetable, Long>> jobs =
-            new ConcurrentHashMap<>();
+    private final Map<Long, SolverJob<DefenseTimetable, Long>> jobs = new ConcurrentHashMap<>();
 
     // ─────────────────────────────────────────────────────────────
-    //  SOLVE
+    // SOLVE
     // ─────────────────────────────────────────────────────────────
 
     public Long solve(List<DefenseSessionRequest> requests) {
@@ -43,7 +42,8 @@ public class SchedulingService {
         // 1. Salles disponibles depuis resource-service
         List<Long> roomIds = resourceClient.getAvailableRooms()
                 .stream()
-                .map(ResourceClient.RoomDTO::id)
+                .filter(ResourceClient.RoomDTO::isAvailable)
+                .map(ResourceClient.RoomDTO::getId)
                 .toList();
 
         if (roomIds.isEmpty()) {
@@ -74,7 +74,7 @@ public class SchedulingService {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  GET RESULT
+    // GET RESULT
     // ─────────────────────────────────────────────────────────────
 
     public DefenseTimetable getResult(Long jobId) throws Exception {
@@ -86,19 +86,18 @@ public class SchedulingService {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  BUILD SESSION
+    // BUILD SESSION
     // ─────────────────────────────────────────────────────────────
 
     private DefenseSession buildSession(DefenseSessionRequest r) {
 
         // ── Projet ──────────────────────────────────────────────
-        String projectName    = "Unknown";
+        String projectName = "Unknown";
         String supervisorName = null;
 
         try {
-            ProjectsClient.ProjectDTO project =
-                    projectsClient.getById(r.getProjectId());
-            projectName    = project.name();
+            ProjectsClient.ProjectDTO project = projectsClient.getById(r.getProjectId());
+            projectName = project.name();
             supervisorName = project.supervisorName();
         } catch (Exception e) {
             log.warn("Could not fetch project {} — using defaults: {}",
@@ -106,15 +105,14 @@ public class SchedulingService {
         }
 
         // ── Jury — noms + disponibilités ────────────────────────
-        List<String> juryNames  = new ArrayList<>();
+        List<String> juryNames = new ArrayList<>();
         List<String> juryAvails = new ArrayList<>();
 
         if (r.getJuryMemberIds() != null) {
             for (Long juryId : r.getJuryMemberIds()) {
                 try {
                     // Nom du juré
-                    UserClient.UserDto user =
-                            userClient.getUserById(String.valueOf(juryId));
+                    UserClient.UserDto user = userClient.getUserById(String.valueOf(juryId));
                     juryNames.add(user.name());
 
                     // Disponibilités → format "HH:mm_HH:mm"
@@ -145,23 +143,24 @@ public class SchedulingService {
                 .juryMemberNames(juryNames)
                 .juryAvailabilities(juryAvails)
                 .durationMinutes(r.getDurationMinutes() != null
-                        ? r.getDurationMinutes() : 30)
+                        ? r.getDurationMinutes()
+                        : 30)
                 .preferredRoomId(r.getPreferredRoomId())
                 .build();
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  TIME SLOT BUILDER
+    // TIME SLOT BUILDER
     // ─────────────────────────────────────────────────────────────
 
     private List<TimeSlot> buildTimeSlots(LocalDate start, int days) {
         List<TimeSlot> slots = new ArrayList<>();
 
         String[][] times = {
-            {"08:00", "10:00"},
-            {"10:00", "12:00"},
-            {"14:00", "16:00"},
-            {"16:00", "18:00"}
+                { "08:00", "10:00" },
+                { "10:00", "12:00" },
+                { "14:00", "16:00" },
+                { "16:00", "18:00" }
         };
 
         for (int d = 0; d < days; d++) {
