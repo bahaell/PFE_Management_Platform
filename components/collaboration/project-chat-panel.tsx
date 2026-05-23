@@ -1,45 +1,23 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Send, Paperclip, Smile } from 'lucide-react'
+import { Send, Paperclip, Smile, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useChat } from '@/hooks/use-chat'
+import { useAuth } from '@/providers/auth-provider'
+import { usePresence } from '@/hooks/use-presence'
 
-interface Message {
-  id: number
-  author: string
-  avatar: string
-  content: string
-  timestamp: string
-  attachments?: { name: string; type: string }[]
+interface ProjectChatPanelProps {
+  projectId: string
+  participantsIds: string[] // List of user IDs in the project to track typing status
 }
 
-export function ProjectChatPanel() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      author: 'Dr. Ahmed Hassan',
-      avatar: 'AH',
-      content: 'Great progress on the data preprocessing module. The accuracy improvements look promising.',
-      timestamp: '10:30 AM'
-    },
-    {
-      id: 2,
-      author: 'Ahmed Mohamed',
-      avatar: 'AM',
-      content: 'Thanks! I implemented the optimization techniques we discussed last meeting. Should I proceed with the model training?',
-      timestamp: '10:35 AM'
-    },
-    {
-      id: 3,
-      author: 'Dr. Ahmed Hassan',
-      avatar: 'AH',
-      content: 'Perfect. Before training, let\'s ensure the validation set has proper stratification.',
-      timestamp: '10:40 AM'
-    }
-  ])
+export function ProjectChatPanel({ projectId, participantsIds }: ProjectChatPanelProps) {
+  const { user } = useAuth()
+  const { messages, loading, sendMsg, setTypingState } = useChat({ projectId })
+  const { presenceMap } = usePresence(participantsIds)
 
   const [newMessage, setNewMessage] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -50,31 +28,29 @@ export function ProjectChatPanel() {
     scrollToBottom()
   }, [messages])
 
-  useEffect(() => {
-    const typingTimer = setTimeout(() => {
-      if (messages.length > 0 && messages[messages.length - 1].author === 'Ahmed Mohamed') {
-        setIsTyping(true)
-        const responseTimer = setTimeout(() => {
-          setIsTyping(false)
-        }, 2000)
-        return () => clearTimeout(responseTimer)
-      }
-    }, 1500)
-    return () => clearTimeout(typingTimer)
-  }, [messages])
-
-  const handleSend = () => {
+  const handleSend = async () => {
     if (newMessage.trim()) {
-      setMessages([...messages, {
-        id: messages.length + 1,
-        author: 'Ahmed Mohamed',
-        avatar: 'AM',
-        content: newMessage,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-      }])
+      await sendMsg(newMessage)
       setNewMessage('')
+      setTypingState(false)
     }
   }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value)
+    if (e.target.value.trim() !== '') {
+      setTypingState(true)
+    } else {
+      setTypingState(false)
+    }
+  }
+
+  // Find if anyone else is typing
+  const typingUsers = Object.values(presenceMap).filter(
+    (p) => p.typing && p.userId !== user?.id
+  )
+  const isTyping = typingUsers.length > 0
+  const typingUserName = typingUsers.length === 1 ? typingUsers[0].userId : 'Someone' // We don't have their name in presence map, usually you'd lookup
 
   return (
     <div className="flex flex-col h-full">
@@ -82,28 +58,43 @@ export function ProjectChatPanel() {
       
       {/* Messages Container */}
       <div className="flex-1 min-h-0 overflow-y-auto space-y-3 sm:space-y-4 pr-2">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex gap-2 sm:gap-3 ${msg.author === 'Ahmed Mohamed' ? 'flex-row-reverse' : ''}`}>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-white flex-shrink-0">
-              {msg.avatar}
-            </div>
-            <div className={`flex-1 min-w-0 ${msg.author === 'Ahmed Mohamed' ? 'items-end' : 'items-start'} flex flex-col`}>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs font-medium text-foreground truncate">{msg.author}</p>
-                <p className="text-xs text-muted-foreground flex-shrink-0">{msg.timestamp}</p>
-              </div>
-              <div className={`px-3 py-2 rounded-lg max-w-[85%] shadow-sm ${msg.author === 'Ahmed Mohamed' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-secondary text-secondary-foreground rounded-bl-none'}`}>
-                <p className="text-xs sm:text-sm break-words">{msg.content}</p>
-              </div>
-            </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-full">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
-        ))}
+        ) : messages.length === 0 ? (
+          <div className="flex justify-center items-center h-full text-muted-foreground text-sm">
+            No messages yet. Start the conversation!
+          </div>
+        ) : (
+          messages.map((msg) => {
+            const isMe = msg.senderId === user?.id
+            return (
+              <div key={msg.id} className={`flex gap-2 sm:gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 ${isMe ? 'bg-primary' : 'bg-muted-foreground'}`}>
+                  {msg.senderAvatar}
+                </div>
+                <div className={`flex-1 min-w-0 ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-xs font-medium text-foreground truncate">{msg.senderName}</p>
+                    <p className="text-xs text-muted-foreground flex-shrink-0">
+                      {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                    </p>
+                  </div>
+                  <div className={`px-3 py-2 rounded-lg max-w-[85%] shadow-sm ${isMe ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-secondary text-secondary-foreground rounded-bl-none'}`}>
+                    <p className="text-xs sm:text-sm break-words">{msg.content}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        )}
 
         {/* Typing Indicator */}
         {isTyping && (
           <div className="flex gap-2 sm:gap-3">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold flex-shrink-0">
-              AH
+              ...
             </div>
             <div className="flex items-center gap-1 px-3 py-2 bg-secondary rounded-lg">
               <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
@@ -122,7 +113,7 @@ export function ProjectChatPanel() {
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Type a message..."
             className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -130,7 +121,7 @@ export function ProjectChatPanel() {
           <Button size="sm" variant="ghost" className="p-2 hover:bg-secondary flex-shrink-0 hidden sm:flex">
             <Paperclip className="w-4 h-4" />
           </Button>
-          <Button size="sm" onClick={handleSend} className="gap-1 flex-shrink-0">
+          <Button size="sm" onClick={handleSend} className="gap-1 flex-shrink-0" disabled={!newMessage.trim()}>
             <Send className="w-4 h-4" />
             <span className="hidden sm:inline">Send</span>
           </Button>

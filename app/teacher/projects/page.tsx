@@ -12,6 +12,7 @@ import { motion } from 'framer-motion'
 import { AnimatedCard } from '@/components/animations/animated-card'
 import { useModalManager } from '@/hooks/use-modal-manager'
 import { ProjectsService } from '@/services/service_projects'
+import { usePresence } from '@/hooks/use-presence'
 import type { ProjectBasic } from '@/models/project.model'
 
 export default function TeacherProjectsPage() {
@@ -30,17 +31,22 @@ export default function TeacherProjectsPage() {
     id: p.id,
     title: p.title,
     student: {
+      id: 'std001', // Using mock ID for presence
       name: studentNames[idx] || 'Student',
       email: studentEmails[idx] || 'student@edu',
-      avatar: studentNames[idx]?.split(' ').map(n => n[0]).join('') || 'ST',
+      avatar: studentNames[idx]?.split(' ').map((n: string) => n[0]).join('') || 'ST',
     },
     progress: p.progress,
     status: (p.progress > 70 ? 'on-track' : p.progress > 40 ? 'at-risk' : 'pending') as 'on-track' | 'at-risk' | 'completed' | 'pending',
     lastUpdate: '3 hours ago',
     nextDeadline: `Milestone ${Math.ceil(p.progress / 25)} - Feb ${25 + idx}`,
     unreadMessages: idx,
+    unreadMessages: idx,
     documentsCount: 3 + idx,
   }))
+
+  const studentIds = Array.from(new Set(enrichedProjects.map((p) => p.student.id)))
+  const { presenceMap } = usePresence(studentIds)
 
   const filteredProjects = enrichedProjects.filter(
     (project) =>
@@ -174,8 +180,15 @@ export default function TeacherProjectsPage() {
                         {project.title}
                       </h3>
                       <div className="flex items-center gap-2 mt-2">
-                        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
-                          {project.student.avatar}
+                        <div className="relative">
+                          <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
+                            {project.student.avatar}
+                          </div>
+                          <span 
+                            className={`w-3 h-3 absolute -bottom-0.5 -right-0.5 border-2 border-background rounded-full ${
+                              presenceMap[project.student.id]?.online ? 'bg-green-500' : 'bg-gray-400'
+                            }`}
+                          />
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">

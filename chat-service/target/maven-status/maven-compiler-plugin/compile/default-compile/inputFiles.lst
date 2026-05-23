@@ -1,0 +1,14 @@
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\ChatServiceApplication.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\controller\RoomController.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\dto\CreateRoomRequest.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\dto\NewMessageEvent.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\dto\ParticipantResponse.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\firebase\FirebaseConfig.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\firebase\FirebaseSyncService.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\model\ChatParticipant.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\model\ChatRoom.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\rabbitmq\ChatEventProducer.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\rabbitmq\RabbitMQConfig.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\repository\ChatParticipantRepository.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\repository\ChatRoomRepository.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\chat-service\src\main\java\com\pfe\chat\service\RoomOrchestratorService.java

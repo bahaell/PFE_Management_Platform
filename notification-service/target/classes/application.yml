@@ -23,13 +23,20 @@ spring:
     port: 5672
     username: guest
     password: guest
+    # ⚡ Fail-safe: service still starts even if RabbitMQ is down
+    connection-timeout: 5000
     listener:
       simple:
+        # Don't crash if queues are missing (RabbitMQ not running)
+        missing-queues-fatal: false
+        # Don't auto-start consumers — events still work when RabbitMQ comes up
+        auto-startup: false
         retry:
           enabled: true
-          initial-interval: 1000
+          initial-interval: 5000  # wait 5s before first retry
           max-attempts: 3
           multiplier: 2.0
+          max-interval: 30000     # max 30s between retries
 
 # ─── RabbitMQ logical config ───────────────────────────────────────────────
 rabbitmq:

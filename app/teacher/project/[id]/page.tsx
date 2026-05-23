@@ -176,7 +176,14 @@ export default function TeacherProjectPage() {
               </TabsContent>
 
               <TabsContent value="chat" className="h-full m-0 p-4 sm:p-6 data-[state=inactive]:hidden">
-                <ProjectChatPanel />
+                <ProjectChatPanel 
+                  projectId={projectMockData.project.id.toString()}
+                  participantsIds={[
+                    projectMockData.student.id.toString(), 
+                    projectMockData.teacher.id.toString(), 
+                    ...(projectMockData.jury?.map(j => j.id.toString()) || [])
+                  ]} 
+                />
               </TabsContent>
 
               <TabsContent value="tasks" className="h-full m-0 p-4 sm:p-6 overflow-hidden data-[state=inactive]:hidden">

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, CheckCheck, Inbox, Loader2, X } from "lucide-react"
 import { NotificationService } from "@/services/service_notifications"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { Notification } from "@/models/notification.model"
 import { formatDistanceToNow } from "date-fns"
 
@@ -114,34 +115,22 @@ function NotificationItem({
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 export function NotificationPanel({ userId }: NotificationPanelProps) {
   const [open, setOpen] = useState(false)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const queryClient = useQueryClient()
+
+  const { data: notifications = [], isLoading: loading, isError: error, refetch } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => NotificationService.getNotifications(userId),
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  const fetchNotifications = useCallback(async () => {
-    if (!userId) return
-    setLoading(true)
-    setError(false)
-    try {
-      const data = await NotificationService.getNotifications(userId)
-      setNotifications(data)
-    } catch {
-      setError(true)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    if (open) {
+      refetch()
     }
-  }, [userId])
-
-  // Fetch on mount and on panel open
-  useEffect(() => {
-    fetchNotifications()
-  }, [fetchNotifications])
-
-  useEffect(() => {
-    if (open) fetchNotifications()
-  }, [open, fetchNotifications])
+  }, [open, refetch])
 
   // Close on outside click
   useEffect(() => {
@@ -156,15 +145,17 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
 
   const handleMarkRead = async (id: string) => {
     await NotificationService.markAsRead(id)
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    queryClient.setQueryData(['notifications'], (old: Notification[] | undefined) =>
+      old ? old.map((n) => (n.id === id ? { ...n, read: true } : n)) : []
     )
   }
 
   const handleMarkAllRead = async () => {
     const unread = notifications.filter((n) => !n.read)
     await Promise.all(unread.map((n) => NotificationService.markAsRead(n.id)))
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    queryClient.setQueryData(['notifications'], (old: Notification[] | undefined) =>
+      old ? old.map((n) => ({ ...n, read: true })) : []
+    )
   }
 
   return (

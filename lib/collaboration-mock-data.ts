@@ -17,7 +17,7 @@ export const projectMockData: CollaborationData = {
     status: 'In Progress',
   },
   teacher: {
-    id: 1,
+    id: 'tch001',
     name: 'Dr. Ahmed Hassan',
     avatar: 'AH',
     role: 'Supervisor',
@@ -25,7 +25,7 @@ export const projectMockData: CollaborationData = {
     online: true,
   },
   student: {
-    id: 2,
+    id: 'std001',
     name: 'Ahmed Mohamed',
     avatar: 'AM',
     role: 'Student',

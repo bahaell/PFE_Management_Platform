@@ -15,6 +15,11 @@ public class RabbitMQConfig {
 
     public static final String EXCHANGE = "pfe.events.exchange";
 
+    // ─── Chat Exchange (produit par chat-service) ──────────────────────────────
+    public static final String CHAT_EXCHANGE = "chat.exchange";
+    public static final String CHAT_NOTIFICATION_QUEUE = "chat.notification.queue";
+    public static final String CHAT_ROUTING_KEY = "chat.event.new_message";
+
     @Value("${rabbitmq.queue.notification}") private String queueCommit;
     @Value("${rabbitmq.queue.subject}")      private String queueSubject;
     @Value("${rabbitmq.queue.subject-updated}") private String queueSubjectUpdated;
@@ -31,6 +36,7 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.user}")         private String queueUser;
     @Value("${rabbitmq.queue.deadline}")     private String queueDeadline;
     @Value("${rabbitmq.queue.dlq}")          private String queueDlq;
+    @Value("${rabbitmq.queue.chat-message:chat.notification.queue}") private String queueChatMessage;
 
     // ─── Exchange ─────────────────────────────────────────────────────────────
     @Bean
@@ -62,6 +68,30 @@ public class RabbitMQConfig {
     @Bean public Queue userQueue()            { return durableQueue(queueUser); }
     @Bean public Queue deadlineQueue()        { return durableQueue(queueDeadline); }
     @Bean public Queue deadLetterQueue()      { return QueueBuilder.durable(queueDlq).build(); }
+
+    // ─── Chat Queue (liée à chat.exchange, pas à pfe.events.exchange) ─────────
+    @Bean
+    public Queue chatNotificationQueue() {
+        return QueueBuilder.durable(CHAT_NOTIFICATION_QUEUE)
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", queueDlq)
+                .build();
+    }
+
+    @Bean
+    public TopicExchange chatExchange() {
+        return new TopicExchange(CHAT_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public Binding chatNotificationBinding() {
+        // Binding spécifique : chat.exchange → chat.notification.queue via routing key chat.event.new_message
+        // Le chat-service publie avec cette routing key pour chaque nouveau message Firestore.
+        return BindingBuilder
+                .bind(chatNotificationQueue())
+                .to(chatExchange())
+                .with(CHAT_ROUTING_KEY);
+    }
 
     // ─── Bindings ─────────────────────────────────────────────────────────────
     @Bean public Binding commitBinding()          { return bind(notificationQueue(), "commit.created"); }

@@ -8,8 +8,16 @@ export const NotificationService = {
    * GET /api/notifications/{userId}
    */
   async getNotifications(userId: string): Promise<Notification[]> {
+    if (!userId || userId.trim() === "") return []
+    
+    // Map mock string IDs to backend numeric IDs
+    let numericId = userId
+    if (userId === "std001") numericId = "1"
+    else if (userId === "tch001") numericId = "2"
+    else if (userId === "coo001") numericId = "3"
+
     try {
-      const res = await fetch(`${NOTIFICATION_SERVICE_URL}/notifications/${userId}`, {
+      const res = await fetch(`${NOTIFICATION_SERVICE_URL}/notifications/${numericId}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
@@ -27,8 +35,16 @@ export const NotificationService = {
    * GET /api/notifications/{userId}/unread
    */
   async getUnreadNotifications(userId: string): Promise<Notification[]> {
+    if (!userId || userId.trim() === "") return []
+    
+    // Map mock string IDs to backend numeric IDs
+    let numericId = userId
+    if (userId === "std001") numericId = "1"
+    else if (userId === "tch001") numericId = "2"
+    else if (userId === "coo001") numericId = "3"
+
     try {
-      const res = await fetch(`${NOTIFICATION_SERVICE_URL}/notifications/${userId}/unread`, {
+      const res = await fetch(`${NOTIFICATION_SERVICE_URL}/notifications/${numericId}/unread`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
@@ -64,10 +80,15 @@ export const NotificationService = {
    */
   async registerDeviceToken(userId: string, token: string): Promise<boolean> {
     try {
+      let numericId = userId
+      if (userId === "std001") numericId = "1"
+      else if (userId === "tch001") numericId = "2"
+      else if (userId === "coo001") numericId = "3"
+
       const res = await fetch(`${NOTIFICATION_SERVICE_URL}/devices`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: Number(userId), token }),
+        body: JSON.stringify({ userId: parseInt(numericId) || 1, token }),
       })
       return res.ok
     } catch (error) {

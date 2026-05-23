@@ -6,6 +6,7 @@ import { NextThemesProvider } from "@/providers/theme-provider"
 import { AcademicYearProvider } from "@/providers/academic-year-provider"
 import { ModalRenderer } from "@/components/modals/modal-renderer"
 import { QueryProvider } from "@/providers/query-provider"
+import { FirebaseProvider } from "@/providers/firebase-provider"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -46,8 +47,10 @@ export default function RootLayout({
           <AuthProvider>
             <AcademicYearProvider>
               <QueryProvider>
-                {children}
-                <ModalRenderer />
+                <FirebaseProvider>
+                  {children}
+                  <ModalRenderer />
+                </FirebaseProvider>
               </QueryProvider>
             </AcademicYearProvider>
           </AuthProvider>

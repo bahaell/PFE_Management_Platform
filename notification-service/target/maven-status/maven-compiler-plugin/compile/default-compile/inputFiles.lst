@@ -4,6 +4,7 @@ D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\event\BaseEvent.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\model\Notification.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\model\NotificationType.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\dto\ParticipantDto.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\event\DeadlineReminderEvent.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\controller\NotificationController.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\repository\DeviceTokenRepository.java
@@ -28,8 +29,10 @@ D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\repository\NotificationRepository.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\event\SubjectApplicationUpdatedEvent.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\event\DefenseRequestCreatedEvent.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\config\RestTemplateConfig.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\dto\CreateNotificationRequest.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\exception\GlobalExceptionHandler.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\service\NotificationService.java
+D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\event\NewChatMessageEvent.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\messaging\NotificationEventConsumer.java
 D:\PFE_Management_Platform\PFE_Management_Platform-main\notification-service\src\main\java\com\pfe\notification\event\UserCreatedEvent.java

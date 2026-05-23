@@ -1,13 +1,21 @@
 package com.pfe.notification.messaging;
 
 import com.pfe.notification.dto.CreateNotificationRequest;
+import com.pfe.notification.dto.ParticipantDto;
 import com.pfe.notification.event.*;
+import com.pfe.notification.config.RabbitMQConfig;
 import com.pfe.notification.model.NotificationType;
 import com.pfe.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -15,6 +23,10 @@ import org.springframework.stereotype.Component;
 public class NotificationEventConsumer {
 
     private final NotificationService notificationService;
+    private final RestTemplate restTemplate;
+
+    // URL du chat-service (idéalement à extraire dans application.yml via @Value)
+    private final String chatServiceUrl = "http://localhost:8086/api/chat";
 
     // ─────────────────────────────────────────────────────────────────────────
     // SUBJECT
@@ -229,6 +241,92 @@ public class NotificationEventConsumer {
                 .message("You have " + event.getDaysRemaining() + " day(s) left for: " + event.getDeadlineType())
                 .data(toData("projectId", event.getProjectId()))
                 .build());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CHAT MESSAGE (consommé depuis chat.exchange → chat.notification.queue)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Consomme les NewChatMessageEvent publiés par le chat-service.
+     *
+     * Pourquoi une queue séparée (chat.notification.queue) ?
+     * → Chaque microservice consommateur doit avoir SA PROPRE queue sur l'exchange.
+     * → Si 2 services partagent la même queue, un seul reçoit le message (load balancing).
+     * → Avec des queues séparées, TOUS les abonnés reçoivent l'événement (pub/sub pattern).
+     *
+     * Protection contre les doublons (Idempotence) :
+     * → Le messageId de Firestore est inclus dans le payload.
+     * → Si un futur cache Redis est ajouté, on pourra vérifier ce messageId
+     *    avant de créer la notification pour éviter les doublons en cas de retry.
+     */
+    @RabbitListener(queues = RabbitMQConfig.CHAT_NOTIFICATION_QUEUE)
+    public void handleNewChatMessage(NewChatMessageEvent event) {
+        log.info("💬 [chat.event.new_message] roomId={} from senderId={} messageId={}",
+                event.getRoomId(), event.getSenderId(), event.getMessageId());
+
+        // Tronquer le contenu pour le preview de notification (80 chars max)
+        String preview = event.getContent() != null && event.getContent().length() > 80
+                ? event.getContent().substring(0, 77) + "..."
+                : event.getContent();
+
+        // Déterminer le label du rôle de l'expéditeur
+        String senderLabel = buildSenderLabel(event.getSenderRole(), event.getSenderName());
+
+        // Construire le data payload pour que le frontend puisse naviguer vers la bonne room
+        String data = "{\"messageId\":\"" + event.getMessageId() + "\","
+                    + "\"roomId\":\"" + event.getRoomId() + "\","
+                    + "\"projectId\":\"" + event.getProjectId() + "\"}";
+
+        // 1. Récupérer les participants depuis chat-service via HTTP (RestTemplate)
+        String url = chatServiceUrl + "/rooms/" + event.getRoomId() + "/participants";
+        
+        try {
+            ResponseEntity<List<ParticipantDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<ParticipantDto>>() {}
+            );
+
+            List<ParticipantDto> participants = response.getBody();
+            if (participants != null && !participants.isEmpty()) {
+                log.info("📢 Récupération de {} participants pour la room {}", participants.size(), event.getRoomId());
+                
+                // 2. Notifier tous les membres SAUF l'expéditeur
+                for (ParticipantDto participant : participants) {
+                    if (!participant.getUserId().equals(event.getSenderId())) {
+                        // Convert mock string IDs (std001) to numeric IDs (1, 2, 3) to match PostgreSQL schema
+                        String userIdStr = participant.getUserId();
+                        long numericId = 1L; // default
+                        if ("std001".equals(userIdStr)) numericId = 1L;
+                        else if ("tch001".equals(userIdStr)) numericId = 2L;
+                        else if ("coo001".equals(userIdStr)) numericId = 3L;
+                        else {
+                            try { numericId = Long.parseLong(userIdStr); } catch (Exception e) {}
+                        }
+
+                        notificationService.createNotification(CreateNotificationRequest.builder()
+                                .userId(numericId)
+                                .type(NotificationType.NEW_MESSAGE)
+                                .title("💬 " + senderLabel)
+                                .message(preview)
+                                .data(data)
+                                .build());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de la récupération des participants de la room {} : {}", event.getRoomId(), e.getMessage());
+        }
+    }
+
+    private String buildSenderLabel(String role, String name) {
+        if (name != null && !name.isBlank()) return name;
+        if ("student".equalsIgnoreCase(role)) return "Un étudiant";
+        if ("teacher".equalsIgnoreCase(role)) return "Un encadreur";
+        if ("coordinator".equalsIgnoreCase(role)) return "Le coordinateur";
+        return "Quelqu'un";
     }
 
     // ─────────────────────────────────────────────────────────────────────────

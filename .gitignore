@@ -34,3 +34,5 @@ notification-service/src/main/resources/firebase-service-account.json.json
 notification-service/src/main/resources/application-local.yml
 notification-service/logs.txt
 notification-service/target/
+# Firebase Admin Key
+firebase-key.json

@@ -2,9 +2,10 @@
 
 import { Users, Circle, Calendar, Clock, MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { usePresence } from '@/hooks/use-presence'
 
 interface Participant {
-  id: number
+  id: string | number
   name: string
   avatar: string
   role: string
@@ -38,22 +39,34 @@ export function ParticipantsPanel({
   ],
   defense,
 }: ParticipantsPanelProps) {
-  const renderParticipant = (participant: Participant) => (
-    <div key={participant.id} className="flex items-center gap-3 pb-3 border-b border-border last:border-b-0 last:pb-0 mb-3 last:mb-0">
-      <div className="relative">
-        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-white">
-          {participant.avatar}
-        </div>
-        <Circle
-          className={`w-3 h-3 absolute -bottom-0.5 -right-0.5 ${participant.online ? 'text-green-500 fill-green-500' : 'text-gray-400 fill-gray-400'}`}
-        />
+  const allParticipantIds = [
+    teacher?.id.toString(),
+    student?.id.toString(),
+    ...(jury?.map(j => j.id.toString()) || [])
+  ].filter(Boolean) as string[]
+
+  const { presenceMap } = usePresence(allParticipantIds)
+
+  const renderParticipant = (participant: Participant) => {
+    const isOnline = presenceMap[participant.id.toString()]?.online || false
+    
+    return (
+      <div key={participant.id} className="flex items-center gap-3 pb-3 border-b border-border last:border-b-0 last:pb-0 mb-3 last:mb-0">
+        <div className="relative">
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-white">
+            {participant.avatar}
+          </div>
+          <Circle
+            className={`w-3 h-3 absolute -bottom-0.5 -right-0.5 ${isOnline ? 'text-green-500 fill-green-500' : 'text-gray-400 fill-gray-400'}`}
+          />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">{participant.name}</p>
         <p className="text-xs text-muted-foreground">{participant.role}</p>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
