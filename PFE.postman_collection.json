@@ -1,0 +1,841 @@
+{
+  "info": {
+    "_postman_id": "7e6802ce-0a6c-40e8-93ca-6f5c887912b9",
+    "name": "PFE",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "33936192"
+  },
+  "item": [
+    {
+      "name": "User service",
+      "item": [
+        {
+          "name": "login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"ahmed.youssef@student.edu\",\r\n  \"password\": \"Password123!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "skills",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhaG1lZC55b3Vzc2VmQHN0dWRlbnQuZWR1IiwiaWF0IjoxNzc2Nzc3NjgzLCJleHAiOjE3NzY4NjQwODMsInJvbGUiOiJTVFVERU5UIn0.ltqOAGH4KcOMznSbKqFqjr5hm8KWGXILFeoQ-DW0zVY",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"Python\", \"category\": \"Language\", \"relevance\": 90 },\r\n  ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/users/me/skills",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "users",
+                "me",
+                "skills"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Mme Mariem K.\",\r\n  \"email\": \"mariem.k@university.tn\",\r\n  \"password\": \"Password123!\",\r\n  \"phone\": \"+216 71 123 456\",\r\n  \"gender\": \"Female\",\r\n  \"birthdate\": \"1980-11-10\",\r\n  \"avatar\": null,\r\n  \"role\": \"coordinator\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get student by level (token admin)",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhaG1lZC55b3Vzc2VmQHN0dWRlbnQuZWR1IiwiaWF0IjoxNzc2Nzc3NjgzLCJleHAiOjE3NzY4NjQwODMsInJvbGUiOiJTVFVERU5UIn0.ltqOAGH4KcOMznSbKqFqjr5hm8KWGXILFeoQ-DW0zVY",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/users/students?level=M2&department=Software%20Engineering&academicYear=2024-2025",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "users",
+                "students"
+              ],
+              "query": [
+                {
+                  "key": "level",
+                  "value": "M2"
+                },
+                {
+                  "key": "department",
+                  "value": "Software%20Engineering"
+                },
+                {
+                  "key": "academicYear",
+                  "value": "2024-2025"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Profil",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhaG1lZC55b3Vzc2VmQHN0dWRlbnQuZWR1IiwiaWF0IjoxNzc2Nzc3NjgzLCJleHAiOjE3NzY4NjQwODMsInJvbGUiOiJTVFVERU5UIn0.ltqOAGH4KcOMznSbKqFqjr5hm8KWGXILFeoQ-DW0zVY",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/users/me/skills",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "users",
+                "me",
+                "skills"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get teacher (token admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhaG1lZC55b3Vzc2VmQHN0dWRlbnQuZWR1IiwiaWF0IjoxNzc2Nzc3NjgzLCJleHAiOjE3NzY4NjQwODMsInJvbGUiOiJTVFVERU5UIn0.ltqOAGH4KcOMznSbKqFqjr5hm8KWGXILFeoQ-DW0zVY",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/users/teachers?minYears=10&department=Computer%20Science",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "users",
+                "teachers"
+              ],
+              "query": [
+                {
+                  "key": "minYears",
+                  "value": "10"
+                },
+                {
+                  "key": "department",
+                  "value": "Computer%20Science"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "availibility",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "verify availibility",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Project service",
+      "item": [
+        {
+          "name": "Company",
+          "item": [
+            {
+              "name": "Create Company",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"name\": \"Global Tech\",\r\n  \"description\": \"Innovative software house.\",\r\n  \"email\": \"contact@globaltech.com\",\r\n  \"phone\": \"+213 555 12 34 56\",\r\n  \"country\": \"Algeria\",\r\n  \"city\": \"Algiers\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/companies",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "companies"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "approve company",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/companies/ea111f9e-3560-49a9-b79e-17da4b8303ca/approve",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "companies",
+                    "ea111f9e-3560-49a9-b79e-17da4b8303ca",
+                    "approve"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get company by id",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/companies/890de7aa-735a-41ef-8596-aef41665786d",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "companies",
+                    "890de7aa-735a-41ef-8596-aef41665786d"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "update Company",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/companies/890de7aa-735a-41ef-8596-aef41665786d",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "companies",
+                    "890de7aa-735a-41ef-8596-aef41665786d"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "deleteCompany",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/companies/890de7aa-735a-41ef-8596-aef41665786d",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "companies",
+                    "890de7aa-735a-41ef-8596-aef41665786d"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get companies",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/companies/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "companies",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "blacklist Company",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"reason\": \"Non-compliance with academic standards\"\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/companies/ea111f9e-3560-49a9-b79e-17da4b8303ca/blacklist",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "companies",
+                    "ea111f9e-3560-49a9-b79e-17da4b8303ca",
+                    "blacklist"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "projects",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhaG1lZC55b3Vzc2VmQHN0dWRlbnQuZWR1IiwiaWF0IjoxNzc2Nzc3NjgzLCJleHAiOjE3NzY4NjQwODMsInJvbGUiOiJTVFVERU5UIn0.ltqOAGH4KcOMznSbKqFqjr5hm8KWGXILFeoQ-DW0zVY",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/projects",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "projects"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ressource Service",
+      "item": [
+        {
+          "name": "get rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/rooms",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "rooms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create room",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Salle C22\",\r\n  \"capacity\": 50,\r\n  \"location\": \"Bloc C – 2ème étage\",\r\n  \"building\": \"Bloc C\",\r\n  \"floor\": \"2ème étage\",\r\n  \"status\": \"maintenance\",\r\n  \"description\": \"Room under maintenance.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/rooms",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "rooms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get room by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Salle C22\",\r\n  \"capacity\": 50,\r\n  \"location\": \"Bloc C – 2ème étage\",\r\n  \"building\": \"Bloc C\",\r\n  \"floor\": \"2ème étage\",\r\n  \"status\": \"maintenance\",\r\n  \"description\": \"Room under maintenance.\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/rooms/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "rooms",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "available room",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Salle C22\",\r\n  \"capacity\": 50,\r\n  \"location\": \"Bloc C – 2ème étage\",\r\n  \"building\": \"Bloc C\",\r\n  \"floor\": \"2ème étage\",\r\n  \"status\": \"maintenance\",\r\n  \"description\": \"Room under maintenance.\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/rooms/available",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "rooms",
+                "available"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add equipment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"type\": \"projector\",\r\n  \"present\": true,\r\n  \"status\": \"ok\",\r\n  \"roomId\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/equipment",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "equipment"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get equipment by type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/equipment/type/projector",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "equipment",
+                "type",
+                "projector"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get equipment in a room",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/equipment/room/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "equipment",
+                "room",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete equipment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/equipment/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "equipment",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update status of an equipment",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"type\": \"projector\",\r\n  \"present\": true,\r\n  \"status\": \"maintenance\",\r\n  \"roomId\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/equipment/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "equipment",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scheduling Service",
+      "item": [
+        {
+          "name": "verify job",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8087/api/schedule/result/1779536580920",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8087",
+              "path": [
+                "api",
+                "schedule",
+                "result",
+                "1779536580920"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create pending request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"projectId\": \"proj-1\",\r\n  \"projectName\": \"AI Traffic System\",\r\n  \"studentName\": \"Ahmed Youssef\",\r\n  \"assignedTeacherName\": \"Dr. Sami Ahmed\",\r\n  \"dateRangeFrom\": \"2026-04-20\",\r\n  \"dateRangeTo\": \"2026-04-30\",\r\n  \"priority\": \"high\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/schedule/pending",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "schedule",
+                "pending"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "verify pending",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/schedule/pending",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "schedule",
+                "pending"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "schedule solve",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\r\n  {\r\n    \"projectId\": 1,\r\n    \"juryMemberIds\": [\r\n      \"e1fa8e17-5afc-41a5-8566-3e2604fcf4b3\",\r\n      \"ff16fdda-e632-4d5e-ae65-6691395b5040\"\r\n    ],\r\n    \"preferredRoomId\": 1,\r\n    \"durationMinutes\": 30,\r\n    \"notBefore\": \"2026-04-26T08:00:00\",\r\n    \"notAfter\": \"2026-04-30T18:00:00\"\r\n  },\r\n  {\r\n    \"projectId\": 2,\r\n    \"juryMemberIds\": [\r\n      \"2\",\r\n      \"3\"\r\n    ],\r\n    \"preferredRoomId\": null,\r\n    \"durationMinutes\": 30,\r\n    \"notBefore\": \"2026-04-26T08:00:00\",\r\n    \"notAfter\": \"2026-04-30T18:00:00\"\r\n  }\r\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/schedule/solve",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "schedule",
+                "solve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "statistiques",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "creation de défense",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
