@@ -96,9 +96,17 @@ public class SchedulingService {
         String supervisorName = null;
 
         try {
+<<<<<<< Updated upstream
             ProjectsClient.ProjectDTO project =
                     projectsClient.getById(r.getProjectId());
             projectName    = project.name();
+=======
+            ProjectsClient.ProjectDTO project = projectsClient.getById(r.getProjectId());
+            projectName = project.title() != null ? project.title() : project.name();
+            if (projectName == null) {
+                projectName = "Unknown";
+            }
+>>>>>>> Stashed changes
             supervisorName = project.supervisorName();
         } catch (Exception e) {
             log.warn("Could not fetch project {} — using defaults: {}",
@@ -109,33 +117,34 @@ public class SchedulingService {
         List<String> juryNames  = new ArrayList<>();
         List<String> juryAvails = new ArrayList<>();
 
-        if (r.getJuryMemberIds() != null) {
-            for (Long juryId : r.getJuryMemberIds()) {
-                try {
-                    // Nom du juré
-                    UserClient.UserDto user =
-                            userClient.getUserById(String.valueOf(juryId));
-                    juryNames.add(user.name());
+       if (r.getJuryMemberIds() != null) {
+    for (String juryId : r.getJuryMemberIds()) {
+        log.info(">>> Fetching jury member id='{}'", juryId);
+        try {
+            UserClient.UserDto user = userClient.getUserById(juryId);
+            log.info(">>> Got user: name='{}' email='{}'", user.name(), user.email());
 
-                    // Disponibilités → format "HH:mm_HH:mm"
-                    // ex: "08:00_12:00", "14:00_18:00"
-                    List<String> avails = userClient
-                            .getTeacherAvailability(String.valueOf(juryId))
-                            .stream()
-                            .map(a -> a.start() + "_" + a.end())
-                            .collect(Collectors.toList());
-
-                    juryAvails.addAll(avails);
-
-                    log.debug("Jury member {} ({}) — {} availabilities",
-                            juryId, user.name(), avails.size());
-
-                } catch (Exception e) {
-                    log.warn("Could not fetch jury member {} — skipping: {}",
-                            juryId, e.getMessage());
-                }
+            if (user.name() != null) {
+                juryNames.add(user.name());
             }
+
+            List<UserClient.TeacherAvailabilityDto> avails =
+                    userClient.getTeacherAvailability(juryId);
+
+            log.info(">>> Availabilities for '{}': count={}", juryId, avails.size());
+
+            avails.stream()
+                    .map(a -> a.start() + "_" + a.end())
+                    .forEach(juryAvails::add);
+
+        } catch (Exception e) {
+            log.error(">>> FAILED for jury id='{}' — [{}] {}",
+                    juryId,
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
         }
+    }
+}
 
         return DefenseSession.builder()
                 .projectId(r.getProjectId())

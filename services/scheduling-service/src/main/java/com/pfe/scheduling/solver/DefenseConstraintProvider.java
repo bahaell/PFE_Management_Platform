@@ -23,6 +23,7 @@ public class DefenseConstraintProvider implements ConstraintProvider {
             roomConflict(factory),
             supervisorConflict(factory),
             juryAvailabilityViolation(factory),
+            juryConflict(factory),
             // ── SOFT constraints ─────────────────────────────────
             preferMorningSlots(factory),
             preferPreferredRoom(factory)
@@ -59,6 +60,21 @@ public class DefenseConstraintProvider implements ConstraintProvider {
                         !b.getSupervisorName().isBlank())
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Supervisor conflict");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  HARD 3 — deux sessions ne peuvent pas partager
+    //           un membre du jury sur le même créneau
+    // ─────────────────────────────────────────────────────────────
+    private Constraint juryConflict(ConstraintFactory factory) {
+        return factory.forEachUniquePair(DefenseSession.class,
+                Joiners.equal(DefenseSession::getTimeSlot))
+                .filter((a, b) ->
+                        a.getJuryMemberIds() != null &&
+                        b.getJuryMemberIds() != null &&
+                        a.getJuryMemberIds().stream().anyMatch(id -> b.getJuryMemberIds().contains(id)))
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Jury conflict");
     }
 
     // ─────────────────────────────────────────────────────────────

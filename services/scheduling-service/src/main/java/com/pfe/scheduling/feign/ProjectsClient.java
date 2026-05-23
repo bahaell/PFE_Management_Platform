@@ -20,7 +20,7 @@ public interface ProjectsClient {
      * GET /api/projects/{id}
      */
     @GetMapping("/api/projects/{id}")
-    ProjectDTO getById(@PathVariable("id") Long id);
+    ProjectDTO getById(@PathVariable("id") String id);
 
     /**
      * Liste tous les projets qui doivent être planifiés (status = PENDING_DEFENSE).
@@ -33,7 +33,8 @@ public interface ProjectsClient {
 
     // ── DTO inline (inner record) ────────────────────────────────
     record ProjectDTO(
-            Long id,
+            String id,
+            String title,
             String name,
             String status, // ACTIVE | PENDING_DEFENSE | COMPLETED
             String supervisorName) {

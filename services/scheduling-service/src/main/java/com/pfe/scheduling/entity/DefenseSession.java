@@ -12,17 +12,14 @@ import java.util.List;
 public class DefenseSession {
 
     @PlanningId
-    private Long projectId;
+    private String projectId;           // UUID → String, not Long
 
     private String projectName;
     private String supervisorName;
 
-    private List<Long>   juryMemberIds;
-    private List<String> juryMemberNames;       // ← noms récupérés via UserClient
-
-    // disponibilités de chaque juré : "MONDAY_08:00_12:00"
-    // format simple pour que Timefold puisse comparer
-    private List<String> juryAvailabilities;    // ← nouveau
+    private List<String> juryMemberIds;
+    private List<String> juryMemberNames;
+    private List<String> juryAvailabilities;
 
     private int  durationMinutes;
     private Long preferredRoomId;

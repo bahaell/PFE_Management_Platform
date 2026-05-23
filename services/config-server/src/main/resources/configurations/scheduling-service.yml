@@ -21,6 +21,9 @@ services:
     url: http://localhost:8086
   projects:
     url: http://localhost:8083
+  user:
+    url: http://localhost:8082
+internal-token: ${INTERNAL_SERVICE_TOKEN:} 
 
 timefold:
   solver:

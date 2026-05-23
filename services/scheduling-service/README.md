@@ -24,8 +24,12 @@ POST http://localhost:8082/api/auth/register
 ```json
 {
   "name": "Dr. Sami Ahmed",
-  "email": "sami@uni.tn",
-  "password": "password123",
+  "email": "sami.ah262med@university.edu",
+  "password": "Password123!",
+  "phone": "+216 98 123 456",
+  "gender": "Male",
+  "birthdate": "1975-03-20",
+  "avatar": "SA",
   "role": "teacher"
 }
 ```
@@ -73,8 +77,12 @@ POST http://localhost:8082/api/auth/register
 ```json
 {
   "name": "Dr. Hatem Hassan",
-  "email": "hatem@uni.tn",
-  "password": "password123",
+  "email": "ha78855tem@uni.tn",
+  "password": "Password123!",
+  "phone": "+216 98 765 432",
+  "gender": "Male",
+  "birthdate": "1980-06-15",
+  "avatar": "HH",
   "role": "teacher"
 }
 ```
@@ -103,24 +111,26 @@ POST http://localhost:8086/api/rooms
 ```
 ```json
 {
-  "name": "Salle A101",
-  "capacity": 30,
-  "hasProjector": true,
-  "hasWhiteboard": true,
-  "building": "Bloc A",
-  "available": true
+  "name": "Salle B2602",
+  "capacity": 20,
+  "location": "Bloc B – 2ème étage",
+  "building": "Bloc B",
+  "floor": "2ème étage",
+  "status": "available",
+  "description": "Salle avec tableau blanc, sans projecteur."
 }
 ```
 
 2ème salle :
 ```json
 {
-  "name": "Salle B202",
+  "name": "Salle B1602",
   "capacity": 20,
-  "hasProjector": false,
-  "hasWhiteboard": true,
-  "building": "Bloc B",
-  "available": true
+  "location": "Bloc A – 2ème étage",
+  "building": "Bloc A",
+  "floor": "2ème étage",
+  "status": "available",
+  "description": "Salle avec tableau blanc, sans projecteur."
 }
 ```
 
@@ -180,16 +190,16 @@ POST http://localhost:8087/api/schedule/solve
 ```json
 [
   {
-    "projectId": 1,
-    "juryMemberIds": [1, 2],
-    "preferredRoomId": 1,
+    "projectId": "0771ba71-c2ba-4c8c-a578-b98c00d2c95b",
+    "juryMemberIds": ["e0250803-0e56-4fa6-995e-5c7cf6678836", "71219b51-50c1-47f6-ad10-0ad57e704f99"],
+    "preferredRoomId": 6,
     "durationMinutes": 30,
     "notBefore": "2026-04-26T08:00:00",
     "notAfter": "2026-04-30T18:00:00"
   },
   {
-    "projectId": 2,
-    "juryMemberIds": [2, 3],
+    "projectId": "eee",
+    "juryMemberIds": ["e0250803-0e56-4fa6-995e-5c7cf6678836", "gh"],
     "preferredRoomId": null,
     "durationMinutes": 30,
     "notBefore": "2026-04-26T08:00:00",
@@ -216,29 +226,193 @@ GET http://localhost:8087/api/schedule/result/1745100000000
 **Résultat attendu :**
 ```json
 {
-  "sessions": [
-    {
-      "projectId": 1,
-      "projectName": "AI Traffic System",
-      "timeSlot": {
-        "date": "2026-04-26",
-        "startTime": "08:00",
-        "endTime": "10:00"
-      },
-      "roomId": 1
-    },
-    {
-      "projectId": 2,
-      "projectName": "Blockchain Voting",
-      "timeSlot": {
-        "date": "2026-04-26",
-        "startTime": "10:00",
-        "endTime": "12:00"
-      },
-      "roomId": 2
+    "timeSlots": [
+        {
+            "id": "53538802-d05d-417d-84db-f4afecb1e812",
+            "date": "2026-05-23",
+            "startTime": "08:00:00",
+            "endTime": "10:00:00"
+        },
+        {
+            "id": "fe9b51aa-091f-4774-832c-9f2d8399247f",
+            "date": "2026-05-23",
+            "startTime": "10:00:00",
+            "endTime": "12:00:00"
+        },
+        {
+            "id": "a4f7beed-f543-498e-910d-8e4f9cfbc270",
+            "date": "2026-05-23",
+            "startTime": "14:00:00",
+            "endTime": "16:00:00"
+        },
+        {
+            "id": "f79199d4-bd16-492d-bf70-61213a227aac",
+            "date": "2026-05-23",
+            "startTime": "16:00:00",
+            "endTime": "18:00:00"
+        },
+        {
+            "id": "8c4d9f9a-8ee4-42c5-a3d1-366589cdeaf7",
+            "date": "2026-05-24",
+            "startTime": "08:00:00",
+            "endTime": "10:00:00"
+        },
+        {
+            "id": "9f366d31-2dd8-4752-a744-edd53a96c2a0",
+            "date": "2026-05-24",
+            "startTime": "10:00:00",
+            "endTime": "12:00:00"
+        },
+        {
+            "id": "d09a66b3-eba5-463f-9fb1-ac22aee1f110",
+            "date": "2026-05-24",
+            "startTime": "14:00:00",
+            "endTime": "16:00:00"
+        },
+        {
+            "id": "0f703ed6-fa7f-4bd4-a8cf-584c182ef8cb",
+            "date": "2026-05-24",
+            "startTime": "16:00:00",
+            "endTime": "18:00:00"
+        },
+        {
+            "id": "3a48f6ce-9721-4349-916a-4cf7f3cf96f6",
+            "date": "2026-05-25",
+            "startTime": "08:00:00",
+            "endTime": "10:00:00"
+        },
+        {
+            "id": "2c5d2e79-1926-4050-8265-9f27068b5b25",
+            "date": "2026-05-25",
+            "startTime": "10:00:00",
+            "endTime": "12:00:00"
+        },
+        {
+            "id": "322136c7-a8ba-4fc0-9ecb-ecd7ec3e8e4f",
+            "date": "2026-05-25",
+            "startTime": "14:00:00",
+            "endTime": "16:00:00"
+        },
+        {
+            "id": "c0aa1ae2-326e-42a5-9b6b-269f4addb014",
+            "date": "2026-05-25",
+            "startTime": "16:00:00",
+            "endTime": "18:00:00"
+        },
+        {
+            "id": "fe222990-0aa3-4401-bcb9-f7666a8a8616",
+            "date": "2026-05-26",
+            "startTime": "08:00:00",
+            "endTime": "10:00:00"
+        },
+        {
+            "id": "d09ccdda-94b2-4729-8be2-23b07e5d6067",
+            "date": "2026-05-26",
+            "startTime": "10:00:00",
+            "endTime": "12:00:00"
+        },
+        {
+            "id": "16853738-93dd-4258-a283-3de578678567",
+            "date": "2026-05-26",
+            "startTime": "14:00:00",
+            "endTime": "16:00:00"
+        },
+        {
+            "id": "eeb9ee1f-9c32-4e4c-814f-59c51bac256d",
+            "date": "2026-05-26",
+            "startTime": "16:00:00",
+            "endTime": "18:00:00"
+        },
+        {
+            "id": "f30f4611-051f-436f-9be6-4f15a4c34474",
+            "date": "2026-05-27",
+            "startTime": "08:00:00",
+            "endTime": "10:00:00"
+        },
+        {
+            "id": "202d1e57-2b34-4300-be68-86b6f04a29ed",
+            "date": "2026-05-27",
+            "startTime": "10:00:00",
+            "endTime": "12:00:00"
+        },
+        {
+            "id": "a74927e9-1642-4118-a5ef-b7b6a44429c9",
+            "date": "2026-05-27",
+            "startTime": "14:00:00",
+            "endTime": "16:00:00"
+        },
+        {
+            "id": "d03bc372-40a0-4faa-8aeb-932e6ba2a973",
+            "date": "2026-05-27",
+            "startTime": "16:00:00",
+            "endTime": "18:00:00"
+        }
+    ],
+    "roomIds": [
+        1,
+        2,
+        6
+    ],
+    "sessions": [
+        {
+            "projectId": "0771ba71-c2ba-4c8c-a578-b98c00d2c95b",
+            "projectName": "Blockchain Voting Platform",
+            "supervisorName": null,
+            "juryMemberIds": [
+                "e0250803-0e56-4fa6-995e-5c7cf6678836",
+                "71219b51-50c1-47f6-ad10-0ad57e704f99"
+            ],
+            "juryMemberNames": [
+                "Dr. Sami Ahmed",
+                "Dr. Hatem Hassan"
+            ],
+            "juryAvailabilities": [
+                "14:00_18:00",
+                "08:00_18:00"
+            ],
+            "durationMinutes": 30,
+            "preferredRoomId": 6,
+            "timeSlot": {
+                "id": "53538802-d05d-417d-84db-f4afecb1e812",
+                "date": "2026-05-23",
+                "startTime": "08:00:00",
+                "endTime": "10:00:00"
+            },
+            "roomId": 6
+        },
+        {
+            "projectId": "eee",
+            "projectName": "Unknown",
+            "supervisorName": null,
+            "juryMemberIds": [
+                "e0250803-0e56-4fa6-995e-5c7cf6678836",
+                "gh"
+            ],
+            "juryMemberNames": [
+                "Dr. Sami Ahmed"
+            ],
+            "juryAvailabilities": [
+                "14:00_18:00"
+            ],
+            "durationMinutes": 30,
+            "preferredRoomId": null,
+            "timeSlot": {
+                "id": "a4f7beed-f543-498e-910d-8e4f9cfbc270",
+                "date": "2026-05-23",
+                "startTime": "14:00:00",
+                "endTime": "16:00:00"
+            },
+            "roomId": 1
+        }
+    ],
+    "score": {
+        "feasible": true,
+        "hardScore": 0,
+        "initScore": 0,
+        "softScore": -1,
+        "solutionInitialized": true,
+        "zero": false
     }
-  ],
-  "score": "0hard/0soft"   ← 0 violations = solution parfaite
 }
 ```
 
