@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
-import { FileUp, BookOpen, Info, Users } from 'lucide-react'
+import { FileUp, BookOpen, Info, Users, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CollapsibleSidebar } from '@/components/collaboration/collapsible-sidebar'
 import { ProjectInfoSidebar } from '@/components/collaboration/project-info-sidebar'
@@ -13,19 +15,42 @@ import { ProjectChatPanel } from '@/components/collaboration/project-chat-panel'
 import { ProjectKanban } from '@/components/collaboration/project-kanban'
 import { DocumentVersionsPanel } from '@/components/collaboration/document-versions-panel'
 import { ActivityTimeline } from '@/components/collaboration/activity-timeline'
+import { ProjectsService } from '@/services/service_projects'
 import { projectMockData } from '@/lib/collaboration-mock-data'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 export default function TeacherProjectPage() {
-  const hasProject = true
+  const params = useParams()
+  const projectId = params?.id as string
+  const juryParticipants = projectMockData.jury.map((member, index) => ({
+    id: Number(member.teacher.id) || index + 1,
+    name: member.teacher.name,
+    avatar: member.teacher.avatar || member.teacher.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(),
+    role: member.role === 'president' ? 'Jury President' : 'Jury Member',
+    online: false,
+  }))
   const [activeTab, setActiveTab] = useState('overview')
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
-  
   const [leftMobileOpen, setLeftMobileOpen] = useState(false)
   const [rightMobileOpen, setRightMobileOpen] = useState(false)
 
-  if (!hasProject) {
+  const { data: project, isLoading, isError } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: () => ProjectsService.getProjectById(projectId),
+    enabled: !!projectId,
+    retry: false,
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!project || isError) {
     return (
       <div className="p-4 sm:p-6">
         <PageHeader
@@ -44,11 +69,11 @@ export default function TeacherProjectPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-y-auto">
-      <div className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-2">
+      <div className="shrink-0 px-4 sm:px-6 pt-4 pb-2">
         <div className="flex items-start justify-between gap-4">
           <PageHeader
-            title={`${projectMockData.project.title} - ${projectMockData.student.name}`}
-            description={projectMockData.project.description}
+            title={`${project.title} - ${projectMockData.student.name}`}
+            description={project.description}
           />
           
           <div className="flex gap-2 lg:hidden">
@@ -64,7 +89,7 @@ export default function TeacherProjectPage() {
                 </SheetHeader>
                 <div className="mt-4">
                   <ProjectInfoSidebar
-                    project={projectMockData.project}
+                    project={project}
                     teacher={projectMockData.teacher}
                     student={projectMockData.student}
                   />
@@ -84,10 +109,9 @@ export default function TeacherProjectPage() {
                 </SheetHeader>
                 <div className="mt-4">
                   <ParticipantsPanel
-                    project={projectMockData.project}
                     teacher={projectMockData.teacher}
                     student={projectMockData.student}
-                    jury={projectMockData.jury}
+                    jury={juryParticipants}
                     defense={projectMockData.defense}
                   />
                 </div>
@@ -99,7 +123,7 @@ export default function TeacherProjectPage() {
 
       <div className="flex-1 flex gap-4 px-4 sm:px-6 pb-4 min-h-0">
         <div className={cn(
-          "hidden lg:block flex-shrink-0 transition-all duration-300",
+          "hidden lg:block shrink-0 transition-all duration-300",
           leftCollapsed ? "w-14" : "w-64 xl:w-72"
         )}>
           <div className="h-full overflow-y-auto rounded-lg border border-border bg-card shadow-sm">
@@ -110,7 +134,7 @@ export default function TeacherProjectPage() {
             >
               <div className="p-4">
                 <ProjectInfoSidebar
-                  project={projectMockData.project}
+                  project={project}
                   teacher={projectMockData.teacher}
                   student={projectMockData.student}
                 />
@@ -121,7 +145,7 @@ export default function TeacherProjectPage() {
 
         <div className="flex-1 min-w-0 overflow-y-auto rounded-lg border border-border bg-card shadow-sm">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-            <div className="flex-shrink-0 border-b border-border overflow-x-auto">
+            <div className="shrink-0 border-b border-border overflow-x-auto">
               <TabsList className="inline-flex h-auto w-full lg:grid lg:grid-cols-5 rounded-none border-0 bg-transparent p-0">
                 <TabsTrigger value="overview" className="whitespace-nowrap rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm">Overview</TabsTrigger>
                 <TabsTrigger value="chat" className="whitespace-nowrap rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 text-sm">Chat</TabsTrigger>
@@ -144,7 +168,7 @@ export default function TeacherProjectPage() {
                         </div>
                         <div>
                           <p className="text-sm sm:text-base text-muted-foreground">Completion Rate</p>
-                          <p className="font-semibold text-foreground">{projectMockData.project.progress}%</p>
+                          <p className="font-semibold text-foreground">{project.progress}%</p>
                         </div>
                         <div>
                           <p className="text-sm sm:text-base text-muted-foreground">Last Update</p>
@@ -160,7 +184,7 @@ export default function TeacherProjectPage() {
 
                   <div className="bg-background rounded-lg border border-border p-4 sm:p-6">
                     <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">Project Description</h3>
-                    <p className="text-xs sm:text-sm text-foreground leading-relaxed">{projectMockData.project.description}</p>
+                    <p className="text-xs sm:text-sm text-foreground leading-relaxed">{project.description}</p>
                   </div>
 
                   <div className="bg-background rounded-lg border border-border p-4 sm:p-6">
@@ -195,7 +219,7 @@ export default function TeacherProjectPage() {
         </div>
 
         <div className={cn(
-          "hidden lg:block flex-shrink-0 transition-all duration-300",
+          "hidden lg:block shrink-0 transition-all duration-300",
           rightCollapsed ? "w-14" : "w-64 xl:w-72"
         )}>
           <div className="h-full overflow-y-auto rounded-lg border border-border bg-card shadow-sm">
@@ -206,10 +230,9 @@ export default function TeacherProjectPage() {
             >
               <div className="p-4">
                 <ParticipantsPanel
-                  project={projectMockData.project}
                   teacher={projectMockData.teacher}
                   student={projectMockData.student}
-                  jury={projectMockData.jury}
+                  jury={juryParticipants}
                   defense={projectMockData.defense}
                 />
               </div>

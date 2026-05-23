@@ -109,16 +109,16 @@ public class SchedulingService {
         List<String> juryAvails = new ArrayList<>();
 
         if (r.getJuryMemberIds() != null) {
-            for (Long juryId : r.getJuryMemberIds()) {
+            for (String juryId : r.getJuryMemberIds()) {
                 try {
                     // Nom du juré
-                    UserClient.UserDto user = userClient.getUserById(String.valueOf(juryId));
+                    UserClient.UserDto user = userClient.getUserById(juryId);
                     juryNames.add(user.name());
 
                     // Disponibilités → format "HH:mm_HH:mm"
                     // ex: "08:00_12:00", "14:00_18:00"
                     List<String> avails = userClient
-                            .getTeacherAvailability(String.valueOf(juryId))
+                            .getTeacherAvailability(juryId) 
                             .stream()
                             .map(a -> a.start() + "_" + a.end())
                             .collect(Collectors.toList());

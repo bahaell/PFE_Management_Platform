@@ -17,7 +17,7 @@ public class DefenseSessionRequest {
 
     // ── Jury / participants ─────────────────────────────────────────
     @NotEmpty(message = "At least one jury member is required")
-    private List<Long> juryMemberIds; // IDs des membres du jury
+    private List<String> juryMemberIds; // IDs des membres du jury
 
     // ── Préférences (hints pour le solver) ─────────────────────────
     private Long preferredRoomId; // nullable — suggestion, pas une contrainte dure

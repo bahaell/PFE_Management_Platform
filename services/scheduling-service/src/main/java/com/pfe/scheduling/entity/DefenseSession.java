@@ -17,7 +17,7 @@ public class DefenseSession {
     private String projectName;
     private String supervisorName;
 
-    private List<Long>   juryMemberIds;
+    private List<String>   juryMemberIds;
     private List<String> juryMemberNames;       // ← noms récupérés via UserClient
 
     // disponibilités de chaque juré : "MONDAY_08:00_12:00"
