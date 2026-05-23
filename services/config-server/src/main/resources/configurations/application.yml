@@ -1,0 +1,25 @@
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0  # Capture everything for now
+  # Zipkin is a sub-property of management, but tracing is a sub-property of zipkin
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+  # Note: 'observations' is usually 'observations' or 'metrics' depending on the version, 
+  # but 'observation' (singular) is the standard for the Micrometer API.
+  observations:
+    http:
+      server:
+        requests:
+          enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+logging:
+  pattern:
+    # Use %clr for console colors and fixed the spanId closing brace
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

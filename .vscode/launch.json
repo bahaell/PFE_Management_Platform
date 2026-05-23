@@ -1,0 +1,87 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "NotificationServiceApplication",
+            "request": "launch",
+            "mainClass": "com.pfe.notification.NotificationServiceApplication",
+            "projectName": "notification-service"
+        },
+        {
+            "type": "java",
+            "name": "SchedulingServiceApplication",
+            "request": "launch",
+            "mainClass": "com.pfe.scheduling.SchedulingServiceApplication",
+            "projectName": "scheduling-service"
+        },
+        {
+            "type": "java",
+            "name": "ResourceServiceApplication",
+            "request": "launch",
+            "mainClass": "com.pfe.resource.ResourceServiceApplication"
+        },
+        {
+            "type": "java",
+            "name": "DefenseApplication",
+            "request": "launch",
+            "mainClass": "com.example.defense.DefenseApplication",
+            "projectName": "defense-service"
+        },
+        {
+            "type": "java",
+            "name": "DefenseApplication",
+            "request": "launch",
+            "mainClass": "com.example.defense.DefenseApplication",
+            "projectName": "Defense"
+        },
+        {
+            "type": "java",
+            "name": "GatewayApplication",
+            "request": "launch",
+            "mainClass": "com.example.gateway.GatewayApplication"
+        },
+        {
+            "type": "java",
+            "name": "ConfigServerApplication",
+            "request": "launch",
+            "mainClass": "com.example.configserver.ConfigServerApplication",
+            "projectName": "config-server"
+        },
+        {
+            "type": "java",
+            "name": "UserServiceApplication",
+            "request": "launch",
+            "mainClass": "com.example.user_service.UserServiceApplication"
+        },
+        {
+            "type": "java",
+            "name": "ProjectsApplication",
+            "request": "launch",
+            "mainClass": "com.example.projects.ProjectsApplication",
+            "projectName": "projects"
+        },
+        {
+            "type": "java",
+            "name": "NotificationServiceApplication",
+            "request": "launch",
+            "mainClass": "com.pfe.notification.NotificationServiceApplication",
+            "projectName": "com.pfe-notification-service"
+        },
+        {
+            "type": "java",
+            "name": "DiscoveryApplication",
+            "request": "launch",
+            "mainClass": "com.example.discovery.DiscoveryApplication"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ConfigServerApplication<com.example-demo>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.configserver.ConfigServerApplication",
+            "projectName": "com.example-demo",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
