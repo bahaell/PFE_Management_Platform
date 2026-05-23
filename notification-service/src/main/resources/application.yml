@@ -1,0 +1,56 @@
+server:
+  port: 8085
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notification_db
+    username: postgres
+    password: 200104ba++
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    connection-timeout: 5000
+    listener:
+      simple:
+        missing-queues-fatal: false
+        auto-startup: false
+        retry:
+          enabled: true
+          initial-interval: 5000
+          max-attempts: 3
+          multiplier: 2.0
+          max-interval: 30000
+
+rabbitmq:
+  exchange: pfe.events.exchange
+  queue:
+    notification: notification.queue
+    subject: subject.application.created.queue
+    subject-updated: subject.application.updated.queue
+    project: project.created.queue
+    message: message.sent.queue
+    task-assigned: task.assigned.queue
+    task-updated: task.updated.queue
+    document-uploaded: document.uploaded.queue
+    doc-generated: academic.document.generated.queue
+    doc-requested: academic.document.requested.queue
+    defense-request: defense.request.created.queue
+    defense-scheduled: defense.scheduled.queue
+    jury: jury.assigned.queue
+    user: user.created.queue
+    deadline: deadline.reminder.queue
+    dlq: notification.queue.dlq
+  routing-key:
+    commit-created: commit.created
