@@ -15,11 +15,11 @@ export interface AdministrativeDocument {
   teacherName?: string
   projectId?: string
   projectTitle?: string
-  templateId: string
+  templateId?: string
   generatedAt: string
   deliveredAt?: string
   fileUrl: string
-  status: 'requested' | 'generated' | 'delivered'
+  status: 'requested' | 'generated' | 'delivered' | 'ready' | 'pending'
   filledData?: Record<string, any>
-  deliveredTo: ('student' | 'teacher' | 'coordinator')[]
+  deliveredTo?: ('student' | 'teacher' | 'coordinator')[]
 }

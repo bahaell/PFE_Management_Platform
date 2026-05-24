@@ -6,6 +6,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.boot.autoconfigure.amqp.SimpleRabbitListenerContainerFactoryConfigurer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,13 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
     public static final String EXCHANGE = "pfe.events.exchange";
+
+    // ─── Defense Exchange (produit par scheduling-service) ────────────────────
+    public static final String DEFENSE_EXCHANGE            = "defense.exchange";
+    public static final String DEFENSE_CREATED_QUEUE      = "defense.created.notification.queue";
+    public static final String DEFENSE_UPDATED_QUEUE      = "defense.updated.notification.queue";
+    public static final String DEFENSE_CANCELLED_QUEUE    = "defense.cancelled.notification.queue";
+    public static final String DEFENSE_RESCHEDULED_QUEUE  = "defense.rescheduled.notification.queue";
 
     // ─── Chat Exchange (produit par chat-service) ──────────────────────────────
     public static final String CHAT_EXCHANGE = "chat.exchange";
@@ -68,6 +76,23 @@ public class RabbitMQConfig {
     @Bean public Queue userQueue()            { return durableQueue(queueUser); }
     @Bean public Queue deadlineQueue()        { return durableQueue(queueDeadline); }
     @Bean public Queue deadLetterQueue()      { return QueueBuilder.durable(queueDlq).build(); }
+
+    // ─── Defense Exchange Queues ──────────────────────────────────────────────
+    @Bean public Queue defenseCreatedNotifQueue()     { return QueueBuilder.durable(DEFENSE_CREATED_QUEUE).withArgument("x-dead-letter-exchange", "").withArgument("x-dead-letter-routing-key", queueDlq).build(); }
+    @Bean public Queue defenseUpdatedNotifQueue()     { return QueueBuilder.durable(DEFENSE_UPDATED_QUEUE).withArgument("x-dead-letter-exchange", "").withArgument("x-dead-letter-routing-key", queueDlq).build(); }
+    @Bean public Queue defenseCancelledNotifQueue()   { return QueueBuilder.durable(DEFENSE_CANCELLED_QUEUE).withArgument("x-dead-letter-exchange", "").withArgument("x-dead-letter-routing-key", queueDlq).build(); }
+    @Bean public Queue defenseRescheduledNotifQueue() { return QueueBuilder.durable(DEFENSE_RESCHEDULED_QUEUE).withArgument("x-dead-letter-exchange", "").withArgument("x-dead-letter-routing-key", queueDlq).build(); }
+
+    // ─── Defense Exchange (scheduling-service) ───────────────────────────────
+    @Bean
+    public TopicExchange defenseExchange() {
+        return new TopicExchange(DEFENSE_EXCHANGE, true, false);
+    }
+
+    @Bean public Binding defenseCreatedBinding()     { return BindingBuilder.bind(defenseCreatedNotifQueue()).to(defenseExchange()).with("defense.created"); }
+    @Bean public Binding defenseUpdatedBinding()     { return BindingBuilder.bind(defenseUpdatedNotifQueue()).to(defenseExchange()).with("defense.updated"); }
+    @Bean public Binding defenseCancelledBinding()   { return BindingBuilder.bind(defenseCancelledNotifQueue()).to(defenseExchange()).with("defense.cancelled"); }
+    @Bean public Binding defenseRescheduledBinding() { return BindingBuilder.bind(defenseRescheduledNotifQueue()).to(defenseExchange()).with("defense.rescheduled"); }
 
     // ─── Chat Queue (liée à chat.exchange, pas à pfe.events.exchange) ─────────
     @Bean
@@ -129,9 +154,10 @@ public class RabbitMQConfig {
 
     @Bean
     public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            SimpleRabbitListenerContainerFactoryConfigurer configurer,
             ConnectionFactory connectionFactory) {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
-        factory.setConnectionFactory(connectionFactory);
+        configurer.configure(factory, connectionFactory);
         factory.setMessageConverter(jsonMessageConverter());
         return factory;
     }

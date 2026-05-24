@@ -1,9 +1,12 @@
 package com.pfe.scheduling.controller;
 
 import com.pfe.scheduling.dto.*;
+import com.pfe.scheduling.entity.AcademicPeriod;
+import com.pfe.scheduling.entity.DefenseJury;
+import com.pfe.scheduling.entity.DefenseSession;
+import com.pfe.scheduling.entity.JuryRole;
 import com.pfe.scheduling.service.*;
 import com.pfe.scheduling.solver.DefenseTimetable;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -18,15 +21,13 @@ import java.util.NoSuchElementException;
 public class ScheduleController {
 
     private final SchedulingService schedulingService;
-    private final ScheduledDefenseService defenseService;
-    private final PendingRequestService pendingService;
-    private final StatisticsService statisticsService;
+    private final DefenseManagementService defenseService;
+    private final AcademicPeriodService academicPeriodService;
 
     // ── TIMEFOLD SOLVER ──────────────────────────────────────────
 
     @PostMapping("/solve")
-    public ResponseEntity<Map<String, Long>> solve(
-            @RequestBody List<DefenseSessionRequest> requests) {
+    public ResponseEntity<Map<String, Long>> solve(@RequestBody List<DefenseSessionRequest> requests) {
         Long jobId = schedulingService.solve(requests);
         return ResponseEntity.accepted().body(Map.of("jobId", jobId));
     }
@@ -45,74 +46,89 @@ public class ScheduleController {
         }
     }
 
-    // ── SCHEDULED DEFENSES ───────────────────────────────────────
+    // ── DEFENSE SESSIONS ───────────────────────────────────────
 
     @GetMapping("/defenses")
-    public List<ScheduledDefenseResponse> getAllDefenses() {
-        return defenseService.getAll();
+    public List<DefenseSession> getAllDefenses() {
+        return defenseService.getAllDefenses();
     }
 
     @GetMapping("/defenses/{id}")
-    public ScheduledDefenseResponse getDefenseById(@PathVariable Long id) {
-        return defenseService.getById(id);
+    public DefenseSession getDefenseById(@PathVariable Long id) {
+        return defenseService.getDefenseById(id);
     }
 
     @PostMapping("/defenses")
     @ResponseStatus(HttpStatus.CREATED)
-    public ScheduledDefenseResponse createDefense(
-            @RequestBody ScheduledDefenseRequest req) {
-        return defenseService.create(req);
+    public DefenseSession createDefense(@RequestBody DefenseSession req) {
+        return defenseService.createDefense(req);
     }
 
     @PutMapping("/defenses/{id}")
-    public ScheduledDefenseResponse updateDefense(
+    public DefenseSession updateDefense(
             @PathVariable Long id,
-            @RequestBody ScheduledDefenseRequest req) {
-        return defenseService.update(id, req);
+            @RequestBody DefenseSession req,
+            @RequestParam(defaultValue = "false") boolean forceOverride) {
+        return defenseService.updateDefense(id, req, forceOverride);
     }
 
     @DeleteMapping("/defenses/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteDefense(@PathVariable Long id) {
-        defenseService.delete(id);
+        defenseService.deleteDefense(id);
     }
 
-    // ── PENDING REQUESTS ─────────────────────────────────────────
-
-    @GetMapping("/pending")
-    public List<PendingRequestDto> getAllPending() {
-        return pendingService.getAll();
-    }
-
-    @GetMapping("/pending/{id}")
-    public PendingRequestDto getPendingById(@PathVariable Long id) {
-        return pendingService.getById(id);
-    }
-
-    @PostMapping("/pending")
+    @PostMapping("/defenses/{id}/jury")
     @ResponseStatus(HttpStatus.CREATED)
-    public PendingRequestDto createPending(
-            @RequestBody PendingRequestDto dto) {
-        return pendingService.create(dto);
-    }
-
-    @PutMapping("/pending/{id}")
-    public PendingRequestDto updatePending(
+    public DefenseJury addJuryMember(
             @PathVariable Long id,
-            @RequestBody PendingRequestDto dto) {
-        return pendingService.update(id, dto);
+            @RequestParam String teacherId,
+            @RequestParam JuryRole role,
+            @RequestParam(defaultValue = "false") boolean forceOverride) {
+        return defenseService.addJuryMember(id, teacherId, role, forceOverride);
     }
 
-    @DeleteMapping("/pending/{id}")
+    @GetMapping("/defenses/{id}/jury")
+    public List<DefenseJury> getJuryMembers(@PathVariable Long id) {
+        return defenseService.getJuryMembers(id);
+    }
+
+    @PutMapping("/defenses/{id}/jury/{juryId}")
+    public DefenseJury updateJuryMember(
+            @PathVariable Long id,
+            @PathVariable Long juryId,
+            @RequestParam String teacherId,
+            @RequestParam JuryRole role,
+            @RequestParam(defaultValue = "false") boolean forceOverride) {
+        return defenseService.updateJuryMember(id, juryId, teacherId, role, forceOverride);
+    }
+
+    @DeleteMapping("/defenses/{id}/jury/{juryId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePending(@PathVariable Long id) {
-        pendingService.delete(id);
+    public void deleteJuryMember(@PathVariable Long id, @PathVariable Long juryId) {
+        defenseService.deleteJuryMember(id, juryId);
     }
 
-    // ── STATISTICS ───────────────────────────────────────────────
+    // ── ACADEMIC PERIODS ───────────────────────────────────────
 
-    @GetMapping("/statistics")
-    public StatisticsResponse getStatistics() {
-        return statisticsService.getStatistics();
+    @GetMapping("/periods")
+    public List<AcademicPeriod> getAllPeriods() {
+        return academicPeriodService.getAllPeriods();
+    }
+
+    @GetMapping("/periods/active")
+    public AcademicPeriod getActivePeriod() {
+        return academicPeriodService.getActivePeriod();
+    }
+
+    @PostMapping("/periods")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AcademicPeriod createPeriod(@RequestBody AcademicPeriod period) {
+        return academicPeriodService.createPeriod(period);
+    }
+
+    @PutMapping("/periods/{id}/activate")
+    public AcademicPeriod activatePeriod(@PathVariable Long id) {
+        return academicPeriodService.activatePeriod(id);
     }
 }

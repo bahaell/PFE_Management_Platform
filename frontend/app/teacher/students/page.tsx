@@ -305,7 +305,7 @@ export default function TeacherStudentsPage() {
           isOpen={isRequestDefenseOpen}
           onClose={() => setIsRequestDefenseOpen(false)}
           student={{
-            id: selectedStudent.id,
+            id: Number(selectedStudent.id),
             name: selectedStudent.name,
             projectTitle: selectedStudent.projectTitle || 'Unknown Project',
             subject: selectedStudent.department || 'Unknown Subject',

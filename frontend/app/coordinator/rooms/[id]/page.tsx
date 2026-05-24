@@ -1,22 +1,45 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Edit2, MapPin, Users, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Edit2, MapPin, Users, AlertCircle, Loader2 } from 'lucide-react'
 import { RoomStatusBadge } from '@/components/rooms/room-status-badge'
 import { EquipmentSelector } from '@/components/rooms/equipment-selector'
 import { RoomCalendar } from '@/components/rooms/room-calendar'
-import { MOCK_ROOMS_WITH_EQUIPMENT, getRoomQualityScore, type Equipment } from '@/lib/room-mock-data'
+import { getRoomQualityScore, type RoomWithEquipment } from '@/lib/room-mock-data'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RoomAvailabilitySection } from '@/components/availability/room-availability-section'
+import { RoomsService } from '@/services/service_rooms'
 
-export default function RoomDetailsPage({ params }: { params: { id: string } }) {
+export default function RoomDetailsPage() {
   const router = useRouter()
-  const roomId = parseInt(params.id)
-  const [room] = useState(MOCK_ROOMS_WITH_EQUIPMENT.find(r => r.id === roomId))
+  const params = useParams<{ id: string }>()
+  const roomId = Number.parseInt(params.id, 10)
+  const [room, setRoom] = useState<RoomWithEquipment | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    if (!Number.isFinite(roomId)) {
+      setRoom(null)
+      setIsLoading(false)
+      return
+    }
+
+    RoomsService.getRoomById(roomId)
+      .then(setRoom)
+      .finally(() => setIsLoading(false))
+  }, [roomId])
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   if (!room) {
     return (

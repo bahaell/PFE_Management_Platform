@@ -1,7 +1,5 @@
 package com.pfe.scheduling.solver;
 
-import com.pfe.scheduling.entity.DefenseSession;
-
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
@@ -23,6 +21,7 @@ public class DefenseConstraintProvider implements ConstraintProvider {
             roomConflict(factory),
             supervisorConflict(factory),
             juryAvailabilityViolation(factory),
+            juryConflict(factory),
             // ── SOFT constraints ─────────────────────────────────
             preferMorningSlots(factory),
             preferPreferredRoom(factory)
@@ -34,9 +33,9 @@ public class DefenseConstraintProvider implements ConstraintProvider {
     //           la même salle au même créneau
     // ─────────────────────────────────────────────────────────────
     private Constraint roomConflict(ConstraintFactory factory) {
-        return factory.forEachUniquePair(DefenseSession.class,
-                Joiners.equal(DefenseSession::getRoomId),
-                Joiners.equal(DefenseSession::getTimeSlot))
+        return factory.forEachUniquePair(DefenseScheduleSlot.class,
+                Joiners.equal(DefenseScheduleSlot::getRoomId),
+                Joiners.equal(DefenseScheduleSlot::getTimeSlot))
                 .filter((a, b) ->
                         a.getRoomId() != null &&
                         b.getRoomId() != null)
@@ -49,9 +48,9 @@ public class DefenseConstraintProvider implements ConstraintProvider {
     //           dans 2 salles en même temps
     // ─────────────────────────────────────────────────────────────
     private Constraint supervisorConflict(ConstraintFactory factory) {
-        return factory.forEachUniquePair(DefenseSession.class,
-                Joiners.equal(DefenseSession::getSupervisorName),
-                Joiners.equal(DefenseSession::getTimeSlot))
+        return factory.forEachUniquePair(DefenseScheduleSlot.class,
+                Joiners.equal(DefenseScheduleSlot::getSupervisorName),
+                Joiners.equal(DefenseScheduleSlot::getTimeSlot))
                 .filter((a, b) ->
                         a.getSupervisorName() != null &&
                         b.getSupervisorName() != null &&
@@ -62,12 +61,27 @@ public class DefenseConstraintProvider implements ConstraintProvider {
     }
 
     // ─────────────────────────────────────────────────────────────
+    //  HARD 3 — deux sessions ne peuvent pas partager
+    //           un membre du jury sur le même créneau
+    // ─────────────────────────────────────────────────────────────
+    private Constraint juryConflict(ConstraintFactory factory) {
+        return factory.forEachUniquePair(DefenseScheduleSlot.class,
+                Joiners.equal(DefenseScheduleSlot::getTimeSlot))
+                .filter((a, b) ->
+                        a.getJuryMemberIds() != null &&
+                        b.getJuryMemberIds() != null &&
+                        a.getJuryMemberIds().stream().anyMatch(id -> b.getJuryMemberIds().contains(id)))
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Jury conflict");
+    }
+
+    // ─────────────────────────────────────────────────────────────
     //  HARD 3 — le créneau doit être couvert par au moins
     //           une disponibilité du jury
     //           (si aucune dispo → pas de contrainte appliquée)
     // ─────────────────────────────────────────────────────────────
     private Constraint juryAvailabilityViolation(ConstraintFactory factory) {
-        return factory.forEach(DefenseSession.class)
+        return factory.forEach(DefenseScheduleSlot.class)
                 .filter(session ->
                         session.getTimeSlot() != null &&
                         session.getJuryAvailabilities() != null &&
@@ -81,7 +95,7 @@ public class DefenseConstraintProvider implements ConstraintProvider {
     //  SOFT 1 — préférer les créneaux du matin (avant 12h00)
     // ─────────────────────────────────────────────────────────────
     private Constraint preferMorningSlots(ConstraintFactory factory) {
-        return factory.forEach(DefenseSession.class)
+        return factory.forEach(DefenseScheduleSlot.class)
                 .filter(s ->
                         s.getTimeSlot() != null &&
                         s.getTimeSlot().getStartTime().isAfter(LocalTime.NOON))
@@ -93,7 +107,7 @@ public class DefenseConstraintProvider implements ConstraintProvider {
     //  SOFT 2 — préférer la salle demandée (preferredRoomId)
     // ─────────────────────────────────────────────────────────────
     private Constraint preferPreferredRoom(ConstraintFactory factory) {
-        return factory.forEach(DefenseSession.class)
+        return factory.forEach(DefenseScheduleSlot.class)
                 .filter(s ->
                         s.getPreferredRoomId() != null &&
                         s.getRoomId() != null &&
@@ -112,7 +126,7 @@ public class DefenseConstraintProvider implements ConstraintProvider {
     //  Un créneau est couvert si :
     //    slotStart >= availStart  ET  slotEnd <= availEnd
     // ─────────────────────────────────────────────────────────────
-    private boolean isSlotCoveredByJury(DefenseSession session) {
+    private boolean isSlotCoveredByJury(DefenseScheduleSlot session) {
         TimeSlot slot = session.getTimeSlot();
         if (slot == null) return true;  // pas de créneau → pas de violation
 

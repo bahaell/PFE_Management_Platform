@@ -1,10 +1,10 @@
-export { Equipment, type EquipmentItem, type EquipmentStatus } from './equipment.model'
-export { RoomBooking, type BookingType, type BookingStatus } from './booking.model'
+export type { Equipment, EquipmentItem, EquipmentStatus } from './equipment.model'
+export type { RoomBooking, BookingType, BookingStatus } from './booking.model'
 
 import type { Equipment } from './equipment.model'
 import type { RoomBooking } from './booking.model'
 
-export type RoomStatus = 'available' | 'occupied' | 'maintenance' | 'unavailable'
+export type RoomStatus = 'available' | 'occupied' | 'maintenance' | 'unavailable' | 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'UNAVAILABLE'
 
 export interface MaintenanceScheduleItem {
   date: string
@@ -12,15 +12,17 @@ export interface MaintenanceScheduleItem {
 }
 
 export interface Room {
-  id: number
+  [key: string]: any
+  id: any
   name: string
   capacity: number
-  location: string
+  location?: string
   building?: string
   floor?: string
-  status: RoomStatus
-  description: string
-  equipment: Equipment
-  bookings: RoomBooking[]
+  status?: any
+  description?: string
+  equipment?: Equipment
+  bookings?: RoomBooking[]
   maintenanceSchedule?: MaintenanceScheduleItem[]
+  color?: string
 }

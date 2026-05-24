@@ -26,7 +26,7 @@ interface ProjectInfoSidebarProps {
 }
 
 export function ProjectInfoSidebar({ 
-  project = { title: 'AI in Healthcare', subject: 'Artificial Intelligence', description: 'Building an intelligent system for disease detection', deadline: '2024-06-30', progress: 65, status: 'In Progress' },
+  project = { title: 'AI in Healthcare', subject: 'Artificial Intelligence', description: 'Building an intelligent system for disease detection', deadline: '2024-06-30', progress: 65, status: 'IN_PROGRESS' },
   teacher = { name: 'Dr. Ahmed Hassan', avatar: 'AH', role: 'Supervisor' },
   student = { name: 'Ahmed Mohamed', avatar: 'AM', role: 'Student' }
 }: ProjectInfoSidebarProps) {

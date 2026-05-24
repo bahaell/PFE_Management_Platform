@@ -303,3 +303,8 @@ export const AcademicDocumentsService = {
 export async function getAllAcademicDocuments(): Promise<AdministrativeDocument[]> {
   return AcademicDocumentsService.getAllDocuments()
 }
+
+export async function getDocuments(filters?: { studentId?: string }): Promise<AdministrativeDocument[]> {
+  const docs = await AcademicDocumentsService.getAllDocuments()
+  return filters?.studentId ? docs.filter((doc) => doc.studentId === filters.studentId) : docs
+}

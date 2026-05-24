@@ -12,7 +12,7 @@ public class DefenseSessionResponse {
     private Long id;
 
     // ── Projet ────────────────────────────────────────────────────
-    private Long projectId;
+    private String projectId;
     private String projectName; // dénormalisé depuis ProjectsClient
 
     // ── Salle (depuis ResourceClient) ─────────────────────────────

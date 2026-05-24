@@ -1,10 +1,9 @@
 package com.example.projects.dto;
 
 import com.example.projects.entity.ProjectStatus;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import com.example.projects.entity.ProjectPhase;
+import com.example.projects.entity.ProjectType;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -24,15 +24,12 @@ public class ProjectRequest {
 
     private String description;
 
-    @NotNull(message = "Status is required")
     private ProjectStatus status;
+    private ProjectType type;
+    private ProjectPhase phase;
+    private String academicYear;
+    private UUID subjectId;
 
-    @Min(0)
-    @Max(100)
-    private Integer progress;
-
-    private String supervisorId;
-    private Set<String> studentIds;
     private String companyId;
     private String companyName;
     private String companyDescription;

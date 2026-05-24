@@ -1,40 +1,60 @@
 package com.example.projects.service.impl;
 
-import com.example.projects.dto.ProjectRequest;
 import com.example.projects.dto.ProjectMatchingRequest;
 import com.example.projects.dto.ProjectMatchingResponse;
+import com.example.projects.dto.ProjectMemberRequest;
+import com.example.projects.dto.ProjectMemberResponse;
+import com.example.projects.dto.ProjectRequest;
 import com.example.projects.dto.ProjectResponse;
+import com.example.projects.dto.ProjectSupervisorRequest;
+import com.example.projects.dto.ProjectSupervisorResponse;
 import com.example.projects.dto.SchedulingProjectResponse;
 import com.example.projects.entity.Company;
 import com.example.projects.entity.CompanyStatus;
 import com.example.projects.entity.Project;
+import com.example.projects.entity.ProjectMember;
+import com.example.projects.entity.ProjectMemberRole;
+import com.example.projects.entity.ProjectPhase;
 import com.example.projects.entity.ProjectStatus;
+import com.example.projects.entity.ProjectSupervisor;
+import com.example.projects.entity.ProjectSupervisorRole;
+import com.example.projects.entity.ProjectType;
+import com.example.projects.entity.Subject;
 import com.example.projects.exception.BadRequestException;
 import com.example.projects.exception.ForbiddenException;
 import com.example.projects.exception.NotFoundException;
-
 import com.example.projects.repository.CompanyRepository;
+import com.example.projects.repository.ProjectMemberRepository;
 import com.example.projects.repository.ProjectRepository;
+import com.example.projects.repository.ProjectSupervisorRepository;
+import com.example.projects.repository.SubjectRepository;
 import com.example.projects.service.ProjectService;
 import lombok.RequiredArgsConstructor;
-
-import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Year;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ProjectServiceImpl implements ProjectService {
+
+    private static final int DEFAULT_MAX_ACTIVE_SUPERVISIONS = 5;
 
     private final ProjectRepository projectRepository;
     private final CompanyRepository companyRepository;
+    private final SubjectRepository subjectRepository;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectSupervisorRepository projectSupervisorRepository;
 
     @Override
     @Transactional
@@ -43,51 +63,62 @@ public class ProjectServiceImpl implements ProjectService {
         validateIdentityHeaders(userId, normalizedRole);
 
         Company company = resolveCompany(request);
-
-        ProjectStatus initialStatus = request.getStatus() != null ? request.getStatus() : ProjectStatus.PROPOSED;
+        Subject subject = resolveSubject(request);
+        ProjectStatus initialStatus = request.getStatus() != null ? request.getStatus() : ProjectStatus.PENDING;
         if (company != null && company.getStatus() == CompanyStatus.BLACKLISTED) {
-            initialStatus = ProjectStatus.CANCELLED;
+            initialStatus = ProjectStatus.REJECTED;
         }
 
         Project project = Project.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .type(resolveProjectType(request, company, subject))
                 .status(initialStatus)
-                .progress(request.getProgress() != null ? request.getProgress() : 0)
-                .supervisorId(request.getSupervisorId())
-                .studentIds(request.getStudentIds() != null ? request.getStudentIds() : new HashSet<>())
+                .phase(request.getPhase() != null ? request.getPhase() : ProjectPhase.PROPOSAL)
+                .progress(0)
+                .academicYear(normalizeAcademicYear(request.getAcademicYear()))
+                .subject(subject)
                 .company(company)
                 .requiredSkills(normalizeSkills(request.getRequiredSkills()))
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .build();
 
-        // Enforce ownership from authenticated token header, not request body.
-        if (userId != null && !userId.isBlank()) {
-            if ("TEACHER".equals(normalizedRole)) {
-                project.setSupervisorId(userId);
-            } else if ("STUDENT".equals(normalizedRole)) {
-                Set<String> studentIds = project.getStudentIds();
-                studentIds.add(userId);
-                project.setStudentIds(studentIds);
-            }
+        Project saved = projectRepository.save(project);
+
+        if ("TEACHER".equals(normalizedRole)) {
+            addSupervisorInternal(saved, userId, ProjectSupervisorRole.MAIN_SUPERVISOR);
+        } else if ("STUDENT".equals(normalizedRole)) {
+            addMemberInternal(saved, userId, ProjectMemberRole.MEMBER);
         }
 
-        return mapToResponse(projectRepository.save(project));
+        return mapToResponse(saved);
     }
 
     @Override
     @Transactional
     public ProjectResponse updateProject(UUID id, ProjectRequest request) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Project not found with id: " + id));
+        Project project = getProjectOrThrow(id);
 
         project.setTitle(request.getTitle());
         project.setDescription(request.getDescription());
-        project.setStatus(request.getStatus());
-        project.setProgress(request.getProgress());
-        project.setSupervisorId(request.getSupervisorId());
-        project.setStudentIds(request.getStudentIds());
+        if (request.getType() != null) {
+            project.setType(request.getType());
+        }
+        if (request.getStatus() != null) {
+            validateStatusTransition(project.getStatus(), request.getStatus());
+            project.setStatus(request.getStatus());
+        }
+        if (request.getPhase() != null) {
+            project.setPhase(request.getPhase());
+        }
+        if (request.getAcademicYear() != null && !request.getAcademicYear().isBlank()) {
+            project.setAcademicYear(normalizeAcademicYear(request.getAcademicYear()));
+        }
+        if (request.getSubjectId() != null) {
+            project.setSubject(subjectRepository.findById(request.getSubjectId())
+                    .orElseThrow(() -> new NotFoundException("Subject not found with id: " + request.getSubjectId())));
+        }
         project.setRequiredSkills(normalizeSkills(request.getRequiredSkills()));
         project.setStartDate(request.getStartDate());
         project.setEndDate(request.getEndDate());
@@ -96,9 +127,20 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse getProjectById(UUID id) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Project not found with id: " + id));
+    public ProjectResponse getProjectById(UUID id, String userId, String userRole) {
+        Project project = getProjectOrThrow(id);
+        
+        if ("STUDENT".equalsIgnoreCase(userRole)) {
+            if (userId == null || userId.isBlank()) {
+                throw new ForbiddenException("User ID is required for students");
+            }
+            boolean isMember = projectMemberRepository.findByProjectId(id).stream()
+                    .anyMatch(member -> userId.equals(member.getStudentId()));
+            if (!isMember) {
+                throw new ForbiddenException("Student is not a member of this project");
+            }
+        }
+        
         return mapToResponse(project);
     }
 
@@ -110,8 +152,23 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public List<ProjectResponse> getProjectsBySupervisor(String supervisorId) {
-        return projectRepository.findBySupervisorId(supervisorId).stream()
+    public List<ProjectResponse> getProjectsBySupervisor(String teacherId) {
+        return projectSupervisorRepository.findByTeacherId(teacherId).stream()
+                .map(supervisor -> supervisor.getProject().getId())
+                .collect(Collectors.toCollection(LinkedHashSet::new))
+                .stream()
+                .map(this::getProjectOrThrow)
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProjectResponse> getProjectsByStudentId(String studentId) {
+        return projectMemberRepository.findByStudentId(studentId).stream()
+                .map(member -> member.getProject().getId())
+                .collect(Collectors.toCollection(LinkedHashSet::new))
+                .stream()
+                .map(this::getProjectOrThrow)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -130,8 +187,8 @@ public class ProjectServiceImpl implements ProjectService {
                         .projectId(project.getId())
                         .title(project.getTitle())
                         .status(project.getStatus())
-                        .supervisorId(project.getSupervisorId())
-                        .studentIds(project.getStudentIds())
+                        .mainSupervisorId(resolvePrimarySupervisorId(project))
+                        .memberStudentIds(resolveStudentIds(project))
                         .build())
                 .collect(Collectors.toList());
     }
@@ -163,7 +220,7 @@ public class ProjectServiceImpl implements ProjectService {
                             .projectId(project.getId())
                             .title(project.getTitle())
                             .description(project.getDescription())
-                            .subject(project.getTitle())
+                            .subject(project.getSubject() != null ? project.getSubject().getTitle() : project.getTitle())
                             .requiredSkills(requiredSkills)
                             .matchedSkills(matchedSkills)
                             .matchScore(score)
@@ -176,15 +233,17 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public void deleteProject(UUID id) {
+        getProjectOrThrow(id);
+        projectMemberRepository.deleteByProjectId(id);
+        projectSupervisorRepository.deleteByProjectId(id);
         projectRepository.deleteById(id);
     }
 
     @Override
     @Transactional
-    public ProjectResponse updateProgress(UUID id, Integer progress) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Project not found with id: " + id));
-        if (progress < 0 || progress > 100) {
+    public ProjectResponse updateProgressInternal(UUID id, Integer progress) {
+        Project project = getProjectOrThrow(id);
+        if (progress == null || progress < 0 || progress > 100) {
             throw new BadRequestException("Progress must be between 0 and 100");
         }
         project.setProgress(progress);
@@ -194,39 +253,111 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public ProjectResponse updateProjectStatus(UUID id, ProjectStatus newStatus, String userRole) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Project not found with id: " + id));
+        Project project = getProjectOrThrow(id);
 
-        // Enforce Coordinator-only validation
-        if (newStatus == ProjectStatus.APPROVED && !"COORDINATOR".equalsIgnoreCase(userRole)) {
-            throw new ForbiddenException("Only a Coordinator can approve/validate a project proposal.");
+        if ((newStatus == ProjectStatus.APPROVED || newStatus == ProjectStatus.IN_PROGRESS)
+                && !"COORDINATOR".equalsIgnoreCase(userRole)) {
+            throw new ForbiddenException("Only a Coordinator can approve or activate a project.");
         }
 
-        // State Machine validation
         validateStatusTransition(project.getStatus(), newStatus);
-
         project.setStatus(newStatus);
-
-        // Auto-set progress if completed
-        if (newStatus == ProjectStatus.COMPLETED) {
-            project.setProgress(100);
+        if (newStatus == ProjectStatus.DEFENDED) {
+            project.setPhase(ProjectPhase.DEFENSE);
         }
 
         return mapToResponse(projectRepository.save(project));
     }
 
+    @Override
+    @Transactional
+    public ProjectMemberResponse addMember(UUID projectId, ProjectMemberRequest request) {
+        Project project = getProjectOrThrow(projectId);
+        ProjectMember member = addMemberInternal(project, request.getStudentId(),
+                request.getRole() != null ? request.getRole() : ProjectMemberRole.MEMBER);
+        return toMemberResponse(member);
+    }
+
+    @Override
+    public List<ProjectMemberResponse> getMembers(UUID projectId) {
+        getProjectOrThrow(projectId);
+        return projectMemberRepository.findByProjectId(projectId).stream()
+                .map(this::toMemberResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public ProjectSupervisorResponse addSupervisor(UUID projectId, ProjectSupervisorRequest request) {
+        Project project = getProjectOrThrow(projectId);
+        ProjectSupervisor supervisor = addSupervisorInternal(project, request.getTeacherId(),
+                request.getRole() != null ? request.getRole() : ProjectSupervisorRole.CO_SUPERVISOR);
+        return toSupervisorResponse(supervisor);
+    }
+
+    @Override
+    public List<ProjectSupervisorResponse> getSupervisors(UUID projectId) {
+        getProjectOrThrow(projectId);
+        return projectSupervisorRepository.findByProjectId(projectId).stream()
+                .map(this::toSupervisorResponse)
+                .collect(Collectors.toList());
+    }
+
+    private Project getProjectOrThrow(UUID id) {
+        return projectRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Project not found with id: " + id));
+    }
+
+    private ProjectMember addMemberInternal(Project project, String studentId, ProjectMemberRole role) {
+        if (studentId == null || studentId.isBlank()) {
+            throw new BadRequestException("studentId is required");
+        }
+        Optional<ProjectMember> existing = projectMemberRepository.findByProjectIdAndStudentId(project.getId(), studentId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        if (projectMemberRepository.existsByStudentIdAndProject_StatusIn(studentId, activeStatuses())) {
+            throw new BadRequestException("Student " + studentId + " already has an active project.");
+        }
+        ProjectMember member = ProjectMember.builder()
+                .project(project)
+                .studentId(studentId)
+                .role(role)
+                .build();
+        return projectMemberRepository.save(member);
+    }
+
+    private ProjectSupervisor addSupervisorInternal(Project project, String teacherId, ProjectSupervisorRole role) {
+        if (teacherId == null || teacherId.isBlank()) {
+            throw new BadRequestException("teacherId is required");
+        }
+        Optional<ProjectSupervisor> existing = projectSupervisorRepository.findByProjectIdAndTeacherId(project.getId(), teacherId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        long activeLoad = projectSupervisorRepository.countByTeacherIdAndProject_StatusIn(teacherId, activeStatuses());
+        if (activeLoad >= DEFAULT_MAX_ACTIVE_SUPERVISIONS) {
+            throw new BadRequestException("Teacher " + teacherId + " reached the supervision limit.");
+        }
+        ProjectSupervisor supervisor = ProjectSupervisor.builder()
+                .project(project)
+                .teacherId(teacherId)
+                .role(role)
+                .build();
+        return projectSupervisorRepository.save(supervisor);
+    }
+
     private void validateStatusTransition(ProjectStatus current, ProjectStatus next) {
-        if (current == next)
+        if (current == next) {
             return;
+        }
 
         boolean valid = switch (current) {
-            case PROPOSED -> next == ProjectStatus.APPROVED || next == ProjectStatus.CANCELLED;
-            case APPROVED -> next == ProjectStatus.ASSIGNED || next == ProjectStatus.CANCELLED;
-            case ASSIGNED -> next == ProjectStatus.IN_PROGRESS || next == ProjectStatus.CANCELLED;
-            case IN_PROGRESS -> next == ProjectStatus.SUBMITTED || next == ProjectStatus.CANCELLED;
-            case SUBMITTED -> next == ProjectStatus.COMPLETED || next == ProjectStatus.CANCELLED;
-            case COMPLETED -> false; // Final state
-            case CANCELLED -> false; // Final state
+            case PENDING -> next == ProjectStatus.APPROVED || next == ProjectStatus.REJECTED;
+            case APPROVED -> next == ProjectStatus.IN_PROGRESS || next == ProjectStatus.REJECTED;
+            case IN_PROGRESS -> next == ProjectStatus.DEFENDED || next == ProjectStatus.ARCHIVED;
+            case DEFENDED -> next == ProjectStatus.ARCHIVED;
+            case REJECTED, ARCHIVED -> false;
         };
 
         if (!valid) {
@@ -234,16 +365,31 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
+    private Set<ProjectStatus> activeStatuses() {
+        return Set.of(ProjectStatus.PENDING, ProjectStatus.APPROVED, ProjectStatus.IN_PROGRESS);
+    }
+
     private ProjectResponse mapToResponse(Project project) {
+        Set<ProjectMemberResponse> members = projectMemberRepository.findByProjectId(project.getId()).stream()
+                .map(this::toMemberResponse)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<ProjectSupervisorResponse> supervisors = projectSupervisorRepository.findByProjectId(project.getId()).stream()
+                .map(this::toSupervisorResponse)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
         return ProjectResponse.builder()
                 .id(project.getId())
                 .title(project.getTitle())
-                .subject(project.getTitle())
+                .subject(project.getSubject() != null ? project.getSubject().getTitle() : project.getTitle())
                 .description(project.getDescription())
+                .type(project.getType() != null ? project.getType() : ProjectType.INTERNAL)
                 .status(project.getStatus())
+                .phase(project.getPhase() != null ? project.getPhase() : ProjectPhase.PROPOSAL)
                 .progress(project.getProgress())
-                .supervisorId(project.getSupervisorId())
-                .studentIds(project.getStudentIds())
+                .academicYear(project.getAcademicYear() != null ? project.getAcademicYear() : normalizeAcademicYear(null))
+                .subjectId(project.getSubject() != null ? project.getSubject().getId() : null)
+                .members(members)
+                .supervisors(supervisors)
                 .companyId(project.getCompany() != null ? project.getCompany().getId().toString() : null)
                 .requiredSkills(project.getRequiredSkills())
                 .startDate(project.getStartDate())
@@ -253,11 +399,48 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
     }
 
+    private ProjectMemberResponse toMemberResponse(ProjectMember member) {
+        return ProjectMemberResponse.builder()
+                .id(member.getId())
+                .projectId(member.getProject().getId())
+                .studentId(member.getStudentId())
+                .role(member.getRole())
+                .joinedAt(member.getJoinedAt())
+                .build();
+    }
+
+    private ProjectSupervisorResponse toSupervisorResponse(ProjectSupervisor supervisor) {
+        return ProjectSupervisorResponse.builder()
+                .id(supervisor.getId())
+                .projectId(supervisor.getProject().getId())
+                .teacherId(supervisor.getTeacherId())
+                .role(supervisor.getRole())
+                .build();
+    }
+
+    private Set<String> resolveStudentIds(Project project) {
+        return projectMemberRepository.findByProjectId(project.getId()).stream()
+                .map(ProjectMember::getStudentId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private String resolvePrimarySupervisorId(Project project) {
+        return projectSupervisorRepository.findByProjectId(project.getId()).stream()
+                .filter(supervisor -> supervisor.getRole() == ProjectSupervisorRole.MAIN_SUPERVISOR)
+                .map(ProjectSupervisor::getTeacherId)
+                .findFirst()
+                .orElse(null);
+    }
+
     private Set<String> extractSkillsFromProject(Project project) {
         if (project.getRequiredSkills() != null && !project.getRequiredSkills().isEmpty()) {
             return normalizeSkills(project.getRequiredSkills());
         }
-        Set<String> skills = new java.util.HashSet<>();
+        if (project.getSubject() != null && project.getSubject().getTechnologies() != null
+                && !project.getSubject().getTechnologies().isEmpty()) {
+            return normalizeSkills(project.getSubject().getTechnologies());
+        }
+        Set<String> skills = new HashSet<>();
         if (project.getTitle() != null && !project.getTitle().isBlank()) {
             for (String token : project.getTitle().split("[,\\s]+")) {
                 if (!token.isBlank() && token.length() > 2) {
@@ -276,12 +459,31 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private Set<String> normalizeSkills(Set<String> skills) {
-        if (skills == null)
+        if (skills == null) {
             return new HashSet<>();
+        }
         return skills.stream()
                 .filter(skill -> skill != null && !skill.isBlank())
                 .map(String::trim)
                 .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    private Subject resolveSubject(ProjectRequest request) {
+        if (request.getSubjectId() == null) {
+            return null;
+        }
+        return subjectRepository.findById(request.getSubjectId())
+                .orElseThrow(() -> new NotFoundException("Subject not found with id: " + request.getSubjectId()));
+    }
+
+    private ProjectType resolveProjectType(ProjectRequest request, Company company, Subject subject) {
+        if (request.getType() != null) {
+            return request.getType();
+        }
+        if (subject != null) {
+            return subject.getType();
+        }
+        return company != null ? ProjectType.EXTERNAL : ProjectType.INTERNAL;
     }
 
     private Company resolveCompany(ProjectRequest request) {
@@ -289,14 +491,12 @@ public class ProjectServiceImpl implements ProjectService {
             try {
                 return companyRepository.findById(UUID.fromString(request.getCompanyId())).orElse(null);
             } catch (IllegalArgumentException e) {
-                // Not a valid UUID
+                // Not a valid UUID.
             }
         }
 
-        // Try to find by name and email to avoid duplicates and check blacklist
-        if (request.getCompanyName() != null && !request.getCompanyName().isBlank() &&
-                request.getCompanyEmail() != null && !request.getCompanyEmail().isBlank()) {
-
+        if (request.getCompanyName() != null && !request.getCompanyName().isBlank()
+                && request.getCompanyEmail() != null && !request.getCompanyEmail().isBlank()) {
             Optional<Company> existing = companyRepository.findByNameAndEmail(
                     request.getCompanyName(), request.getCompanyEmail());
             if (existing.isPresent()) {
@@ -305,12 +505,11 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         if (request.getCompanyName() != null && !request.getCompanyName().isBlank()) {
-            // Create a new company if it doesn't exist but name is provided
             Company company = Company.builder()
                     .name(request.getCompanyName())
                     .description(request.getCompanyDescription())
-                    .email(request.getCompanyEmail())
-                    .phone(request.getCompanyPhone())
+                    .email(request.getCompanyEmail() != null ? request.getCompanyEmail() : "unknown@example.local")
+                    .phone(request.getCompanyPhone() != null ? request.getCompanyPhone() : "N/A")
                     .country(request.getCompanyCountry())
                     .city(request.getCompanyCity())
                     .status(CompanyStatus.PENDING)
@@ -319,6 +518,14 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         return null;
+    }
+
+    private String normalizeAcademicYear(String academicYear) {
+        if (academicYear != null && !academicYear.isBlank()) {
+            return academicYear;
+        }
+        int year = Year.now().getValue();
+        return year + "-" + (year + 1);
     }
 
     private void validateIdentityHeaders(String userId, String normalizedRole) {

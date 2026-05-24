@@ -17,6 +17,6 @@ public class SchedulingProjectResponse {
     private UUID projectId;
     private String title;
     private ProjectStatus status;
-    private String supervisorId;
-    private Set<String> studentIds;
+    private String mainSupervisorId;
+    private Set<String> memberStudentIds;
 }

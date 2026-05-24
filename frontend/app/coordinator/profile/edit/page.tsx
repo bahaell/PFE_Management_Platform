@@ -137,7 +137,11 @@ export default function EditCoordinatorProfilePage() {
       birthdate: formData.birthdate,
       avatar: avatarUrl || (profile as any)?.avatar || ''
     }
-    await ProfileService.updateProfile('coordinator', profileUpdates)
+    const updated = await ProfileService.updateProfile('coordinator', profileUpdates)
+    if (!updated) {
+      alert('Failed to save profile changes. Please check the form values and try again.')
+      return
+    }
     alert('Profile changes saved successfully!')
     router.push('/coordinator/profile')
   }

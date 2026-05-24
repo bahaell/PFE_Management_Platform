@@ -21,10 +21,16 @@ public enum NotificationType {
     ACADEMIC_DOCUMENT_GENERATED,
     ACADEMIC_DOCUMENT_REQUESTED,
 
-    // Defense
+    // Defense (legacy pfe.events.exchange)
     DEFENSE_SCHEDULED,
     DEFENSE_REQUEST_CREATED,
     JURY_ASSIGNED,
+
+    // Defense (new defense.exchange from scheduling-service)
+    DEFENSE_CREATED,
+    DEFENSE_UPDATED,
+    DEFENSE_CANCELLED,
+    DEFENSE_RESCHEDULED,
 
     // System
     USER_CREATED,

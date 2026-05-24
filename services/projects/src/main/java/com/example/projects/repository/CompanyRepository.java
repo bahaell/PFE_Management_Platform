@@ -9,5 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface CompanyRepository extends JpaRepository<Company, UUID> {
+    Optional<Company> findByName(String name);
     Optional<Company> findByNameAndEmail(String name, String email);
 }

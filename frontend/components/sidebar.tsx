@@ -55,7 +55,7 @@ export function Sidebar({ role }: SidebarProps) {
         { label: "New Subject", href: `/${role}/new-subject`, icon: Plus },
         { label: "Students", href: `/${role}/students`, icon: Users },
         { label: "Projects", href: `/${role}/projects`, icon: ClipboardList },
-        { label: "External Requests", href: `/${role}/external-requests`, icon: Briefcase },
+        { label: "External Requests", href: `/${role}/free-requests`, icon: Briefcase },
         { label: "Documents", href: `/${role}/documents`, icon: FileText },
         { label: "Defenses", href: `/${role}/defenses`, icon: Calendar },
         { label: "Defense Timeline", href: `/${role}/defenses/timeline`, icon: Calendar },

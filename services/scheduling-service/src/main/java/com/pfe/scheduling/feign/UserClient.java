@@ -7,28 +7,29 @@ import java.util.List;
 @FeignClient(name = "user-service", url = "${services.user.url}")
 public interface UserClient {
 
-    @GetMapping("/api/users/{id}/availability")
-    List<TeacherAvailabilityDto> getTeacherAvailability(
-            @PathVariable("id") String teacherId);
-
     @GetMapping("/api/users/{id}")
     UserDto getUserById(@PathVariable("id") String id);
 
-    // ── DTOs — doivent correspondre exactement aux champs
-    //           de TeacherAvailabilityDto.java dans user-service ──
+    @GetMapping("/api/users/teachers")
+    List<UserDto> getAllTeachers();
 
-    record TeacherAvailabilityDto(
-            Long id,
-            String start,          // ← "start" pas "startTime"
-            String end,            // ← "end" pas "endTime"
-            Boolean isRecurrent,
-            Boolean onlyDuringPFE) {
-    }
+    @GetMapping("/api/users/{id}/availability")
+    List<TeacherAvailabilityDto> getTeacherAvailability(
+            @PathVariable("id") String teacherId);
 
     record UserDto(
             String id,
             String name,
             String email,
-            String role) {
-    }
+            String role,
+            String department,
+            String grade,
+            String speciality) {}
+
+    record TeacherAvailabilityDto(
+            Long id,
+            String start,
+            String end,
+            Boolean isRecurrent,
+            Boolean onlyDuringPFE) {}
 }

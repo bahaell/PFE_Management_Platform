@@ -61,7 +61,7 @@ export function ProjectInfoCard({ defense }: ProjectInfoCardProps) {
               {defense.jury.find(m => m.role === 'encadrant')?.teacher.name}
             </p>
             <p className="text-xs text-muted-foreground">
-              {defense.jury.find(m => m.role === 'encadrant')?.teacher.title}
+              {defense.jury.find(m => m.role === 'encadrant')?.teacher.grade}
             </p>
           </div>
         </div>

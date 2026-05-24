@@ -12,12 +12,15 @@ import com.example.user_service.dto.SkillDto;
 import com.example.user_service.dto.StudentProfileDto;
 import com.example.user_service.dto.SuggestedSkillsDto;
 import com.example.user_service.dto.TeacherAvailabilityDto;
+import com.example.user_service.dto.TeacherCapacityDto;
 import com.example.user_service.dto.TeacherProfileDto;
+import com.example.user_service.dto.TeacherRecommendationDto;
 import com.example.user_service.dto.UserDto;
 import com.example.user_service.dto.UserDocumentDto;
 import com.example.user_service.dto.UserUpdateRequest;
 import com.example.user_service.entity.Skill;
 import com.example.user_service.entity.TeacherAvailability;
+import com.example.user_service.entity.TeacherGrade;
 import com.example.user_service.entity.User;
 import com.example.user_service.entity.UserDocument;
 import com.example.user_service.entity.UserRole;
@@ -159,20 +162,69 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<StudentProfileDto> getStudents(String query, String level, String department, String academicYear) {
+    public List<StudentProfileDto> getStudents(String query, String classLevel, String department, String academicYear) {
         return userRepository.findAll().stream()
-            .filter(user -> user.getRole() == UserRole.STUDENT)
-            .filter(user -> matchesStudentFilters(user, query, level, department, academicYear))
+            .filter(user -> user.getRole() == UserRole.STUDENT && user.isActive())
+            .filter(user -> matchesStudentFilters(user, query, classLevel, department, academicYear))
             .map(this::toStudentProfile)
             .collect(Collectors.toList());
     }
 
     @Override
+    public List<StudentProfileDto> getCurrentYearStudents() {
+        int currentYear = java.time.LocalDate.now().getYear();
+        String currentAcademicYear = currentYear + "-" + (currentYear + 1);
+        return userRepository.findAll().stream()
+            .filter(user -> user.getRole() == UserRole.STUDENT && user.isActive())
+            .filter(user -> currentAcademicYear.equals(user.getAcademicYear()))
+            .map(this::toStudentProfile)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public StudentProfileDto getStudentProfile(String id) {
+        User user = getUserByIdOrThrow(id);
+        if (user.getRole() != UserRole.STUDENT) {
+            throw new IllegalArgumentException("User is not a student");
+        }
+        return toStudentProfile(user);
+    }
+
+    @Override
     public List<TeacherProfileDto> getTeachers(String query, String grade, String speciality, String department, Integer minYears) {
         return userRepository.findAll().stream()
-            .filter(user -> user.getRole() == UserRole.TEACHER)
+            .filter(user -> user.getRole() == UserRole.TEACHER && user.isActive())
             .filter(user -> matchesTeacherFilters(user, query, grade, speciality, department, minYears))
             .map(this::toTeacherProfile)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TeacherProfileDto> getAvailableTeachers() {
+        return userRepository.findAll().stream()
+            .filter(user -> user.getRole() == UserRole.TEACHER && user.isActive())
+            .filter(user -> {
+                int max = user.getMaxSupervisedStudents() != null ? user.getMaxSupervisedStudents() : 5;
+                int current = user.getCurrentSupervisedStudents() != null ? user.getCurrentSupervisedStudents() : 0;
+                return current < max;
+            })
+            .map(this::toTeacherProfile)
+            .collect(Collectors.toList());
+    }
+
+    public TeacherCapacityDto getTeacherCapacity(String id) {
+        User teacher = getUserByIdOrThrow(id);
+        if (teacher.getRole() != UserRole.TEACHER) {
+            throw new IllegalArgumentException("User is not a teacher");
+        }
+        return new TeacherCapacityDto(teacher.getMaxSupervisedStudents(), teacher.getCurrentSupervisedStudents());
+    }
+
+    public List<TeacherRecommendationDto> getTeacherRecommendations(String studentId, String speciality) {
+        // Stub implementation returning some matching logic
+        return getAvailableTeachers().stream()
+            .filter(t -> speciality == null || (t.getSpeciality() != null && t.getSpeciality().equalsIgnoreCase(speciality)))
+            .map(t -> new TeacherRecommendationDto(t.getId(), 85, "Matching speciality: " + t.getSpeciality(), t))
             .collect(Collectors.toList());
     }
 
@@ -537,11 +589,17 @@ public class UserServiceImpl implements UserService {
     private StudentProfileDto toStudentProfile(User user) {
         StudentProfileDto dto = new StudentProfileDto();
         applyBaseProfile(dto, user);
-        dto.setLevel(user.getLevel());
+        dto.setClassLevel(user.getClassLevel());
         dto.setDepartment(user.getDepartment());
-        dto.setStudentId(user.getStudentId());
+        dto.setStudentNumber(user.getStudentNumber());
         dto.setAcademicYear(user.getAcademicYear());
         dto.setInterests(user.getInterests());
+        dto.setGroupName(user.getGroupName());
+        dto.setCvUrl(user.getCvUrl());
+        dto.setPortfolioUrl(user.getPortfolioUrl());
+        dto.setGithubUrl(user.getGithubUrl());
+        dto.setBiography(user.getBio());
+        dto.setValidated(user.isValidated());
         dto.setSkills(getSkillsByUserId(user.getId()));
         return dto;
     }
@@ -556,6 +614,9 @@ public class UserServiceImpl implements UserService {
         dto.setResearchInterests(user.getResearchInterests());
         dto.setYearsOfExperience(user.getYearsOfExperience());
         dto.setYearsOfService(user.getYearsOfService());
+        dto.setMaxSupervisedStudents(user.getMaxSupervisedStudents() != null ? user.getMaxSupervisedStudents() : 5);
+        dto.setCurrentSupervisedStudents(user.getCurrentSupervisedStudents() != null ? user.getCurrentSupervisedStudents() : 0);
+        dto.setLinkedinUrl(user.getLinkedinUrl());
         dto.setSkills(getSkillsByUserId(user.getId()));
         return dto;
     }
@@ -567,6 +628,15 @@ public class UserServiceImpl implements UserService {
         dto.setOffice(user.getOffice());
         dto.setResponsibilities(user.getResponsibilities());
         dto.setYearsOfService(user.getYearsOfService());
+        dto.setPosition(user.getPosition());
+        dto.setResponsibilityLevel(user.getResponsibilityLevel());
+        if (user.getManagedAcademicYearsJson() != null && !user.getManagedAcademicYearsJson().isBlank()) {
+            dto.setManagedAcademicYears(java.util.Arrays.asList(user.getManagedAcademicYearsJson().split(",")));
+        } else {
+            dto.setManagedAcademicYears(java.util.Collections.emptyList());
+        }
+        dto.setSignatureUrl(user.getSignatureUrl());
+        dto.setAdministrativeCode(user.getAdministrativeCode());
         dto.setSkills(getSkillsByUserId(user.getId()));
         return dto;
     }
@@ -598,20 +668,35 @@ public class UserServiceImpl implements UserService {
         if (request.getAvatar() != null) {
             user.setAvatar(request.getAvatar());
         }
-        if (request.getLevel() != null) {
-            user.setLevel(request.getLevel());
+        if (request.getClassLevel() != null) {
+            user.setClassLevel(request.getClassLevel());
         }
         if (request.getDepartment() != null) {
             user.setDepartment(request.getDepartment());
         }
-        if (request.getStudentId() != null) {
-            user.setStudentId(request.getStudentId());
+        if (request.getStudentNumber() != null) {
+            user.setStudentNumber(request.getStudentNumber());
         }
         if (request.getAcademicYear() != null) {
             user.setAcademicYear(request.getAcademicYear());
         }
         if (request.getInterests() != null) {
             user.setInterests(request.getInterests());
+        }
+        if (request.getGroupName() != null) {
+            user.setGroupName(request.getGroupName());
+        }
+        if (request.getCvUrl() != null) {
+            user.setCvUrl(request.getCvUrl());
+        }
+        if (request.getPortfolioUrl() != null) {
+            user.setPortfolioUrl(request.getPortfolioUrl());
+        }
+        if (request.getGithubUrl() != null) {
+            user.setGithubUrl(request.getGithubUrl());
+        }
+        if (request.getBiography() != null) {
+            user.setBio(request.getBiography()); // map biography to bio
         }
         if (request.getGrade() != null) {
             user.setGrade(request.getGrade());
@@ -637,18 +722,36 @@ public class UserServiceImpl implements UserService {
         if (request.getResponsibilities() != null) {
             user.setResponsibilities(request.getResponsibilities());
         }
+        if (request.getPosition() != null) {
+            user.setPosition(request.getPosition());
+        }
+        if (request.getResponsibilityLevel() != null) {
+            user.setResponsibilityLevel(request.getResponsibilityLevel());
+        }
+        if (request.getManagedAcademicYears() != null) {
+            user.setManagedAcademicYearsJson(String.join(",", request.getManagedAcademicYears()));
+        }
+        if (request.getSignatureUrl() != null) {
+            user.setSignatureUrl(request.getSignatureUrl());
+        }
+        if (request.getAdministrativeCode() != null) {
+            user.setAdministrativeCode(request.getAdministrativeCode());
+        }
+        if (request.getLinkedinUrl() != null) {
+            user.setLinkedinUrl(request.getLinkedinUrl());
+        }
         if (request.getSkills() != null) {
             replaceUserSkills(user, request.getSkills());
         }
     }
 
-    private boolean matchesStudentFilters(User user, String query, String level, String department, String academicYear) {
+    private boolean matchesStudentFilters(User user, String query, String classLevel, String department, String academicYear) {
         return containsIgnoreCase(user.getName(), query)
             || containsIgnoreCase(user.getEmail(), query)
-            || containsIgnoreCase(user.getStudentId(), query)
-            ? equalsOrEmpty(user.getLevel(), level) && equalsOrEmpty(user.getDepartment(), department) && equalsOrEmpty(user.getAcademicYear(), academicYear)
+            || containsIgnoreCase(user.getStudentNumber(), query)
+            ? equalsOrEmpty(user.getClassLevel() != null ? user.getClassLevel().name() : null, classLevel) && equalsOrEmpty(user.getDepartment(), department) && equalsOrEmpty(user.getAcademicYear(), academicYear)
             : query == null || query.isBlank()
-                ? equalsOrEmpty(user.getLevel(), level) && equalsOrEmpty(user.getDepartment(), department) && equalsOrEmpty(user.getAcademicYear(), academicYear)
+                ? equalsOrEmpty(user.getClassLevel() != null ? user.getClassLevel().name() : null, classLevel) && equalsOrEmpty(user.getDepartment(), department) && equalsOrEmpty(user.getAcademicYear(), academicYear)
                 : false;
     }
 
@@ -659,7 +762,7 @@ public class UserServiceImpl implements UserService {
             || containsIgnoreCase(user.getSpeciality(), query);
         boolean yearsMatch = minYears == null || (user.getYearsOfExperience() != null && user.getYearsOfExperience() >= minYears);
         return queryMatches
-            && equalsOrEmpty(user.getGrade(), grade)
+            && (grade == null || grade.isBlank() || (user.getGrade() != null && user.getGrade().name().equalsIgnoreCase(grade)))
             && equalsOrEmpty(user.getSpeciality(), speciality)
             && equalsOrEmpty(user.getDepartment(), department)
             && yearsMatch;

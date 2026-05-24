@@ -13,15 +13,17 @@ import { AnimatedCard } from '@/components/animations/animated-card'
 import { useModalManager } from '@/hooks/use-modal-manager'
 import { ProjectsService } from '@/services/service_projects'
 import { usePresence } from '@/hooks/use-presence'
-import type { ProjectBasic } from '@/models/project.model'
+import { useAuth } from '@/providers/auth-provider'
 
 export default function TeacherProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const { open } = useModalManager()
+  const { user } = useAuth()
 
   const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => ProjectsService.getAllProjects(),
+    queryKey: ['projects', user?.id],
+    queryFn: () => user?.id ? ProjectsService.getProjectsBySupervisor(user.id) : Promise.resolve([]),
+    enabled: !!user?.id,
   })
 
   const studentNames = ['Ahmed Mohamed', 'Sara Ali', 'Omar Hassan', 'Layla Ahmed']
@@ -40,7 +42,6 @@ export default function TeacherProjectsPage() {
     status: (p.progress > 70 ? 'on-track' : p.progress > 40 ? 'at-risk' : 'pending') as 'on-track' | 'at-risk' | 'completed' | 'pending',
     lastUpdate: '3 hours ago',
     nextDeadline: `Milestone ${Math.ceil(p.progress / 25)} - Feb ${25 + idx}`,
-    unreadMessages: idx,
     unreadMessages: idx,
     documentsCount: 3 + idx,
   }))

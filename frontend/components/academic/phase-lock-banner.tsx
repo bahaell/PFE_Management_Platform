@@ -4,8 +4,9 @@ import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface PhaseLockBannerProps {
-  phase: string
-  requiredPhase: string
+  phase?: string
+  requiredPhase?: string
+  message?: string
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -20,7 +21,9 @@ export function PhaseLockBanner({ phase, requiredPhase }: PhaseLockBannerProps) 
     <Alert>
       <AlertCircle className="h-4 w-4" />
       <AlertDescription>
-        Ce document n'est accessible que {PHASE_LABELS[requiredPhase]}. Vous êtes actuellement à la phase: {PHASE_LABELS[phase]}
+        {requiredPhase && phase
+          ? `Ce document n'est accessible que ${PHASE_LABELS[requiredPhase]}. Vous êtes actuellement à la phase: ${PHASE_LABELS[phase]}`
+          : 'Ce document n’est pas encore accessible à cette phase.'}
       </AlertDescription>
     </Alert>
   )

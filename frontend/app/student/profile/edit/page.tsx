@@ -142,7 +142,11 @@ export default function EditStudentProfilePage() {
       birthdate: formData.birthdate,
       avatar: avatarUrl || (profile as any)?.avatar || ''
     }
-    await ProfileService.updateProfile('student', profileUpdates)
+    const updated = await ProfileService.updateProfile('student', profileUpdates)
+    if (!updated) {
+      alert('Failed to save profile changes. Please check the form values and try again.')
+      return
+    }
     alert('Profile changes saved successfully!')
     router.push('/student/profile')
   }

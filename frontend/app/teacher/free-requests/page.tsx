@@ -13,20 +13,26 @@ import { RequestReviewModal } from "./RequestReviewModal"
 import { format } from "date-fns"
 import { Eye, FileText } from "lucide-react"
 
+import { useAuth } from "@/providers/auth-provider"
+
 export default function TeacherFreeRequestsPage() {
   const [requests, setRequests] = useState<FreeSubjectRequest[]>([])
   const [selectedRequest, setSelectedRequest] = useState<FreeSubjectRequest | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const { user } = useAuth()
 
   useEffect(() => {
-    loadRequests()
-  }, [])
+    if (user?.id) {
+      loadRequests()
+    }
+  }, [user?.id])
 
   const loadRequests = async () => {
+    if (!user?.id) return
     setIsLoading(true)
     try {
-      const data = await getTeacherRequests("t1")
+      const data = await getTeacherRequests(user.id)
       setRequests(data)
     } finally {
       setIsLoading(false)

@@ -1,88 +1,69 @@
-import type { RoomAvailability, RoomAvailabilityData } from '@/models/availability.model'
+import { RoomsService, type RoomAvailabilitySlot } from './service_rooms'
+import type { RoomAvailabilityData, RoomAvailability } from '@/models/availability.model'
 
-let roomAvailabilityMockData: Record<string, RoomAvailabilityData> = {
-  'room-a': {
-    roomId: 'room-a',
-    availability: [
-      { id: 1, start: '09:00', end: '12:00', isMaintenance: false },
-      { id: 2, start: '14:00', end: '17:00', isMaintenance: true, reason: 'Cleaning' },
-    ],
-  },
-  'room-b': {
-    roomId: 'room-b',
-    availability: [
-      { id: 3, start: '08:00', end: '11:00', isMaintenance: false },
-      { id: 4, start: '13:00', end: '16:00', isMaintenance: false },
-    ],
-  },
+export type { RoomAvailabilitySlot }
+
+const DEFAULT_DAY_OF_WEEK: RoomAvailabilitySlot['dayOfWeek'] = 'MONDAY'
+
+function currentAcademicYear(): string {
+  const year = new Date().getFullYear()
+  return `${year}-${year + 1}`
+}
+
+function parseRoomId(roomId: string): number {
+  return parseInt(roomId.replace(/\D/g, ''), 10) || Number(roomId) || 1
+}
+
+function toUiAvailability(slot: RoomAvailabilitySlot): RoomAvailability {
+  return {
+    id: slot.id || `${slot.roomId}-${slot.dayOfWeek}-${slot.startTime}-${slot.endTime}`,
+    start: slot.startTime,
+    end: slot.endTime,
+    isMaintenance: slot.available === false,
+  }
 }
 
 export const RoomAvailabilityService = {
   async getRoomAvailability(roomId: string): Promise<RoomAvailabilityData> {
-    const data = roomAvailabilityMockData[roomId]
-    if (!data) {
-      roomAvailabilityMockData[roomId] = { roomId, availability: [] }
-      return Promise.resolve(roomAvailabilityMockData[roomId])
-    }
-    return Promise.resolve(data)
+    const numId = parseRoomId(roomId)
+    const slots = await RoomsService.getAvailabilitySlots(numId)
+    return { roomId, availability: slots.map(toUiAvailability) }
   },
 
   async addRoomSlot(roomId: string, slot: Omit<RoomAvailability, 'id'>): Promise<RoomAvailability> {
-    if (!roomAvailabilityMockData[roomId]) {
-      roomAvailabilityMockData[roomId] = { roomId, availability: [] }
-    }
-
-    const newSlot: RoomAvailability = {
-      ...slot,
-      id: Math.max(...roomAvailabilityMockData[roomId].availability.map(s => typeof s.id === 'number' ? s.id : 0), 0) + 1,
-    }
-    roomAvailabilityMockData[roomId].availability.push(newSlot)
-    return Promise.resolve(newSlot)
+    const numId = parseRoomId(roomId)
+    const res = await RoomsService.addAvailabilitySlot(numId, {
+      roomId: numId,
+      dayOfWeek: DEFAULT_DAY_OF_WEEK,
+      startTime: slot.start,
+      endTime: slot.end,
+      available: !slot.isMaintenance,
+      academicYear: currentAcademicYear()
+    })
+    return toUiAvailability(res)
   },
 
   async updateRoomSlot(roomId: string, id: string | number, slot: Partial<RoomAvailability>): Promise<RoomAvailability> {
-    const data = roomAvailabilityMockData[roomId]
-    if (!data) throw new Error('Room not found')
-
-    const index = data.availability.findIndex(s => s.id === id)
-    if (index === -1) throw new Error('Slot not found')
-
-    const updatedSlot = { ...data.availability[index], ...slot, id }
-    data.availability[index] = updatedSlot
-    return Promise.resolve(updatedSlot)
+    const numId = parseRoomId(roomId)
+    const availabilityId = Number(id)
+    const res = await RoomsService.updateAvailabilitySlot(numId, availabilityId, {
+      id: availabilityId,
+      roomId: numId,
+      dayOfWeek: DEFAULT_DAY_OF_WEEK,
+      startTime: slot.start || '08:00',
+      endTime: slot.end || '10:00',
+      available: !slot.isMaintenance,
+      academicYear: currentAcademicYear()
+    })
+    return toUiAvailability(res)
   },
 
   async deleteRoomSlot(roomId: string, id: string | number): Promise<void> {
-    const data = roomAvailabilityMockData[roomId]
-    if (!data) throw new Error('Room not found')
-
-    data.availability = data.availability.filter(s => s.id !== id)
-    return Promise.resolve()
+    await RoomsService.deleteAvailabilitySlot(parseRoomId(roomId), Number(id))
   },
 
   async validateNoOverlap(roomId: string, start: string, end: string, excludeId?: string | number): Promise<boolean> {
-    const data = roomAvailabilityMockData[roomId]
-    if (!data) return Promise.resolve(true)
-
-    const timeToMinutes = (time: string) => {
-      const [hours, minutes] = time.split(':').map(Number)
-      return hours * 60 + minutes
-    }
-
-    const newStart = timeToMinutes(start)
-    const newEnd = timeToMinutes(end)
-
-    for (const slot of data.availability) {
-      if (excludeId && slot.id === excludeId) continue
-      
-      const slotStart = timeToMinutes(slot.start)
-      const slotEnd = timeToMinutes(slot.end)
-      
-      if ((newStart < slotEnd && newEnd > slotStart)) {
-        return Promise.resolve(false)
-      }
-    }
-    return Promise.resolve(true)
+    return RoomsService.validateAvailabilityOverlap(parseRoomId(roomId), start, end, excludeId)
   },
 }
 

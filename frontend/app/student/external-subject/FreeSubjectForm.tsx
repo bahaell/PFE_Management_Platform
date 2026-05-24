@@ -97,8 +97,9 @@ export function FreeSubjectForm({ onSubmit, onGenerateRecommendations, isLoading
   }
 
   const handleSaveAsDraft = () => {
-    console.log("Saving as draft:", formData)
-    // Mock implementation - would save to local storage or backend
+    if (typeof window !== "undefined") {
+      localStorage.setItem("free_subject_draft", JSON.stringify(formData))
+    }
   }
 
   return (

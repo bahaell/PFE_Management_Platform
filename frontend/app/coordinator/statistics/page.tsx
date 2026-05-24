@@ -1,7 +1,7 @@
 'use client'
 
 import { PageHeader } from '@/components/page-header'
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, DoughnutChart } from 'recharts'
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts'
 
 const mostChosenSubjects = [
   { name: 'AI Healthcare', students: 12 },

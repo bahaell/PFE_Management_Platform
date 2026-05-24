@@ -1,12 +1,13 @@
 // Mock data for the Intelligent Auto-Scheduler with Complete Jury Management
 
 import type { Teacher } from '@/models/teacher.model'
+export type { Teacher } from '@/models/teacher.model'
 import type { Jury, ScheduledDefense } from '@/models/scheduler.model'
 import type { Room } from '@/models/room.model'
 
 export interface JuryMember {
-  teacher: Teacher
-  role: 'president' | 'rapporteur' | 'encadrant'
+  teacher?: Teacher
+  role: 'president' | 'rapporteur' | 'encadrant' | string
 }
 
 export interface Project {
@@ -364,24 +365,34 @@ export const MOCK_STATISTICS = {
   }, {} as Record<string, number>)
 }
 
-export const getJuryRoleBadgeColor = (role: 'president' | 'rapporteur' | 'encadrant') => {
+export const getJuryRoleBadgeColor = (role: string) => {
   switch (role) {
     case 'president':
       return 'bg-blue-100 text-blue-900 border-blue-300'
     case 'rapporteur':
       return 'bg-purple-100 text-purple-900 border-purple-300'
     case 'encadrant':
+    case 'supervisor':
       return 'bg-green-100 text-green-900 border-green-300'
+    case 'examiner':
+      return 'bg-amber-100 text-amber-900 border-amber-300'
+    default:
+      return 'bg-gray-100 text-gray-900 border-gray-300'
   }
 }
 
-export const getJuryRoleLabel = (role: 'president' | 'rapporteur' | 'encadrant') => {
+export const getJuryRoleLabel = (role: string) => {
   switch (role) {
     case 'president':
       return 'Président'
     case 'rapporteur':
       return 'Rapporteur'
     case 'encadrant':
+    case 'supervisor':
       return 'Encadrant'
+    case 'examiner':
+      return 'Examinateur'
+    default:
+      return role
   }
 }

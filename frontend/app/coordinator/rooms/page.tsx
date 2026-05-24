@@ -10,17 +10,26 @@ import { Input } from '@/components/ui/input'
 import { Plus, Search, MapPin, Users, Eye, Edit2, Clock } from 'lucide-react'
 import { RoomStatusBadge } from '@/components/rooms/room-status-badge'
 import { EquipmentIcons } from '@/components/rooms/equipment-icons'
-import { MOCK_ROOMS_WITH_EQUIPMENT, getRoomQualityScore, type RoomWithEquipment } from '@/lib/room-mock-data'
+import { getRoomQualityScore, type RoomWithEquipment } from '@/lib/room-mock-data'
+import { RoomsService } from '@/services/service_rooms'
 import { RoomAvailabilityService } from '@/services/service_roomAvailability'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function RoomsPage() {
   const router = useRouter()
-  const [rooms] = useState<RoomWithEquipment[]>(MOCK_ROOMS_WITH_EQUIPMENT)
+  const [rooms, setRooms] = useState<RoomWithEquipment[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [capacityFilter, setCapacityFilter] = useState<string>('all')
+
+  useEffect(() => {
+    RoomsService.getAllRooms()
+      .then(setRooms)
+      .finally(() => setIsLoading(false))
+  }, [])
 
   const { data: availabilityMap = {} } = useQuery({
     queryKey: ['all-room-availability'],
@@ -43,12 +52,12 @@ export default function RoomsPage() {
     const matchesSearch = room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          room.location.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === 'all' || room.status === statusFilter
-    const matchesCapacity = 
+    const matchesCapacity =
       capacityFilter === 'all' ||
       (capacityFilter === 'small' && room.capacity <= 25) ||
       (capacityFilter === 'medium' && room.capacity > 25 && room.capacity <= 40) ||
       (capacityFilter === 'large' && room.capacity > 40)
-    
+
     return matchesSearch && matchesStatus && matchesCapacity
   })
 
@@ -136,90 +145,96 @@ export default function RoomsPage() {
       </div>
 
       {/* Room Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredRooms.map(room => {
-          const qualityScore = getRoomQualityScore(room)
-          const availabilityCount = availabilityMap[room.id] || 0
-          
-          return (
-            <Card key={room.id} className="p-6 hover:shadow-lg transition-shadow">
-              <div className="space-y-4">
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">{room.name}</h3>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4" />
-                      {room.location}
+      {isLoading ? (
+        <Card className="p-12 text-center">
+          <p className="text-muted-foreground">Loading rooms from backend...</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredRooms.map(room => {
+            const qualityScore = getRoomQualityScore(room)
+            const availabilityCount = availabilityMap[room.id] || 0
+
+            return (
+              <Card key={room.id} className="p-6 hover:shadow-lg transition-shadow">
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">{room.name}</h3>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4" />
+                        {room.location}
+                      </div>
+                    </div>
+                    <RoomStatusBadge status={room.status} />
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {room.description}
+                  </p>
+
+                  {/* Capacity & Quality */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">{room.capacity} people</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm text-muted-foreground">Equipment:</div>
+                      <Badge variant="outline" className="text-xs">
+                        {qualityScore}% Ready
+                      </Badge>
                     </div>
                   </div>
-                  <RoomStatusBadge status={room.status} />
-                </div>
 
-                {/* Description */}
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {room.description}
-                </p>
+                  {/* Equipment Icons */}
+                  <EquipmentIcons equipment={room.equipment} />
 
-                {/* Capacity & Quality */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{room.capacity} people</span>
+                  <div className="pt-2 border-t flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {availabilityCount} time slots configured
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm text-muted-foreground">Equipment:</div>
-                    <Badge variant="outline" className="text-xs">
-                      {qualityScore}% Ready
-                    </Badge>
+
+                  {/* Bookings Info */}
+                  {room.bookings.length > 0 && (
+                    <div className="pb-2 text-xs text-muted-foreground">
+                      {room.bookings.length} upcoming booking{room.bookings.length > 1 ? 's' : ''}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => router.push(`/coordinator/rooms/${room.id}`)}
+                    >
+                      <Eye className="w-3 h-3 mr-2" />
+                      View Details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => router.push(`/coordinator/rooms/${room.id}/edit`)}
+                    >
+                      <Edit2 className="w-3 h-3 mr-2" />
+                      Edit
+                    </Button>
                   </div>
                 </div>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
-                {/* Equipment Icons */}
-                <EquipmentIcons equipment={room.equipment} />
-
-                <div className="pt-2 border-t flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {availabilityCount} time slots configured
-                  </span>
-                </div>
-
-                {/* Bookings Info */}
-                {room.bookings.length > 0 && (
-                  <div className="pb-2 text-xs text-muted-foreground">
-                    {room.bookings.length} upcoming booking{room.bookings.length > 1 ? 's' : ''}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => router.push(`/coordinator/rooms/${room.id}`)}
-                  >
-                    <Eye className="w-3 h-3 mr-2" />
-                    View Details
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => router.push(`/coordinator/rooms/${room.id}/edit`)}
-                  >
-                    <Edit2 className="w-3 h-3 mr-2" />
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )
-        })}
-      </div>
-
-      {filteredRooms.length === 0 && (
+      {!isLoading && filteredRooms.length === 0 && (
         <Card className="p-12 text-center">
           <p className="text-muted-foreground">No rooms found matching your filters</p>
         </Card>

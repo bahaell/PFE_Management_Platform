@@ -27,7 +27,7 @@ export function CommitPanelChatGPT({ projectId, userRole = "student" }: CommitPa
 
   const { data: documents = [], isLoading: docsLoading } = useQuery({
     queryKey: ["documents", projectId],
-    queryFn: () => DocumentsService.getDocuments(),
+    queryFn: () => DocumentsService.getDocuments(projectId),
     retry: 1,
     staleTime: 1000 * 60 * 5,
   })
@@ -64,6 +64,9 @@ export function CommitPanelChatGPT({ projectId, userRole = "student" }: CommitPa
 
   const addCommitMutation = useMutation({
     mutationFn: async (commitData: any) => {
+      if (!commitData.documentId) {
+        throw new Error("Select a document before adding official feedback.")
+      }
       return CommitService.addCommit(commitData)
     },
     onSuccess: () => {
@@ -78,25 +81,6 @@ export function CommitPanelChatGPT({ projectId, userRole = "student" }: CommitPa
       toast({
         title: "Error",
         description: "Failed to add feedback",
-        variant: "destructive",
-      })
-    },
-  })
-
-  const deleteCommitMutation = useMutation({
-    mutationFn: (commitId: string) => CommitService.deleteCommit(commitId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["commits", projectId] })
-      queryClient.invalidateQueries({ queryKey: ["overall-progress", projectId] })
-      toast({
-        title: "Success",
-        description: "Feedback deleted",
-      })
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete feedback",
         variant: "destructive",
       })
     },
@@ -145,9 +129,9 @@ export function CommitPanelChatGPT({ projectId, userRole = "student" }: CommitPa
             commits={filteredCommits}
             isLoading={commitsLoading}
             isReadOnly={isReadOnly}
-            canDelete={() => userRole === "teacher"}
-            onDelete={(commitId) => deleteCommitMutation.mutate(commitId)}
-            isDeleting={deleteCommitMutation.isPending}
+            canDelete={() => false}
+            onDelete={() => {}}
+            isDeleting={false}
             userRole={userRole}
           />
           <div ref={commitsEndRef} />

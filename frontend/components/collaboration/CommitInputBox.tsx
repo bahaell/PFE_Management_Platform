@@ -11,7 +11,7 @@ import type { Commit } from '@/models/commit.model'
 interface CommitInputBoxProps {
   onSubmit: (data: {
     projectId: string
-    documentId: string | null
+    documentId: string
     teacherId: string
     teacherName: string
     teacherAvatar: string
@@ -62,6 +62,10 @@ export function CommitInputBox({
       newErrors.push(`Progress must be between 0 and ${maxProgress}`)
     }
 
+    if (!documentId) {
+      newErrors.push('Select a document before sending official feedback')
+    }
+
     setErrors(newErrors)
     return newErrors.length === 0
   }
@@ -91,7 +95,7 @@ export function CommitInputBox({
 
     onSubmit({
       projectId,
-      documentId,
+      documentId: documentId as string,
       teacherId: 'teacher-1',
       teacherName: 'Dr. Ahmed Hassan',
       teacherAvatar: 'AH',
@@ -107,7 +111,7 @@ export function CommitInputBox({
     setErrors([])
   }
 
-  const isSubmitDisabled = !comment.trim() || isLoading
+  const isSubmitDisabled = !comment.trim() || isLoading || !documentId
 
   return (
     <motion.div

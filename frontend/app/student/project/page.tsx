@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
-import { FileUp, BookOpen, Info, Users } from 'lucide-react'
+import { FileUp, BookOpen, Info, Users, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CollapsibleSidebar } from '@/components/collaboration/collapsible-sidebar'
 import { ProjectInfoSidebar } from '@/components/collaboration/project-info-sidebar'
@@ -13,19 +14,65 @@ import { ProjectChatPanel } from '@/components/collaboration/project-chat-panel'
 import { ProjectKanban } from '@/components/collaboration/project-kanban'
 import { DocumentVersionsPanel } from '@/components/collaboration/document-versions-panel'
 import { ActivityTimeline } from '@/components/collaboration/activity-timeline'
-import { CommitPanel } from '@/components/collaboration/commit-panel'
 import { CommitPanelChatGPT } from '@/components/collaboration/commit-panel-chatgpt'
-import { projectMockData } from '@/lib/collaboration-mock-data'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { ProjectsService } from '@/services/service_projects'
+import { useAuth } from '@/providers/auth-provider'
+import type { ProjectBasic } from '@/models/project.model'
+
+function initials(value?: string) {
+  return value?.split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'NA'
+}
+
+function buildProjectParticipants(project: ProjectBasic, currentStudent?: { id: string; name: string }) {
+  const supervisorId = project.supervisors?.find((item) => item.role === 'MAIN_SUPERVISOR')?.teacherId ?? project.supervisors?.[0]?.teacherId ?? 'supervisor'
+  const studentId = currentStudent?.id ?? project.members?.[0]?.studentId ?? 'student'
+
+  return {
+    teacher: {
+      id: supervisorId,
+      name: `Teacher ${supervisorId}`,
+      avatar: initials(supervisorId),
+      role: 'Supervisor',
+      online: false,
+    },
+    student: {
+      id: studentId,
+      name: currentStudent?.name ?? `Student ${studentId}`,
+      avatar: initials(currentStudent?.name ?? studentId),
+      role: 'Student',
+      online: false,
+    },
+    jury: [],
+  }
+}
 
 export default function ProjectPage() {
-  const hasProject = true
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
 
   const [leftMobileOpen, setLeftMobileOpen] = useState(false)
   const [rightMobileOpen, setRightMobileOpen] = useState(false)
+
+  const { data: projects = [], isLoading, isError } = useQuery({
+    queryKey: ['student-project', user?.id],
+    queryFn: () => ProjectsService.getProjectsByStudent(user?.id ?? ''),
+    enabled: Boolean(user?.id),
+  })
+
+  const project = projects[0]
+  const hasProject = Boolean(project)
+  const participants = project ? buildProjectParticipants(project, user ? { id: user.id, name: user.name } : undefined) : null
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   if (!hasProject) {
     return (
@@ -37,7 +84,9 @@ export default function ProjectPage() {
         <div className="bg-card rounded-lg border border-border p-6 sm:p-12 text-center mt-6">
           <BookOpen className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-3" />
           <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">No Project Yet</h3>
-          <p className="text-sm sm:text-base text-muted-foreground mb-6">You haven't been assigned a project. Apply for subjects to get started.</p>
+          <p className="text-sm sm:text-base text-muted-foreground mb-6">
+            {isError ? "Unable to load your project right now." : "You haven't been assigned a project. Apply for subjects to get started."}
+          </p>
           <Button className="w-full sm:w-auto">Browse Subjects</Button>
         </div>
       </div>
@@ -49,8 +98,8 @@ export default function ProjectPage() {
       <div className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-2">
         <div className="flex items-start justify-between gap-4">
           <PageHeader
-            title={projectMockData.project.title}
-            description={projectMockData.project.description}
+            title={project.title}
+            description={project.description}
           />
           
           <div className="flex gap-2 lg:hidden">
@@ -66,9 +115,9 @@ export default function ProjectPage() {
                 </SheetHeader>
                 <div className="mt-4">
                   <ProjectInfoSidebar
-                    project={projectMockData.project}
-                    teacher={projectMockData.teacher}
-                    student={projectMockData.student}
+                    project={project}
+                    teacher={participants?.teacher}
+                    student={participants?.student}
                   />
                 </div>
               </SheetContent>
@@ -86,9 +135,9 @@ export default function ProjectPage() {
                 </SheetHeader>
                 <div className="mt-4">
                   <ParticipantsPanel
-                    teacher={projectMockData.teacher}
-                    student={projectMockData.student}
-                    jury={projectMockData.jury}
+                    teacher={participants?.teacher}
+                    student={participants?.student}
+                    jury={participants?.jury}
                   />
                 </div>
               </SheetContent>
@@ -110,9 +159,9 @@ export default function ProjectPage() {
             >
               <div className="p-4">
                 <ProjectInfoSidebar
-                  project={projectMockData.project}
-                  teacher={projectMockData.teacher}
-                  student={projectMockData.student}
+                  project={project}
+                  teacher={participants?.teacher}
+                  student={participants?.student}
                 />
               </div>
             </CollapsibleSidebar>
@@ -145,7 +194,7 @@ export default function ProjectPage() {
                         </div>
                         <div>
                           <p className="text-sm sm:text-base text-muted-foreground">Completion Rate</p>
-                          <p className="font-semibold text-foreground">{projectMockData.project.progress}%</p>
+                          <p className="font-semibold text-foreground">{project.progress}%</p>
                         </div>
                         <div>
                           <p className="text-sm sm:text-base text-muted-foreground">Last Update</p>
@@ -157,7 +206,7 @@ export default function ProjectPage() {
 
                   <div className="bg-background rounded-lg border border-border p-4 sm:p-6">
                     <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">Project Description</h3>
-                    <p className="text-xs sm:text-sm text-foreground leading-relaxed">{projectMockData.project.description}</p>
+                    <p className="text-xs sm:text-sm text-foreground leading-relaxed">{project.description}</p>
                   </div>
 
                   <div className="bg-background rounded-lg border border-border p-4 sm:p-6">
@@ -174,17 +223,17 @@ export default function ProjectPage() {
 
               <TabsContent value="chat" className="h-full m-0 p-4 sm:p-6 data-[state=inactive]:hidden">
                 <ProjectChatPanel 
-                  projectId={projectMockData.project.id.toString()}
+                  projectId={project.id.toString()}
                   participantsIds={[
-                    projectMockData.student.id.toString(), 
-                    projectMockData.teacher.id.toString(), 
-                    ...(projectMockData.jury?.map(j => j.id.toString()) || [])
+                    participants?.student.id.toString() ?? '',
+                    participants?.teacher.id.toString() ?? '',
+                    ...(participants?.jury?.map(j => j.id.toString()) || [])
                   ]} 
                 />
               </TabsContent>
 
               <TabsContent value="tasks" className="h-full m-0 p-4 sm:p-6 overflow-hidden data-[state=inactive]:hidden">
-                <ProjectKanban />
+                <ProjectKanban projectId={project.id} />
               </TabsContent>
 
               <TabsContent value="documents" className="h-full m-0 p-4 sm:p-6 overflow-y-auto data-[state=inactive]:hidden">
@@ -192,11 +241,11 @@ export default function ProjectPage() {
               </TabsContent>
 
               <TabsContent value="activity" className="h-full m-0 p-4 sm:p-6 overflow-y-auto data-[state=inactive]:hidden">
-                <ActivityTimeline />
+                <ActivityTimeline projectId={project.id} />
               </TabsContent>
 
               <TabsContent value="commits" className="h-full m-0 p-4 sm:p-6 overflow-y-auto data-[state=inactive]:hidden">
-                <CommitPanelChatGPT projectId={projectMockData.project.id.toString()} userRole="student" />
+                <CommitPanelChatGPT projectId={project.id.toString()} userRole="student" />
               </TabsContent>
             </div>
           </Tabs>
@@ -214,10 +263,9 @@ export default function ProjectPage() {
             >
               <div className="p-4">
                 <ParticipantsPanel
-                  teacher={projectMockData.teacher}
-                  student={projectMockData.student}
-                  jury={projectMockData.jury}
-                  defense={projectMockData.defense}
+                  teacher={participants?.teacher}
+                  student={participants?.student}
+                  jury={participants?.jury}
                 />
               </div>
             </CollapsibleSidebar>

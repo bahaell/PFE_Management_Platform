@@ -1,9 +1,13 @@
 package com.example.projects.controller;
 
 import com.example.projects.dto.ProjectRequest;
+import com.example.projects.dto.ProjectMemberRequest;
+import com.example.projects.dto.ProjectMemberResponse;
 import com.example.projects.dto.ProjectMatchingRequest;
 import com.example.projects.dto.ProjectMatchingResponse;
 import com.example.projects.dto.ProjectResponse;
+import com.example.projects.dto.ProjectSupervisorRequest;
+import com.example.projects.dto.ProjectSupervisorResponse;
 import com.example.projects.dto.SchedulingProjectResponse;
 import com.example.projects.entity.ProjectStatus;
 import com.example.projects.service.ProjectService;
@@ -32,12 +36,19 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable UUID id) {
-        return ResponseEntity.ok(projectService.getProjectById(id));
+    public ResponseEntity<ProjectResponse> getProjectById(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        return ResponseEntity.ok(projectService.getProjectById(id, userId, userRole));
     }
 
     @GetMapping
-    public ResponseEntity<List<ProjectResponse>> getAllProjects() {
+    public ResponseEntity<List<ProjectResponse>> getAllProjects(
+            @RequestParam(required = false) ProjectStatus status) {
+        if (status != null) {
+            return ResponseEntity.ok(projectService.getProjectsByStatus(status));
+        }
         return ResponseEntity.ok(projectService.getAllProjects());
     }
 
@@ -54,9 +65,14 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/supervisor/{supervisorId}")
-    public ResponseEntity<List<ProjectResponse>> getProjectsBySupervisor(@PathVariable String supervisorId) {
-        return ResponseEntity.ok(projectService.getProjectsBySupervisor(supervisorId));
+    @GetMapping("/supervisor/{teacherId}")
+    public ResponseEntity<List<ProjectResponse>> getProjectsBySupervisor(@PathVariable String teacherId) {
+        return ResponseEntity.ok(projectService.getProjectsBySupervisor(teacherId));
+    }
+
+    @GetMapping("/student/{studentId}")
+    public ResponseEntity<List<ProjectResponse>> getProjectsByStudent(@PathVariable String studentId) {
+        return ResponseEntity.ok(projectService.getProjectsByStudentId(studentId));
     }
 
     @GetMapping("/status/{status}")
@@ -66,7 +82,7 @@ public class ProjectController {
 
     @GetMapping("/scheduling-candidates")
     public ResponseEntity<List<SchedulingProjectResponse>> getSchedulingCandidates(
-            @RequestParam(defaultValue = "SUBMITTED") ProjectStatus status) {
+            @RequestParam(defaultValue = "IN_PROGRESS") ProjectStatus status) {
         return ResponseEntity.ok(projectService.getSchedulingCandidates(status));
     }
 
@@ -76,11 +92,15 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.calculateProjectMatching(request));
     }
 
-    @PatchMapping("/{id}/progress")
-    public ResponseEntity<ProjectResponse> updateProgress(
+    @PutMapping("/{id}/progress/internal")
+    public ResponseEntity<ProjectResponse> updateProgressInternal(
             @PathVariable UUID id,
-            @RequestParam Integer progress) {
-        return ResponseEntity.ok(projectService.updateProgress(id, progress));
+            @RequestParam Integer progress,
+            @RequestHeader(value = "X-Internal-Request", required = false) String internalRequest) {
+        if (!"true".equalsIgnoreCase(internalRequest)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(projectService.updateProgressInternal(id, progress));
     }
 
     @PatchMapping("/{id}/status")
@@ -89,5 +109,29 @@ public class ProjectController {
             @RequestParam ProjectStatus status,
             @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         return ResponseEntity.ok(projectService.updateProjectStatus(id, status, userRole));
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<List<ProjectMemberResponse>> getMembers(@PathVariable UUID id) {
+        return ResponseEntity.ok(projectService.getMembers(id));
+    }
+
+    @PostMapping("/{id}/members")
+    public ResponseEntity<ProjectMemberResponse> addMember(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProjectMemberRequest request) {
+        return new ResponseEntity<>(projectService.addMember(id, request), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}/supervisors")
+    public ResponseEntity<List<ProjectSupervisorResponse>> getSupervisors(@PathVariable UUID id) {
+        return ResponseEntity.ok(projectService.getSupervisors(id));
+    }
+
+    @PostMapping("/{id}/supervisors")
+    public ResponseEntity<ProjectSupervisorResponse> addSupervisor(
+            @PathVariable UUID id,
+            @Valid @RequestBody ProjectSupervisorRequest request) {
+        return new ResponseEntity<>(projectService.addSupervisor(id, request), HttpStatus.CREATED);
     }
 }

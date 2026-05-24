@@ -1,14 +1,22 @@
 package com.example.user_service.dto;
 
+import com.example.user_service.entity.ResponsibilityLevel;
+import com.example.user_service.entity.StudentLevel;
+import com.example.user_service.entity.TeacherGrade;
 import java.util.List;
 
 public class ProfileUpdateRequest {
-    private String level;
+    private StudentLevel classLevel;
     private String department;
-    private String studentId;
+    private String studentNumber;
     private String academicYear;
     private String interests;
-    private String grade;
+    private String groupName;
+    private String cvUrl;
+    private String portfolioUrl;
+    private String githubUrl;
+    private String biography;
+    private TeacherGrade grade;
     private String speciality;
     private String bio;
     private String researchInterests;
@@ -16,22 +24,28 @@ public class ProfileUpdateRequest {
     private String office;
     private String responsibilities;
     private Integer yearsOfService;
+    private String position;
+    private ResponsibilityLevel responsibilityLevel;
+    private List<String> managedAcademicYears;
+    private String signatureUrl;
+    private String administrativeCode;
     private String name;
     private String phone;
     private String gender;
     private String birthdate;
     private String avatar;
+    private String linkedinUrl;
     private List<SkillDto> skills;
 
     public ProfileUpdateRequest() {
     }
 
-    public String getLevel() {
-        return level;
+    public StudentLevel getClassLevel() {
+        return classLevel;
     }
 
-    public void setLevel(String level) {
-        this.level = level;
+    public void setClassLevel(StudentLevel classLevel) {
+        this.classLevel = classLevel;
     }
 
     public String getDepartment() {
@@ -42,12 +56,12 @@ public class ProfileUpdateRequest {
         this.department = department;
     }
 
-    public String getStudentId() {
-        return studentId;
+    public String getStudentNumber() {
+        return studentNumber;
     }
 
-    public void setStudentId(String studentId) {
-        this.studentId = studentId;
+    public void setStudentNumber(String studentNumber) {
+        this.studentNumber = studentNumber;
     }
 
     public String getAcademicYear() {
@@ -66,11 +80,51 @@ public class ProfileUpdateRequest {
         this.interests = interests;
     }
 
-    public String getGrade() {
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public String getCvUrl() {
+        return cvUrl;
+    }
+
+    public void setCvUrl(String cvUrl) {
+        this.cvUrl = cvUrl;
+    }
+
+    public String getPortfolioUrl() {
+        return portfolioUrl;
+    }
+
+    public void setPortfolioUrl(String portfolioUrl) {
+        this.portfolioUrl = portfolioUrl;
+    }
+
+    public String getGithubUrl() {
+        return githubUrl;
+    }
+
+    public void setGithubUrl(String githubUrl) {
+        this.githubUrl = githubUrl;
+    }
+
+    public String getBiography() {
+        return biography;
+    }
+
+    public void setBiography(String biography) {
+        this.biography = biography;
+    }
+
+    public TeacherGrade getGrade() {
         return grade;
     }
 
-    public void setGrade(String grade) {
+    public void setGrade(TeacherGrade grade) {
         this.grade = grade;
     }
 
@@ -128,6 +182,54 @@ public class ProfileUpdateRequest {
 
     public void setYearsOfService(Integer yearsOfService) {
         this.yearsOfService = yearsOfService;
+    }
+
+    public String getLinkedinUrl() {
+        return linkedinUrl;
+    }
+
+    public void setLinkedinUrl(String linkedinUrl) {
+        this.linkedinUrl = linkedinUrl;
+    }
+
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
+
+    public ResponsibilityLevel getResponsibilityLevel() {
+        return responsibilityLevel;
+    }
+
+    public void setResponsibilityLevel(ResponsibilityLevel responsibilityLevel) {
+        this.responsibilityLevel = responsibilityLevel;
+    }
+
+    public List<String> getManagedAcademicYears() {
+        return managedAcademicYears;
+    }
+
+    public void setManagedAcademicYears(List<String> managedAcademicYears) {
+        this.managedAcademicYears = managedAcademicYears;
+    }
+
+    public String getSignatureUrl() {
+        return signatureUrl;
+    }
+
+    public void setSignatureUrl(String signatureUrl) {
+        this.signatureUrl = signatureUrl;
+    }
+
+    public String getAdministrativeCode() {
+        return administrativeCode;
+    }
+
+    public void setAdministrativeCode(String administrativeCode) {
+        this.administrativeCode = administrativeCode;
     }
 
     public List<SkillDto> getSkills() {

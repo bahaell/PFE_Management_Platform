@@ -230,7 +230,7 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
                 <div className="p-6 text-center text-sm text-muted-foreground">
                   <p>Unable to load notifications.</p>
                   <button
-                    onClick={fetchNotifications}
+                    onClick={() => refetch()}
                     className="mt-2 text-primary hover:underline text-xs"
                   >
                     Try again

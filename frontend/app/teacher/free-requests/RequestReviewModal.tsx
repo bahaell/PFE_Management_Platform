@@ -22,6 +22,8 @@ import { updateRequestStatus } from "@/services/freeSubjectService"
 import { motion } from "framer-motion"
 import { Mail, Phone, MapPin, AlertCircle, CheckCircle2, TrendingUp, Briefcase, User, Target } from "lucide-react"
 
+import { useAuth } from "@/providers/auth-provider"
+
 interface RequestReviewModalProps {
   request: FreeSubjectRequest | null
   open: boolean
@@ -34,6 +36,7 @@ export function RequestReviewModal({ request, open, onOpenChange, onStatusChange
   const [error, setError] = useState("")
   const [showAcceptDialog, setShowAcceptDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
+  const { user } = useAuth()
 
   if (!request) return null
 
@@ -42,10 +45,11 @@ export function RequestReviewModal({ request, open, onOpenChange, onStatusChange
   const loadPercentage = (currentLoad / maxCapacity) * 100
 
   const handleAccept = async () => {
+    if (!user) return
     setIsLoading(true)
     setError("")
     try {
-      await updateRequestStatus(request.id, "accepted", "t1", "Prof. Fatima Benali")
+      await updateRequestStatus(request.id, "accepted", user.id, user.name)
       onStatusChange()
       setShowAcceptDialog(false)
     } catch (err) {

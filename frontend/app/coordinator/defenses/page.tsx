@@ -7,29 +7,47 @@ import { DataTable } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Edit2, Trash2, Zap } from 'lucide-react'
 import { DefenseModal, type DefenseData } from '@/components/modals/defense-modal'
-import { EnhancedAutoScheduleModal } from '@/components/scheduler/enhanced-auto-schedule-modal'
 import { EnhancedSmartCalendar } from '@/components/scheduler/enhanced-smart-calendar'
 import { SchedulerSummarySidebar } from '@/components/scheduler/scheduler-summary-sidebar'
 import { PendingRequestsTable } from '@/components/scheduler/pending-requests-table'
 import { Card } from '@/components/ui/card'
-import { MOCK_SCHEDULED_DEFENSES, getJuryRoleBadgeColor, getJuryRoleLabel, type ScheduledDefense } from '@/lib/scheduler-mock-data'
+import { getJuryRoleBadgeColor } from '@/lib/scheduler-mock-data'
+import { SchedulerService } from '@/services/service_scheduler'
+import { useEffect } from 'react'
+import type { ScheduledDefenseEntry } from '@/models/scheduler.model'
 
 export default function DefensesPage() {
-  const [defenses, setDefenses] = useState<ScheduledDefense[]>(MOCK_SCHEDULED_DEFENSES)
+  const [defenses, setDefenses] = useState<ScheduledDefenseEntry[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isAutoScheduleOpen, setIsAutoScheduleOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
+
+  const loadDefenses = async () => {
+    setIsLoading(true)
+    SchedulerService.getAllScheduledDefenses()
+      .then(setDefenses)
+      .catch(() => setDefenses([]))
+      .finally(() => setIsLoading(false))
+  }
+
+  useEffect(() => {
+    loadDefenses()
+  }, [])
 
   const handleEdit = (id: number) => {
     setEditingId(id)
     setIsModalOpen(true)
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
+    await SchedulerService.deleteScheduledDefense(id)
     setDefenses(defenses.filter((d) => d.id !== id))
     setDeleteConfirm(null)
   }
+
+  const editingDefense = editingId ? defenses.find((defense) => defense.id === editingId) : null
+  const [editingStartTime, editingEndTime] = editingDefense?.time?.split('-').map((part) => part.trim()) ?? []
 
   return (
     <div className="space-y-6">
@@ -38,7 +56,7 @@ export default function DefensesPage() {
         description="Intelligent auto-scheduling system for PFE defenses with complete jury management"
         action={
           <div className="flex gap-2">
-            <Button onClick={() => setIsAutoScheduleOpen(true)} className="flex items-center gap-2">
+            <Button onClick={() => window.location.href = '/coordinator/defenses/recommend'} className="flex items-center gap-2">
               <Zap className="w-4 h-4" />
               Auto-Schedule
             </Button>
@@ -61,6 +79,14 @@ export default function DefensesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <EnhancedSmartCalendar
+            events={defenses
+              .filter((defense) => defense.date && defense.date !== 'TBD')
+              .map((defense) => ({
+                date: defense.date,
+                title: defense.projectName,
+                type: 'confirmed' as const,
+                time: defense.time,
+              }))}
             onDateSelect={(date) => {
               setEditingId(null)
               setIsModalOpen(true)
@@ -76,7 +102,7 @@ export default function DefensesPage() {
       <div>
         <PendingRequestsTable
           onAutoSchedule={(id) => {
-            setIsAutoScheduleOpen(true)
+            window.location.href = '/coordinator/defenses/recommend'
           }}
         />
       </div>
@@ -84,6 +110,7 @@ export default function DefensesPage() {
       {/* Scheduled Defenses Table with Jury Roles */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4">Scheduled Defenses</h3>
+        {isLoading && <p className="text-sm text-muted-foreground mb-4">Loading defenses from scheduling-service...</p>}
         <DataTable
           columns={[
             { header: 'Project', accessor: 'projectName' },
@@ -95,8 +122,8 @@ export default function DefensesPage() {
               id: 'president',
               header: 'Président',
               accessor: 'jury',
-              render: (jury) => {
-                const president = jury.find((m: any) => m.role === 'president')
+              render: (_value, row) => {
+                const president = row.jury.find((m: any) => m.role === 'president')
                 return president ? (
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{president.teacher.name}</span>
@@ -111,8 +138,8 @@ export default function DefensesPage() {
               id: 'rapporteur',
               header: 'Rapporteur',
               accessor: 'jury',
-              render: (jury) => {
-                const rapporteur = jury.find((m: any) => m.role === 'rapporteur')
+              render: (_value, row) => {
+                const rapporteur = row.jury.find((m: any) => m.role === 'rapporteur')
                 return rapporteur ? (
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{rapporteur.teacher.name}</span>
@@ -127,8 +154,8 @@ export default function DefensesPage() {
               id: 'encadrant',
               header: 'Encadrant',
               accessor: 'jury',
-              render: (jury) => {
-                const encadrant = jury.find((m: any) => m.role === 'encadrant')
+              render: (_value, row) => {
+                const encadrant = row.jury.find((m: any) => m.role === 'encadrant')
                 return encadrant ? (
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">{encadrant.teacher.name}</span>
@@ -142,12 +169,12 @@ export default function DefensesPage() {
             {
               header: 'Actions',
               accessor: 'id',
-              render: (id) => (
+              render: (_value, row) => (
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleEdit(id)}
+                    onClick={() => handleEdit(row.id)}
                     className="flex items-center gap-1"
                   >
                     <Edit2 className="w-3 h-3" />
@@ -157,7 +184,7 @@ export default function DefensesPage() {
                     size="sm"
                     variant="outline"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => setDeleteConfirm(id)}
+                    onClick={() => setDeleteConfirm(row.id)}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
@@ -194,15 +221,28 @@ export default function DefensesPage() {
           setIsModalOpen(false)
           setEditingId(null)
         }}
-        onSubmit={(data) => {
+        initialData={editingDefense ? {
+          projectId: editingDefense.projectId,
+          roomId: editingDefense.roomId,
+          date: editingDefense.date === 'TBD' ? '' : editingDefense.date,
+          startTime: editingStartTime || '09:00',
+          endTime: editingEndTime || '09:45',
+          roomNameSnapshot: editingDefense.room,
+        } : undefined}
+        onSubmit={async (data) => {
+          if (editingId) {
+            await SchedulerService.updateDefense(editingId, data)
+          } else {
+            await SchedulerService.createDefense({
+              ...data,
+              status: 'PENDING',
+              manuallyScheduled: false,
+            })
+          }
+          await loadDefenses()
           setIsModalOpen(false)
           setEditingId(null)
         }}
-      />
-
-      <EnhancedAutoScheduleModal
-        isOpen={isAutoScheduleOpen}
-        onClose={() => setIsAutoScheduleOpen(false)}
       />
     </div>
   )

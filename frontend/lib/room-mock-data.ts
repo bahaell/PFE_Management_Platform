@@ -4,6 +4,8 @@ import type { Room } from '@/models/room.model'
 import type { Equipment } from '@/models/equipment.model'
 import type { RoomBooking } from '@/models/booking.model'
 
+export type { Equipment, RoomBooking }
+
 export interface RoomWithEquipment extends Room {
   bookings: RoomBooking[]
   maintenanceSchedule?: {

@@ -1,36 +1,52 @@
-// Mock documents service for commit panel
-// Documents are derived from the commits' documentId references
+import { apiClient } from '@/lib/api-client'
+import type { ProjectDocument } from '@/models/document.model'
 
-const MOCK_DOCUMENTS = [
-  { id: "doc-1", name: "Report Draft", type: "document" },
-  { id: "doc-2", name: "Architecture.pdf", type: "pdf" },
-  { id: "doc-3", name: "Implementation", type: "document" },
-]
+interface BackendProjectDocument {
+  id: string
+  projectId: string
+  title: string
+  description?: string
+  fileUrl: string
+  fileType?: string
+  version: number
+  uploadedBy: string
+  status: string
+  createdAt: string
+}
+
+function mapDocument(document: BackendProjectDocument): ProjectDocument {
+  return {
+    id: document.id,
+    projectId: document.projectId,
+    name: document.title,
+    title: document.title,
+    description: document.description ?? '',
+    fileUrl: document.fileUrl,
+    fileType: document.fileType,
+    type: document.fileType,
+    version: document.version,
+    uploadedBy: document.uploadedBy,
+    uploadedAt: document.createdAt,
+    createdAt: document.createdAt,
+    status: document.status,
+  }
+}
 
 export const DocumentsService = {
-  async getDocuments() {
-    return Promise.resolve(MOCK_DOCUMENTS)
+  async getDocuments(projectId: string) {
+    const documents = await apiClient.get<BackendProjectDocument[]>(`/api/projects/${projectId}/documents`)
+    return documents.map(mapDocument)
   },
 
-  async getDocumentById(id: string) {
-    return Promise.resolve(MOCK_DOCUMENTS.find((doc) => doc.id === id) || null)
-  },
-
-  async addDocument(document: Omit<(typeof MOCK_DOCUMENTS)[0], "id">) {
-    const newDoc = {
-      ...document,
-      id: `doc-${Date.now()}`,
-    }
-    MOCK_DOCUMENTS.push(newDoc)
-    return Promise.resolve(newDoc)
-  },
-
-  async deleteDocument(id: string) {
-    const initialLength = MOCK_DOCUMENTS.length
-    const index = MOCK_DOCUMENTS.findIndex((doc) => doc.id === id)
-    if (index > -1) {
-      MOCK_DOCUMENTS.splice(index, 1)
-    }
-    return Promise.resolve(MOCK_DOCUMENTS.length < initialLength)
+  async addDocument(projectId: string, document: {
+    title: string
+    description?: string
+    fileUrl: string
+    fileType?: string
+    uploadedBy: string
+    version?: number
+  }) {
+    const created = await apiClient.post<BackendProjectDocument>(`/api/projects/${projectId}/documents`, document)
+    return mapDocument(created)
   },
 }

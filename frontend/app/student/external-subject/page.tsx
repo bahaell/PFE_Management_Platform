@@ -1,31 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { FreeSubjectForm } from "./FreeSubjectForm"
 import { RecommendationPanel } from "./RecommendationPanel"
-import { generateTeacherRecommendations } from "@/services/recommendationService"
+import { generateSupervisorRecommendations } from "@/services/recommendationService"
 import { submitFreeSubjectRequest, getStudentRequests } from "@/services/freeSubjectService"
 import type { TeacherRecommendation } from "@/models/recommendation.model"
 import type { FreeSubjectRequest } from "@/models/freeSubject.model"
 import { CheckCircle2, AlertCircle } from "lucide-react"
+import { useAuth } from "@/providers/auth-provider"
 
 export default function FreeSubjectPage() {
+  const { user } = useAuth()
   const [recommendations, setRecommendations] = useState<TeacherRecommendation[]>([])
   const [selectedTeacher, setSelectedTeacher] = useState<{ id: string; name: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [studentRequests, setStudentRequests] = useState<FreeSubjectRequest[]>([])
+  const studentId = user?.id ?? ""
+
+  useEffect(() => {
+    if (!studentId) return
+    getStudentRequests(studentId)
+      .then(setStudentRequests)
+      .catch(() => setErrorMessage("Failed to load your existing requests."))
+  }, [studentId])
 
   const handleGenerateRecommendations = async (formData: any) => {
     setIsLoading(true)
     setErrorMessage("")
     try {
-      const recs = await generateTeacherRecommendations(formData.subjectDescription, formData.companyDescription)
+      const recs = await generateSupervisorRecommendations({
+        studentId,
+        subjectDescription: formData.subjectDescription,
+        companyDescription: formData.companyDescription,
+        keywords: formData.keywords,
+      })
       setRecommendations(recs)
     } catch (error) {
       setErrorMessage("Failed to generate recommendations. Please try again.")
@@ -35,6 +50,11 @@ export default function FreeSubjectPage() {
   }
 
   const handleSubmitRequest = async (formData: any) => {
+    if (!studentId) {
+      setErrorMessage("Unable to submit request without an authenticated student.")
+      return
+    }
+
     if (!selectedTeacher && recommendations.length === 0) {
       setErrorMessage("Please generate recommendations and select a teacher first")
       return
@@ -44,8 +64,8 @@ export default function FreeSubjectPage() {
     setErrorMessage("")
     try {
       const newRequest = await submitFreeSubjectRequest({
-        studentId: "s1",
-        studentName: "Current Student",
+        studentId,
+        studentName: user?.name ?? "Current Student",
         teacherId: selectedTeacher?.id,
         teacherName: selectedTeacher?.name,
         status: "pending",
@@ -74,7 +94,7 @@ export default function FreeSubjectPage() {
       setRecommendations([])
       setSelectedTeacher(null)
 
-      const requests = await getStudentRequests("s1")
+      const requests = await getStudentRequests(studentId)
       setStudentRequests(requests)
 
       // Clear form after submission

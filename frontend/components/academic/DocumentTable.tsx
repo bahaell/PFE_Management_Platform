@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import { getDocuments } from '../../services/service_academic_documents'
-import type { AdministrativeDocument } from '../../models/administrative_document.model'
+import type { AdministrativeDocument } from '../../models/academic-document.model'
 
 export default function DocumentTable({ studentId }: { studentId: string }) {
   const [documents, setDocuments] = useState<AdministrativeDocument[]>([])

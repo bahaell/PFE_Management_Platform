@@ -143,7 +143,11 @@ export default function EditTeacherProfilePage() {
       birthdate: formData.birthdate,
       avatar: avatarUrl || (profile as any)?.avatar || ''
     }
-    await ProfileService.updateProfile('teacher', profileUpdates)
+    const updated = await ProfileService.updateProfile('teacher', profileUpdates)
+    if (!updated) {
+      alert('Failed to save profile changes. Please check the form values and try again.')
+      return
+    }
     alert('Profile changes saved successfully!')
     router.push('/teacher/profile')
   }
@@ -276,9 +280,11 @@ export default function EditTeacherProfilePage() {
                   onChange={handleInputChange}
                   className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <option>Assistant</option>
-                  <option>Associate</option>
-                  <option>Professor</option>
+                  <option value="">Select your grade</option>
+                  <option value="ASSISTANT">Assistant</option>
+                  <option value="MAITRE_ASSISTANT">Associate</option>
+                  <option value="PROFESSOR">Professor</option>
+                  <option value="DOCTOR">Doctor</option>
                 </select>
               </div>
 

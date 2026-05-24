@@ -1,31 +1,118 @@
-import type { ProjectBasic, ProjectMatch } from "@/models/project.model"
+import type { ProjectBasic, ProjectMatch, ProjectMember, ProjectSupervisor } from "@/models/project.model"
+import { ProjectStatus } from "@/models/project.model"
 import { apiClient } from "@/lib/api-client"
 
 const PROJECTS_ENDPOINT = "/api/projects"
+
+interface BackendProjectResponse extends Omit<ProjectBasic, 'deadline' | 'startDate'> {
+  startDate?: string
+  endDate?: string
+  deadline?: string
+}
+
+type ProjectPayload = Partial<ProjectBasic> & {
+  subjectId?: string
+  endDate?: string
+}
+
+type ProjectMemberRole = 'LEADER' | 'MEMBER'
+type ProjectSupervisorRole = 'MAIN_SUPERVISOR' | 'CO_SUPERVISOR'
 
 function normalizeId(id: string | number) {
   return typeof id === 'number' ? id.toString() : id
 }
 
+function toLocalDateTime(value?: string) {
+  if (!value) return undefined
+  return value.includes('T') ? value : `${value}T00:00:00`
+}
+
+function toProjectPayload(project: ProjectPayload) {
+  const {
+    id,
+    subject,
+    progress,
+    members,
+    supervisors,
+    createdAt,
+    updatedAt,
+    deadline,
+    ...payload
+  } = project
+
+  return {
+    ...payload,
+    startDate: toLocalDateTime(project.startDate),
+    endDate: toLocalDateTime(project.deadline ?? project.endDate),
+  }
+}
+
+function mapProject(project: BackendProjectResponse): ProjectBasic {
+  return {
+    ...project,
+    subject: project.subject ?? project.title,
+    description: project.description ?? '',
+    startDate: project.startDate?.slice(0, 10) ?? '',
+    deadline: (project.deadline ?? project.endDate ?? '').slice(0, 10),
+    progress: project.progress ?? 0,
+  }
+}
+
 export const ProjectsService = {
-  async createProject(project: ProjectBasic): Promise<ProjectBasic> {
-    const payload = { ...project }
-    return apiClient.post<ProjectBasic>(PROJECTS_ENDPOINT, payload)
+  async createProject(project: ProjectPayload): Promise<ProjectBasic> {
+    return mapProject(await apiClient.post<BackendProjectResponse>(PROJECTS_ENDPOINT, toProjectPayload(project)))
   },
 
   async getProjectById(id: string | number): Promise<ProjectBasic | null> {
     const normalizedId = normalizeId(id)
-    return apiClient.get<ProjectBasic>(`${PROJECTS_ENDPOINT}/${normalizedId}`)
+    return mapProject(await apiClient.get<BackendProjectResponse>(`${PROJECTS_ENDPOINT}/${normalizedId}`))
   },
 
   async getAllProjects(): Promise<ProjectBasic[]> {
-    return apiClient.get<ProjectBasic[]>(PROJECTS_ENDPOINT)
+    const projects = await apiClient.get<BackendProjectResponse[]>(PROJECTS_ENDPOINT)
+    return projects.map(mapProject)
   },
 
-  async updateProject(id: string | number, updates: Partial<ProjectBasic>): Promise<ProjectBasic | null> {
+  async getProjectsBySupervisor(teacherId: string): Promise<ProjectBasic[]> {
+    const projects = await apiClient.get<BackendProjectResponse[]>(`${PROJECTS_ENDPOINT}/supervisor/${teacherId}`)
+    return projects.map(mapProject)
+  },
+
+  async getProjectsByStudent(studentId: string): Promise<ProjectBasic[]> {
+    const projects = await apiClient.get<BackendProjectResponse[]>(`${PROJECTS_ENDPOINT}/student/${studentId}`)
+    return projects.map(mapProject)
+  },
+
+  async updateProject(id: string | number, updates: ProjectPayload): Promise<ProjectBasic | null> {
     const normalizedId = normalizeId(id)
-    const payload = { ...updates }
-    return apiClient.put<ProjectBasic>(`${PROJECTS_ENDPOINT}/${normalizedId}`, payload)
+    return mapProject(await apiClient.put<BackendProjectResponse>(`${PROJECTS_ENDPOINT}/${normalizedId}`, toProjectPayload(updates)))
+  },
+
+  async updateProjectStatus(id: string | number, status: ProjectStatus): Promise<ProjectBasic> {
+    const normalizedId = normalizeId(id)
+    return mapProject(await apiClient.patch<BackendProjectResponse>(
+      `${PROJECTS_ENDPOINT}/${normalizedId}/status?status=${encodeURIComponent(status)}`,
+      {},
+      { headers: { 'X-User-Role': 'COORDINATOR' } },
+    ))
+  },
+
+  async addProjectMember(
+    projectId: string | number,
+    studentId: string,
+    role: ProjectMemberRole = 'MEMBER',
+  ): Promise<ProjectMember> {
+    const normalizedId = normalizeId(projectId)
+    return apiClient.post<ProjectMember>(`${PROJECTS_ENDPOINT}/${normalizedId}/members`, { studentId, role })
+  },
+
+  async addProjectSupervisor(
+    projectId: string | number,
+    teacherId: string,
+    role: ProjectSupervisorRole = 'MAIN_SUPERVISOR',
+  ): Promise<ProjectSupervisor> {
+    const normalizedId = normalizeId(projectId)
+    return apiClient.post<ProjectSupervisor>(`${PROJECTS_ENDPOINT}/${normalizedId}/supervisors`, { teacherId, role })
   },
 
   async deleteProject(id: string | number): Promise<boolean> {
@@ -49,21 +136,13 @@ export const ProjectsService = {
   },
 
   async getProjectsByStatus(status: string): Promise<ProjectBasic[]> {
-    return apiClient.get<ProjectBasic[]>(`${PROJECTS_ENDPOINT}/status/${encodeURIComponent(status)}`)
-  },
-
-  async updateProjectProgress(id: string | number, progress: number): Promise<ProjectBasic | null> {
-    const normalizedId = normalizeId(id)
-    return apiClient.patch<ProjectBasic>(`${PROJECTS_ENDPOINT}/${normalizedId}/progress?progress=${progress}`, {})
+    const projects = await apiClient.get<BackendProjectResponse[]>(`${PROJECTS_ENDPOINT}/status/${encodeURIComponent(status)}`)
+    return projects.map(mapProject)
   },
 
   async getProjectsByDateRange(startDate: string, endDate: string): Promise<ProjectBasic[]> {
     const projects = await this.getAllProjects()
     return projects.filter((p) => p.startDate >= startDate && p.deadline <= endDate)
-  },
-
-  async updateProgress(projectId: string | number, newProgress: number): Promise<ProjectBasic | null> {
-    return this.updateProjectProgress(projectId, newProgress)
   },
 
   async getProjectMatches(studentSkills: string[]): Promise<ProjectMatch[]> {

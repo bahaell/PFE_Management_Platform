@@ -1,5 +1,6 @@
 package com.example.projects.dto;
 
+import com.example.projects.entity.ProjectDocumentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,12 +15,13 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ProjectDocumentResponse {
     private UUID id;
-    private String name;
-    private Integer version;
-    private UUID uploadedBy;
-    private LocalDateTime uploadedAt;
-    private Long size;
-    private String contentType;
-    private String fileUrl;
     private UUID projectId;
+    private String title;
+    private String description;
+    private String fileUrl;
+    private String fileType;
+    private Integer version;
+    private String uploadedBy;
+    private ProjectDocumentStatus status;
+    private LocalDateTime createdAt;
 }

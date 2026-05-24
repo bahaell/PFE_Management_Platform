@@ -1,8 +1,10 @@
 export interface ActivityItem {
-  id: string;
+  [key: string]: any;
+  id: string | number;
   type: 'message' | 'upload' | 'task' | 'status' | 'member';
-  authorId: string;
+  authorId?: string;
+  author?: string;
   action: string;
   timestamp: string;
-  projectId: string;
+  projectId?: string | number;
 }

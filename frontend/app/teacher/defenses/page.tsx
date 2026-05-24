@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
@@ -8,19 +8,32 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Eye, Search, Calendar, Clock, MapPin, Users } from 'lucide-react'
-import { MOCK_TEACHER_DEFENSES } from '@/lib/teacher-defense-mock-data'
 import { getJuryRoleBadgeColor, getJuryRoleLabel } from '@/lib/scheduler-mock-data'
+import { SchedulerService } from '@/services/service_scheduler'
+import { useAuth } from '@/providers/auth-provider'
+import type { TeacherDefense } from '@/lib/teacher-defense-mock-data'
 
 export default function TeacherDefensesPage() {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
+  const [defenses, setDefenses] = useState<TeacherDefense[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const filteredDefenses = MOCK_TEACHER_DEFENSES.filter(
+  useEffect(() => {
+    SchedulerService.getTeacherDefenses(user?.id)
+      .then(setDefenses)
+      .catch(() => setDefenses([]))
+      .finally(() => setIsLoading(false))
+  }, [user?.id])
+
+  const filteredDefenses = defenses.filter(
     (defense) =>
       defense.student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       defense.subject.title.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const formatDate = (dateString: string) => {
+    if (!dateString || dateString === 'TBD') return 'TBD'
     const date = new Date(dateString)
     return date.toLocaleDateString('fr-FR', {
       day: '2-digit',
@@ -36,7 +49,7 @@ export default function TeacherDefensesPage() {
       'in-progress': 'bg-yellow-100 text-yellow-900 dark:bg-yellow-900/20 dark:text-yellow-100'
     }
     return (
-      <Badge className={colors[status as keyof typeof colors]}>
+      <Badge className={colors[status as keyof typeof colors] || colors.scheduled}>
         {status}
       </Badge>
     )
@@ -49,7 +62,6 @@ export default function TeacherDefensesPage() {
         description="View all defenses where you are assigned as jury member"
       />
 
-      {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
@@ -60,11 +72,12 @@ export default function TeacherDefensesPage() {
         />
       </div>
 
+      {isLoading && <p className="text-sm text-muted-foreground">Loading defenses from scheduling-service...</p>}
+
       <div className="grid gap-4 md:grid-cols-2">
         {filteredDefenses.map((defense) => (
           <Card key={defense.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
-              {/* Header with Student & Status */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
@@ -72,13 +85,12 @@ export default function TeacherDefensesPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">{defense.student.name}</h3>
-                    <p className="text-xs text-muted-foreground">{defense.student.email}</p>
+                    <p className="text-xs text-muted-foreground">{defense.student.email || 'No email provided'}</p>
                   </div>
                 </div>
                 {getStatusBadge(defense.defense.status)}
               </div>
 
-              {/* Subject */}
               <div className="mb-4">
                 <h4 className="text-sm font-medium text-foreground mb-2">{defense.subject.title}</h4>
                 <div className="flex flex-wrap gap-1">
@@ -90,7 +102,6 @@ export default function TeacherDefensesPage() {
                 </div>
               </div>
 
-              {/* Defense Details */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="w-4 h-4" />
@@ -106,7 +117,6 @@ export default function TeacherDefensesPage() {
                 </div>
               </div>
 
-              {/* My Role & Jury */}
               <div className="flex items-center justify-between pt-4 border-t">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">My Role:</span>
@@ -114,24 +124,13 @@ export default function TeacherDefensesPage() {
                     {getJuryRoleLabel(defense.teacherRole)}
                   </Badge>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-foreground" />
-                  <div className="flex items-center -space-x-2">
-                    {defense.jury.slice(0, 3).map((member: any) => (
-                      <div
-                        key={member.teacher.id}
-                        className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary border-2 border-background"
-                        title={member.teacher.name}
-                      >
-                        {member.teacher.name.split(' ').map((n: string) => n[0]).join('')}
-                      </div>
-                    ))}
-                  </div>
+                  <span className="text-xs text-muted-foreground">{defense.jury.length} jury members</span>
                 </div>
               </div>
 
-              {/* Action Button */}
               <Link href={`/teacher/defenses/${defense.id}`} className="block mt-4">
                 <Button size="sm" variant="outline" className="w-full flex items-center justify-center gap-2">
                   <Eye className="w-4 h-4" />
@@ -143,7 +142,7 @@ export default function TeacherDefensesPage() {
         ))}
       </div>
 
-      {filteredDefenses.length === 0 && (
+      {!isLoading && filteredDefenses.length === 0 && (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No defenses found matching your search.</p>
         </div>

@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, Filter, Trash2, CheckCircle2 } from 'lucide-react'
+import { Search, Filter, CheckCircle2 } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -15,43 +15,46 @@ import {
 } from '@/components/ui/select'
 import { SkillMatchBar } from '@/components/recommendations/skill-match-bar'
 import { RecommendedSubjectsPanel } from '@/components/recommendations/recommended-subjects-panel'
-import { ProjectsService } from '@/services/service_projects'
+import { SubjectsService } from '@/services/service_subjects'
 export default function SubjectsPage() {
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterTeacher, setFilterTeacher] = useState('all')
   const [filterDomain, setFilterDomain] = useState('all')
-  const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => ProjectsService.getAllProjects(),
+  const { data: subjects = [], isLoading } = useQuery({
+    queryKey: ['accepted-subjects'],
+    queryFn: () => SubjectsService.getAllSubjects({ status: 'ACCEPTED', role: 'STUDENT' }),
   })
 
-  const [appliedIds, setAppliedIds] = useState<string[]>([])
+  const { data: applications = [] } = useQuery({
+    queryKey: ['subject-applications'],
+    queryFn: () => SubjectsService.getApplicationsByStudent(),
+  })
 
-  const handleApply = (id: string) => {
-    setAppliedIds([...appliedIds, id])
-    queryClient.invalidateQueries({ queryKey: ['projects'] })
-  }
+  const appliedIds = applications
+    .filter((application) => application.status !== 'REJECTED')
+    .map((application) => application.subjectId)
 
-  const handleWithdraw = (id: string) => {
-    setAppliedIds(appliedIds.filter(aid => aid !== id))
-    setDeleteId(null)
-    queryClient.invalidateQueries({ queryKey: ['projects'] })
-  }
+  const applyMutation = useMutation({
+    mutationFn: (id: string) => SubjectsService.applyToSubject(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subject-applications'] })
+    },
+  })
 
-  const filteredSubjects = projects.filter((p) => {
-    const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesTeacher = filterTeacher === 'all' || p.subject === filterTeacher
-    const matchesDomain = filterDomain === 'all' || p.subject === filterDomain
+  const filteredSubjects = subjects.filter((subject) => {
+    const domain = subject.type === 'EXTERNAL' ? subject.companyName ?? 'External' : 'Internal'
+    const matchesSearch = subject.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subject.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesTeacher = filterTeacher === 'all' || subject.teacherId === filterTeacher
+    const matchesDomain = filterDomain === 'all' || domain === filterDomain
 
     return matchesSearch && matchesTeacher && matchesDomain
   })
 
-  const uniqueTeachers = Array.from(new Set(projects.map((p) => p.subject)))
-  const uniqueDomains = Array.from(new Set(projects.map((p) => p.subject)))
+  const uniqueTeachers = Array.from(new Set(subjects.map((subject) => subject.teacherId).filter(Boolean))) as string[]
+  const uniqueDomains = Array.from(new Set(subjects.map((subject) => subject.type === 'EXTERNAL' ? subject.companyName ?? 'External' : 'Internal')))
 
   if (isLoading) {
     return (
@@ -143,12 +146,14 @@ export default function SubjectsPage() {
             <p className="text-xs sm:text-sm text-muted-foreground mb-3 flex-1">{subject.description}</p>
 
             <div className="mb-4 space-y-1">
-              <p className="text-xs sm:text-sm font-medium text-foreground">Subject: {subject.subject}</p>
-              <p className="text-xs text-muted-foreground">Status: {subject.status}</p>
+              <p className="text-xs sm:text-sm font-medium text-foreground">
+                Teacher: {subject.teacherId ?? 'Not assigned'}
+              </p>
+              <p className="text-xs text-muted-foreground">Status: Accepted</p>
             </div>
 
             <div className="flex gap-2 mb-4 flex-wrap">
-              {['Research', 'Development', 'Testing'].map((tech) => (
+              {subject.technologies.slice(0, 3).map((tech) => (
                 <span key={tech} className="bg-primary/10 text-primary text-xs px-2 py-1 rounded">
                   {tech}
                 </span>
@@ -158,16 +163,20 @@ export default function SubjectsPage() {
             <div className="flex gap-2 mt-auto">
               {appliedIds.includes(subject.id) ? (
                 <Button
-                  variant="destructive"
+                  variant="outline"
                   className="w-full"
-                  onClick={() => setDeleteId(subject.id)}
                   size="sm"
+                  disabled
                 >
-                  <Trash2 className="w-3 h-3 mr-1" />
-                  Withdraw
+                  Applied
                 </Button>
               ) : (
-                <Button className="w-full" onClick={() => handleApply(subject.id)} size="sm">
+                <Button
+                  className="w-full"
+                  onClick={() => applyMutation.mutate(subject.id)}
+                  size="sm"
+                  disabled={applyMutation.isPending}
+                >
                   Apply Now
                 </Button>
               )}
@@ -183,24 +192,6 @@ export default function SubjectsPage() {
         </div>
       )}
 
-      {deleteId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg border border-border p-4 sm:p-6 w-full max-w-sm">
-            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Withdraw Application?</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-              You can reapply for this subject later.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-              <Button variant="outline" onClick={() => setDeleteId(null)} className="w-full sm:w-auto">
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={() => handleWithdraw(deleteId)} className="w-full sm:w-auto">
-                Withdraw
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

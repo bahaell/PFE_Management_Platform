@@ -59,7 +59,13 @@ export function CommitPanel({ projectId, isReadOnly = false }: CommitPanelProps)
   })
 
   const addCommitMutation = useMutation({
-    mutationFn: async (commitData: Omit<Commit, 'id' | 'createdAt'>) => {
+    mutationFn: async (commitData: {
+      documentId: string
+      teacherId: string
+      comment: string
+      newProgress: number
+      attachments: { name: string; url: string; type: string }[]
+    }) => {
       return CommitService.addCommit(commitData)
     },
     onSuccess: (commit) => {
@@ -84,26 +90,6 @@ export function CommitPanel({ projectId, isReadOnly = false }: CommitPanelProps)
     }
   })
 
-  const deleteCommitMutation = useMutation({
-    mutationFn: (commitId: string) => CommitService.deleteCommit(commitId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commits', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['overall-progress', projectId] })
-      
-      toast({
-        title: 'Success',
-        description: 'Commit deleted successfully!'
-      })
-    },
-    onError: () => {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete commit',
-        variant: 'destructive'
-      })
-    }
-  })
-
   // Auto-scroll to bottom
   useEffect(() => {
     if (!isLoading && commits.length > 0) {
@@ -111,7 +97,7 @@ export function CommitPanel({ projectId, isReadOnly = false }: CommitPanelProps)
     }
   }, [commits.length, isLoading])
 
-  const canEditDelete = user?.role === 'teacher'
+  const selectedDocumentId = commits[0]?.documentId ?? ''
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -170,9 +156,9 @@ export function CommitPanel({ projectId, isReadOnly = false }: CommitPanelProps)
                   key={commit.id}
                   commit={commit}
                   itemVariants={itemVariants}
-                  canDelete={canEditDelete && user?.id === commit.teacherId}
-                  onDelete={() => deleteCommitMutation.mutate(commit.id)}
-                  isDeleting={deleteCommitMutation.isPending}
+                  canDelete={false}
+                  onDelete={() => {}}
+                  isDeleting={false}
                 />
               ))}
             </AnimatePresence>
@@ -196,6 +182,7 @@ export function CommitPanel({ projectId, isReadOnly = false }: CommitPanelProps)
             </DialogHeader>
             <CommitForm
               projectId={projectId}
+              documentId={selectedDocumentId}
               previousProgress={commits.length > 0 ? commits[0].newProgress : 0}
               onSubmit={(data) => addCommitMutation.mutate(data)}
               isLoading={addCommitMutation.isPending}

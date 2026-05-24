@@ -1,11 +1,10 @@
 package com.example.projects.entity;
 
 public enum ProjectStatus {
-    PROPOSED,
+    PENDING,
     APPROVED,
-    ASSIGNED,
     IN_PROGRESS,
-    SUBMITTED,
-    COMPLETED,
-    CANCELLED
+    DEFENDED,
+    REJECTED,
+    ARCHIVED
 }

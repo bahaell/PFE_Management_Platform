@@ -9,6 +9,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { BookOpen, CheckCircle2, Users, ClipboardList } from 'lucide-react'
 import { ProjectsService } from '@/services/service_projects'
 import { StudentsService } from '@/services/service_students'
+import { ProjectStatus } from '@/models/project.model'
 
 export default function CoordinatorDashboard() {
   const { user } = useAuth()
@@ -31,9 +32,9 @@ export default function CoordinatorDashboard() {
   ]
 
   const pieChartData = [
-    { name: 'In Progress', value: projects.filter(p => p.status === 'In Progress').length, fill: '#3b82f6' },
-    { name: 'Completed', value: projects.filter(p => p.status === 'Completed').length, fill: '#10b981' },
-    { name: 'Pending', value: Math.max(1, 5 - projects.length), fill: '#f59e0b' },
+    { name: 'In Progress', value: projects.filter(p => p.status === ProjectStatus.IN_PROGRESS).length, fill: '#3b82f6' },
+    { name: 'Defended', value: projects.filter(p => p.status === ProjectStatus.DEFENDED).length, fill: '#10b981' },
+    { name: 'Pending', value: projects.filter(p => p.status === ProjectStatus.PENDING).length, fill: '#f59e0b' },
   ]
 
   const activityItems = [

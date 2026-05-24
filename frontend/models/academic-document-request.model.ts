@@ -15,6 +15,7 @@ export interface AcademicDocumentRequest {
   status: RequestStatus
   requestedAt: string
   respondedAt?: string
+  deliveredAt?: string
   responseMessage?: string
   coordinatorId?: string
   generatedDocumentId?: string

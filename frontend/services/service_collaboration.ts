@@ -14,7 +14,7 @@ let projectMockData: CollaborationData = {
     startDate: '2024-01-15',
     deadline: '2024-06-30',
     progress: 65,
-    status: 'In Progress',
+    status: 'IN_PROGRESS',
   },
   teacher: {
     id: 1,
@@ -89,7 +89,6 @@ let projectMockData: CollaborationData = {
     { id: 2, type: 'upload', author: 'Ahmed Mohamed', action: 'Uploaded new version of Project Proposal', timestamp: '3 hours ago', icon: 'FileUp' },
   ],
 }
-
 export const CollaborationService = {
   async getProject() {
     return Promise.resolve(projectMockData)
@@ -106,7 +105,7 @@ export const CollaborationService = {
     return Promise.resolve(newMessage)
   },
 
-  async getMessageById(id: number): Promise<ProjectMessage | null> {
+  async getMessageById(id: any): Promise<ProjectMessage | null> {
     return Promise.resolve(projectMockData.messages.find(m => m.id === id) || null)
   },
 
@@ -114,26 +113,26 @@ export const CollaborationService = {
     return Promise.resolve(projectMockData.messages)
   },
 
-  async updateMessage(id: number, updates: Partial<ProjectMessage>): Promise<ProjectMessage | null> {
+  async updateMessage(id: any, updates: Partial<ProjectMessage>): Promise<ProjectMessage | null> {
     const message = projectMockData.messages.find(m => m.id === id)
     if (!message) return Promise.resolve(null)
     Object.assign(message, updates, { id })
     return Promise.resolve(message)
   },
 
-  async deleteMessage(id: number): Promise<boolean> {
+  async deleteMessage(id: any): Promise<boolean> {
     const initialLength = projectMockData.messages.length
     projectMockData.messages = projectMockData.messages.filter(m => m.id !== id)
     return Promise.resolve(projectMockData.messages.length < initialLength)
   },
 
   async createTask(task: Task): Promise<Task> {
-    const newTask = { ...task, id: Math.max(...projectMockData.tasks.map(t => t.id), 0) + 1 }
+    const newTask = { ...task, id: Math.max(...projectMockData.tasks.map(t => Number(t.id)), 0) + 1 }
     projectMockData.tasks.push(newTask)
     return Promise.resolve(newTask)
   },
 
-  async getTaskById(id: number): Promise<Task | null> {
+  async getTaskById(id: any): Promise<Task | null> {
     return Promise.resolve(projectMockData.tasks.find(t => t.id === id) || null)
   },
 
@@ -141,26 +140,26 @@ export const CollaborationService = {
     return Promise.resolve(projectMockData.tasks)
   },
 
-  async updateTask(taskId: number, updates: Partial<Task>): Promise<Task | null> {
+  async updateTask(taskId: any, updates: Partial<Task>): Promise<Task | null> {
     const task = projectMockData.tasks.find(t => t.id === taskId)
     if (!task) return Promise.resolve(null)
     Object.assign(task, updates, { id: taskId })
     return Promise.resolve(task)
   },
 
-  async deleteTask(taskId: number): Promise<boolean> {
+  async deleteTask(taskId: any): Promise<boolean> {
     const initialLength = projectMockData.tasks.length
     projectMockData.tasks = projectMockData.tasks.filter(t => t.id !== taskId)
     return Promise.resolve(projectMockData.tasks.length < initialLength)
   },
 
   async createDocument(doc: ProjectDocument): Promise<ProjectDocument> {
-    const newDoc = { ...doc, id: Math.max(...projectMockData.documents.map(d => d.id), 0) + 1 }
+    const newDoc = { ...doc, id: Math.max(...projectMockData.documents.map(d => Number(d.id)), 0) + 1 }
     projectMockData.documents.push(newDoc)
     return Promise.resolve(newDoc)
   },
 
-  async getDocumentById(id: number): Promise<ProjectDocument | null> {
+  async getDocumentById(id: any): Promise<ProjectDocument | null> {
     return Promise.resolve(projectMockData.documents.find(d => d.id === id) || null)
   },
 
@@ -168,26 +167,26 @@ export const CollaborationService = {
     return Promise.resolve(projectMockData.documents)
   },
 
-  async updateDocument(id: number, updates: Partial<ProjectDocument>): Promise<ProjectDocument | null> {
+  async updateDocument(id: any, updates: Partial<ProjectDocument>): Promise<ProjectDocument | null> {
     const doc = projectMockData.documents.find(d => d.id === id)
     if (!doc) return Promise.resolve(null)
     Object.assign(doc, updates, { id })
     return Promise.resolve(doc)
   },
 
-  async deleteDocument(id: number): Promise<boolean> {
+  async deleteDocument(id: any): Promise<boolean> {
     const initialLength = projectMockData.documents.length
     projectMockData.documents = projectMockData.documents.filter(d => d.id !== id)
     return Promise.resolve(projectMockData.documents.length < initialLength)
   },
 
   async createComment(comment: NestedComment): Promise<NestedComment> {
-    const newComment = { ...comment, id: Math.max(...projectMockData.comments.map(c => c.id), 0) + 1, replies: [] }
+    const newComment = { ...comment, id: Math.max(...projectMockData.comments.map(c => Number(c.id)), 0) + 1, replies: [] }
     projectMockData.comments.push(newComment)
     return Promise.resolve(newComment)
   },
 
-  async getCommentById(id: number): Promise<NestedComment | null> {
+  async getCommentById(id: any): Promise<NestedComment | null> {
     const findComment = (comments: NestedComment[]): NestedComment | null => {
       for (const comment of comments) {
         if (comment.id === id) return comment
@@ -203,7 +202,7 @@ export const CollaborationService = {
     return Promise.resolve(projectMockData.comments)
   },
 
-  async updateComment(id: number, updates: Partial<NestedComment>): Promise<NestedComment | null> {
+  async updateComment(id: any, updates: Partial<NestedComment>): Promise<NestedComment | null> {
     const findAndUpdate = (comments: NestedComment[]): NestedComment | null => {
       for (const comment of comments) {
         if (comment.id === id) {
@@ -218,11 +217,11 @@ export const CollaborationService = {
     return Promise.resolve(findAndUpdate(projectMockData.comments))
   },
 
-  async addReply(parentId: number, reply: NestedComment): Promise<NestedComment | null> {
+  async addReply(parentId: any, reply: NestedComment): Promise<NestedComment | null> {
     const findAndAddReply = (comments: NestedComment[]): NestedComment | null => {
       for (const comment of comments) {
         if (comment.id === parentId) {
-          const newReply = { ...reply, id: Math.max(...projectMockData.comments.map(c => c.id), 0) + 1, replies: [] }
+          const newReply = { ...reply, id: Math.max(...projectMockData.comments.map(c => Number(c.id)), 0) + 1, replies: [] }
           comment.replies.push(newReply)
           return newReply
         }
@@ -234,7 +233,7 @@ export const CollaborationService = {
     return Promise.resolve(findAndAddReply(projectMockData.comments))
   },
 
-  async deleteComment(id: number): Promise<boolean> {
+  async deleteComment(id: any): Promise<boolean> {
     const deleteCommentRecursive = (comments: NestedComment[]): boolean => {
       for (let i = 0; i < comments.length; i++) {
         if (comments[i].id === id) {
@@ -253,12 +252,12 @@ export const CollaborationService = {
 
 export const ActivityService = {
   async createActivity(activity: ActivityItem): Promise<ActivityItem> {
-    const newActivity = { ...activity, id: Math.max(...projectMockData.activities.map(a => a.id), 0) + 1 }
+    const newActivity = { ...activity, id: Math.max(...projectMockData.activities.map(a => Number(a.id)), 0) + 1 }
     projectMockData.activities.push(newActivity)
     return Promise.resolve(newActivity)
   },
 
-  async getActivityById(id: number): Promise<ActivityItem | null> {
+  async getActivityById(id: any): Promise<ActivityItem | null> {
     return Promise.resolve(projectMockData.activities.find(a => a.id === id) || null)
   },
 
@@ -266,14 +265,14 @@ export const ActivityService = {
     return Promise.resolve(projectMockData.activities)
   },
 
-  async updateActivity(id: number, updates: Partial<ActivityItem>): Promise<ActivityItem | null> {
+  async updateActivity(id: any, updates: Partial<ActivityItem>): Promise<ActivityItem | null> {
     const activity = projectMockData.activities.find(a => a.id === id)
     if (!activity) return Promise.resolve(null)
     Object.assign(activity, updates, { id })
     return Promise.resolve(activity)
   },
 
-  async deleteActivity(id: number): Promise<boolean> {
+  async deleteActivity(id: any): Promise<boolean> {
     const initialLength = projectMockData.activities.length
     projectMockData.activities = projectMockData.activities.filter(a => a.id !== id)
     return Promise.resolve(projectMockData.activities.length < initialLength)

@@ -1,108 +1,86 @@
 import type { ExternalCompany } from "@/models/company.model"
+import { apiClient } from "@/lib/api-client"
 
-let mockCompanies: ExternalCompany[] = [
-  {
-    id: "c1",
-    name: "TechVision Solutions",
-    description: "Leading software development company specializing in AI and cloud solutions",
-    email: "hr@techvision.com",
-    phone: "+213 21 123 4567",
-    country: "Algeria",
-    city: "Algiers",
-    status: "approved",
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-15",
-  },
-  {
-    id: "c2",
-    name: "DataDrive Analytics",
-    description: "Big data and business intelligence solutions provider",
-    email: "contact@datadrive.dz",
-    phone: "+213 21 234 5678",
-    country: "Algeria",
-    city: "Oran",
-    status: "approved",
-    createdAt: "2024-01-20",
-    updatedAt: "2024-01-20",
-  },
-  {
-    id: "c3",
-    name: "CloudNine Infrastructure",
-    description: "Cloud infrastructure and DevOps services",
-    email: "sales@cloudnine.com",
-    phone: "+213 21 345 6789",
-    country: "Algeria",
-    city: "Constantine",
-    status: "pending",
-    createdAt: "2024-02-01",
-    updatedAt: "2024-02-01",
-  },
-  {
-    id: "c4",
-    name: "SecureNet Systems",
-    description: "Cybersecurity and network solutions",
-    email: "info@securenet.dz",
-    phone: "+213 21 456 7890",
-    country: "Algeria",
-    city: "Algiers",
-    status: "blacklisted",
-    blacklistReason: "Compliance violations",
-    createdAt: "2024-01-10",
-    updatedAt: "2024-02-05",
-  },
-]
+type BackendCompanyStatus = "PENDING" | "APPROVED" | "BLACKLISTED" | "REJECTED"
+
+interface BackendCompany {
+  id: string
+  name: string
+  description?: string
+  email: string
+  phone: string
+  country?: string
+  city?: string
+  status: BackendCompanyStatus
+  blacklistReason?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+function mapCompany(company: BackendCompany): ExternalCompany {
+  return {
+    id: company.id,
+    name: company.name,
+    description: company.description ?? "",
+    email: company.email,
+    phone: company.phone,
+    country: company.country ?? "",
+    city: company.city ?? "",
+    status: company.status.toLowerCase() as ExternalCompany["status"],
+    blacklistReason: company.blacklistReason,
+    createdAt: company.createdAt ?? "",
+    updatedAt: company.updatedAt ?? company.createdAt ?? "",
+  }
+}
+
+function toBackendCompany(company: ExternalCompany): Partial<BackendCompany> {
+  return {
+    name: company.name,
+    description: company.description,
+    email: company.email,
+    phone: company.phone,
+    country: company.country,
+    city: company.city,
+    status: company.status.toUpperCase() as BackendCompanyStatus,
+    blacklistReason: company.blacklistReason,
+  }
+}
 
 export async function getCompanies() {
-  return mockCompanies
+  const companies = await apiClient.get<BackendCompany[]>("/api/companies")
+  return companies.map(mapCompany)
 }
 
 export async function getCompanyById(id: string) {
-  return mockCompanies.find((c) => c.id === id)
+  return mapCompany(await apiClient.get<BackendCompany>(`/api/companies/${id}`))
 }
 
 export async function createCompany(company: ExternalCompany) {
-  mockCompanies.push(company)
-  return company
+  return mapCompany(await apiClient.post<BackendCompany>("/api/companies", toBackendCompany(company)))
 }
 
 export async function updateCompany(id: string, company: ExternalCompany) {
-  const existingCompany = mockCompanies.find((c) => c.id === id)
-  if (existingCompany) {
-    existingCompany.name = company.name
-    existingCompany.description = company.description
-    existingCompany.email = company.email
-    existingCompany.phone = company.phone
-    existingCompany.country = company.country
-    existingCompany.city = company.city
-    existingCompany.status = company.status
-    existingCompany.updatedAt = new Date().toISOString()
-  }
-  return existingCompany
+  return mapCompany(await apiClient.put<BackendCompany>(`/api/companies/${id}`, toBackendCompany(company)))
 }
 
 export async function deleteCompany(id: string) {
-  const company = mockCompanies.find((c) => c.id === id)
-  if (company) {
-    mockCompanies = mockCompanies.filter((c) => c.id !== id)
-  }
-  return company
+  await apiClient.delete<void>(`/api/companies/${id}`)
+  return true
 }
 
 export async function approveCompany(id: string) {
-  const company = mockCompanies.find((c) => c.id === id)
-  if (company) {
-    company.status = "approved"
-    company.updatedAt = new Date().toISOString()
-  }
-  return company
+  return mapCompany(await apiClient.put<BackendCompany>(`/api/companies/${id}/approve`, {}))
 }
 
 export async function blacklistCompany(id: string, reason: string) {
-  const company = mockCompanies.find((c) => c.id === id)
-  if (company) {
-    company.status = "blacklisted"
-    company.blacklistReason = reason
-    company.updatedAt = new Date().toISOString()
-  }
-  return company
+  return mapCompany(await apiClient.put<BackendCompany>(`/api/companies/${id}/blacklist`, { reason }))
+}
+
+export async function rejectCompany(id: string, reason?: string) {
+  const company = await getCompanyById(id)
+  return updateCompany(id, {
+    ...company,
+    status: "rejected",
+    blacklistReason: reason ?? company.blacklistReason,
+  })
 }

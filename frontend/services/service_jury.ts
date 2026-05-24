@@ -1,128 +1,62 @@
+import { SchedulerService, type BackendDefenseJury, type JuryRole } from './service_scheduler'
 import type { JuryMember } from '@/models/jury.model'
-import type { Teacher } from '@/models/teacher.model'
+import { TeachersService } from '@/services/service_teachers'
 
-interface JuryMemberInternal {
-  id: string
-  teacher: Teacher
-  role: 'president' | 'rapporteur' | 'encadrant'
-}
-
-let MOCK_JURY_MEMBERS: JuryMemberInternal[] = [
-  { 
-    id: 'jury-1', 
-    teacher: {
-      id: 'TCH001',
-      name: 'Prof. Ali Mohamed',
-      email: 'ali@university.edu',
-      phone: '+216 90 000 001',
-      gender: 'Male',
-      birthdate: '1970-01-01',
-      avatar: 'AM',
-      role: 'teacher',
-      grade: 'Professor',
-      speciality: 'Computer Networks',
-      department: 'Computer Science',
-      bio: 'Expert in networks',
-      researchInterests: 'Networks, IoT',
-      yearsOfExperience: 25,
-      skills: []
-    },
-    role: 'president'
-  },
-  { 
-    id: 'jury-2', 
-    teacher: {
-      id: 'TCH002',
-      name: 'Dr. Ahmed Mansour',
-      email: 'ahmed@university.edu',
-      phone: '+216 90 000 002',
-      gender: 'Male',
-      birthdate: '1980-01-01',
-      avatar: 'AM',
-      role: 'teacher',
-      grade: 'Associate Professor',
-      speciality: 'Cybersecurity',
-      department: 'Computer Science',
-      bio: 'Security expert',
-      researchInterests: 'Security, Encryption',
-      yearsOfExperience: 15,
-      skills: []
-    },
-    role: 'rapporteur'
-  },
-  { 
-    id: 'jury-3', 
-    teacher: {
-      id: 'TCH003',
-      name: 'Dr. Fatima Zahra',
-      email: 'fatima@university.edu',
-      phone: '+216 90 000 003',
-      gender: 'Female',
-      birthdate: '1982-01-01',
-      avatar: 'FZ',
-      role: 'teacher',
-      grade: 'Assistant Professor',
-      speciality: 'Human-Computer Interaction',
-      department: 'Computer Science',
-      bio: 'HCI specialist',
-      researchInterests: 'UX, Accessibility',
-      yearsOfExperience: 10,
-      skills: []
-    },
-    role: 'encadrant'
-  }
-]
+export type { BackendDefenseJury, JuryRole }
 
 export const JuryService = {
-  async createJuryMember(member: JuryMember): Promise<JuryMember> {
-    const newMember: JuryMemberInternal = {
-      id: `jury-${Date.now()}`,
-      teacher: member.teacher,
-      role: member.role
-    }
-    MOCK_JURY_MEMBERS.push(newMember)
-    return Promise.resolve(member)
+  async addJuryMember(
+    defenseId: number,
+    teacherId: string,
+    role: JuryRole,
+    forceOverride = false
+  ): Promise<JuryMember> {
+    const backendJury = await SchedulerService.addJuryMember(defenseId, teacherId, role, forceOverride)
+    return SchedulerService.mapJuryMember(backendJury)
+  },
+
+  async getJuryByDefense(defenseId: number): Promise<JuryMember[]> {
+    const backendJury = await SchedulerService.getDefenseJury(defenseId)
+    return backendJury.map(SchedulerService.mapJuryMember)
   },
 
   async getJuryMemberById(id: string): Promise<JuryMember | null> {
-    return Promise.resolve((MOCK_JURY_MEMBERS.find(j => j.id === id) as JuryMember) || null)
+    const teacher = await TeachersService.getTeacherById(id)
+    return teacher ? { id, teacher, role: 'rapporteur' } : null
   },
-
   async getAllJuryMembers(): Promise<JuryMember[]> {
-    return Promise.resolve(MOCK_JURY_MEMBERS as JuryMember[])
+    const teachers = await TeachersService.getAllTeachers()
+    return teachers.map((teacher) => ({ id: teacher.id, teacher, role: 'rapporteur' }))
   },
-
-  async updateJuryMember(id: string, updates: Partial<JuryMember>): Promise<JuryMember | null> {
-    const member = MOCK_JURY_MEMBERS.find(j => j.id === id)
-    if (!member) return Promise.resolve(null)
-    if (updates.teacher) member.teacher = updates.teacher
-    if (updates.role) member.role = updates.role
-    return Promise.resolve(member as JuryMember)
+  async updateJuryMember(
+    defenseId: number,
+    juryId: number,
+    teacherId: string,
+    role: JuryRole,
+    forceOverride = false
+  ): Promise<JuryMember> {
+    const backendJury = await SchedulerService.updateJuryMember(defenseId, juryId, teacherId, role, forceOverride)
+    return SchedulerService.mapJuryMember(backendJury)
   },
-
-  async deleteJuryMember(id: string): Promise<boolean> {
-    const initialLength = MOCK_JURY_MEMBERS.length
-    MOCK_JURY_MEMBERS = MOCK_JURY_MEMBERS.filter(j => j.id !== id)
-    return Promise.resolve(MOCK_JURY_MEMBERS.length < initialLength)
+  async deleteJuryMember(defenseId: number, juryId: number): Promise<boolean> {
+    return SchedulerService.deleteJuryMember(defenseId, juryId)
   },
-
-  async getJuryByRole(role: 'president' | 'rapporteur' | 'encadrant'): Promise<JuryMember[]> {
-    return Promise.resolve((MOCK_JURY_MEMBERS.filter(j => j.role === role) as JuryMember[]))
+  async getJuryByRole(role: string): Promise<JuryMember[]> {
+    const members = await this.getAllJuryMembers()
+    return members.map((member) => ({ ...member, role: role as JuryMember['role'] }))
   },
-
   async searchJury(query: string): Promise<JuryMember[]> {
-    const lowerQuery = query.toLowerCase()
-    return Promise.resolve((MOCK_JURY_MEMBERS.filter(j =>
-      j.teacher.name.toLowerCase().includes(lowerQuery) ||
-      j.teacher.speciality.toLowerCase().includes(lowerQuery)
-    ) as JuryMember[]))
+    const teachers = await TeachersService.getAllTeachers({ q: query })
+    return teachers.map((teacher) => ({ id: teacher.id, teacher, role: 'rapporteur' }))
   },
-
   async getJuryBySpeciality(speciality: string): Promise<JuryMember[]> {
-    return Promise.resolve((MOCK_JURY_MEMBERS.filter(j => j.teacher.speciality === speciality) as JuryMember[]))
+    const teachers = await TeachersService.getAllTeachers({ speciality })
+    return teachers.map((teacher) => ({ id: teacher.id, teacher, role: 'rapporteur' }))
   },
-
   async getJuryByDepartment(department: string): Promise<JuryMember[]> {
-    return Promise.resolve((MOCK_JURY_MEMBERS.filter(j => j.teacher.department === department) as JuryMember[]))
+    const teachers = await TeachersService.getAllTeachers({ department })
+    return teachers.map((teacher) => ({ id: teacher.id, teacher, role: 'rapporteur' }))
   },
 }
+
+export default JuryService

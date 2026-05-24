@@ -1,4 +1,4 @@
-export type ModalType = 'expand-tasks' | 'add-task' | 'edit-task' | 'chat'
+export type ModalType = 'expand-tasks' | 'add-task' | 'edit-task' | 'chat' | 'commits'
 
 export interface ModalConfig {
   id: string

@@ -12,8 +12,15 @@ import type { Commit } from '@/models/commit.model'
 
 interface CommitFormProps {
   projectId: string
+  documentId: string
   previousProgress: number
-  onSubmit: (data: Omit<Commit, 'id' | 'createdAt'>) => void
+  onSubmit: (data: {
+    documentId: string
+    teacherId: string
+    comment: string
+    newProgress: number
+    attachments: { name: string; url: string; type: string }[]
+  }) => void
   isLoading: boolean
   onCancel: () => void
 }
@@ -23,6 +30,7 @@ const MAX_FILE_SIZE = 15 * 1024 * 1024 // 15MB
 
 export function CommitForm({
   projectId,
+  documentId,
   previousProgress,
   onSubmit,
   isLoading,
@@ -45,6 +53,10 @@ export function CommitForm({
     
     if (newProgress < 0 || newProgress > 100) {
       newErrors.push('Progress must be between 0 and 100')
+    }
+
+    if (!documentId) {
+      newErrors.push('A document is required before adding an official commit')
     }
     
     setErrors(newErrors)
@@ -106,14 +118,11 @@ export function CommitForm({
     const finalNewProgress = applyProgress ? newProgress : previousProgress
 
     onSubmit({
-      projectId,
+      documentId,
       teacherId: user?.id || 'teacher-1',
-      teacherName: user?.name || 'Teacher',
-      teacherAvatar: user?.name?.substring(0, 2).toUpperCase() || 'T',
       comment: comment.trim(),
-      previousProgress,
       newProgress: finalNewProgress,
-      attachments
+      attachments: attachments.map(({ name, url, type }) => ({ name, url, type }))
     })
   }
 

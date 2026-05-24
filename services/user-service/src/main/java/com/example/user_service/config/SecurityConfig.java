@@ -30,8 +30,8 @@ public class SecurityConfig {
     private final List<String> allowedOrigins;
 
     public SecurityConfig(CustomUserDetailsService userDetailsService,
-                          JwtAuthenticationFilter jwtAuthenticationFilter,
-                          @Value("${app.cors.allowed-origins}") List<String> allowedOrigins) {
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            @Value("${app.cors.allowed-origins}") List<String> allowedOrigins) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.allowedOrigins = allowedOrigins;
@@ -40,29 +40,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
-                // Public teacher availability lookup by teacher id (no token required)
-                .requestMatchers(HttpMethod.GET, "/api/users/*/availability").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/users/me").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/users/me/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/api/users/me/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/users/me/**").authenticated()
-                .requestMatchers(HttpMethod.PATCH, "/api/users/me/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/users/me/**").authenticated()
-//                .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("COORDINATOR")
-                .requestMatchers(HttpMethod.POST, "/api/users/**").hasRole("COORDINATOR")
-                .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("COORDINATOR")
-                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("COORDINATOR")
-                .anyRequest().authenticated()
-            )
-            .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        // Public teacher availability lookup by teacher id (no token required)
+                        .requestMatchers(HttpMethod.GET, "/api/users/*/availability").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/users/me/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/me/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/users/me/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/me/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/me/**").authenticated()
+                        // .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("COORDINATOR")
+                        .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("COORDINATOR")
+                        .requestMatchers(HttpMethod.POST, "/api/users/**").hasRole("COORDINATOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("COORDINATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("COORDINATOR")
+                        .anyRequest().authenticated())
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -74,12 +75,13 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-        @Bean
-        public AuthenticationManager authenticationManager() {
-            DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder());
-            provider.setUserDetailsService(userDetailsService);
-            return new ProviderManager(provider);
-        }
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder());
+        provider.setUserDetailsService(userDetailsService);
+        return new ProviderManager(provider);
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();

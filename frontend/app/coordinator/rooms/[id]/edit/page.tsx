@@ -11,13 +11,14 @@ import { Button } from '@/components/ui/button'
 import { EquipmentSelector } from '@/components/rooms/equipment-selector'
 import { RoomAvailabilitySection } from '@/components/availability/room-availability-section'
 import { ArrowLeft } from 'lucide-react'
-import { MOCK_ROOMS_WITH_EQUIPMENT, type Equipment } from '@/lib/room-mock-data'
+import { type Equipment, type RoomWithEquipment } from '@/lib/room-mock-data'
+import { RoomsService } from '@/services/service_rooms'
 
 export default function EditRoomPage() {
   const params = useParams()
   const router = useRouter()
-  const roomId = parseInt(params?.id as string)
-  const room = MOCK_ROOMS_WITH_EQUIPMENT.find(r => r.id === roomId)
+  const roomId = Number.parseInt(params?.id as string, 10)
+  const [room, setRoom] = useState<RoomWithEquipment | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -41,22 +42,36 @@ export default function EditRoomPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (room) {
-      setFormData({
-        name: room.name,
-        location: room.location,
-        capacity: room.capacity,
-        description: room.description,
-        status: room.status
-      })
-      setEquipment(room.equipment)
+    if (!Number.isFinite(roomId)) {
+      setRoom(null)
+      setIsLoading(false)
+      return
     }
-    setIsLoading(false)
-  }, [room])
 
-  const handleSubmit = (e: React.FormEvent) => {
+    RoomsService.getRoomById(roomId)
+      .then((fetchedRoom) => {
+        if (fetchedRoom) {
+          setRoom(fetchedRoom)
+          setFormData({
+            name: fetchedRoom.name,
+            location: fetchedRoom.location,
+            capacity: fetchedRoom.capacity,
+            description: fetchedRoom.description,
+            status: fetchedRoom.status as any
+          })
+          setEquipment(fetchedRoom.equipment)
+        }
+      })
+      .finally(() => setIsLoading(false))
+  }, [roomId])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('[v0] Updating room:', { id: roomId, ...formData, equipment })
+    if (!Number.isFinite(roomId)) return
+
+    setIsLoading(true)
+    await RoomsService.updateRoom(roomId, { ...formData, equipment })
+    setIsLoading(false)
     alert('Room updated successfully!')
     router.push(`/coordinator/rooms/${roomId}`)
   }

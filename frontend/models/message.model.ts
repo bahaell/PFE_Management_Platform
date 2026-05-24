@@ -5,12 +5,13 @@ import type { Timestamp } from 'firebase/firestore'
  * Legacy model — kept for compatibility with existing mock data structures.
  */
 export interface ProjectMessage {
-  id: number
+  [key: string]: any
+  id: any
   author: string
   avatar: string
   content: string
   timestamp: string
-  createdAt: Date
+  createdAt?: Date | string
 }
 
 /**

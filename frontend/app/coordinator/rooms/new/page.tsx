@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { EquipmentSelector } from '@/components/rooms/equipment-selector'
-import { RoomAvailabilitySection } from '@/components/availability/room-availability-section'
-import type { Equipment } from '@/lib/room-mock-data'
+import type { Equipment, RoomWithEquipment } from '@/lib/room-mock-data'
+import { RoomsService } from '@/services/service_rooms'
 
 const DEFAULT_EQUIPMENT: Equipment = {
   projector: { present: false, status: 'missing' },
@@ -35,11 +35,32 @@ export default function NewRoomPage() {
     status: 'available' as const
   })
   const [equipment, setEquipment] = useState<Equipment>(DEFAULT_EQUIPMENT)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('[v0] Creating new room:', { ...formData, equipment })
-    router.push('/coordinator/rooms')
+    setIsSaving(true)
+    setError('')
+    try {
+      const room: RoomWithEquipment = {
+        id: 0,
+        ...formData,
+        equipment,
+        bookings: [],
+      }
+      await RoomsService.createRoom(room)
+      router.push('/coordinator/rooms')
+    } catch (err) {
+      const message = err instanceof Error
+        ? err.message
+        : typeof err === 'object' && err && 'message' in err
+          ? String((err as { message?: unknown }).message)
+          : 'Failed to create room'
+      setError(message)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -60,6 +81,11 @@ export default function NewRoomPage() {
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             <Card className="p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Basic Information</h3>
+              {error && (
+                <p className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              )}
               <div className="space-y-3 sm:space-y-4">
                 <div>
                   <Label htmlFor="name" className="text-sm">Room Name *</Label>
@@ -138,7 +164,12 @@ export default function NewRoomPage() {
               />
             </Card>
 
-            <RoomAvailabilitySection roomId="new" />
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-2">Availability</h3>
+              <p className="text-sm text-muted-foreground">
+                Save the room first, then configure availability from the edit page.
+              </p>
+            </Card>
           </div>
 
           {/* Right Column - Actions */}
@@ -146,8 +177,8 @@ export default function NewRoomPage() {
             <Card className="p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Actions</h3>
               <div className="space-y-2 sm:space-3">
-                <Button type="submit" className="w-full">
-                  Create Room
+                <Button type="submit" className="w-full" disabled={isSaving}>
+                  {isSaving ? 'Creating...' : 'Create Room'}
                 </Button>
                 <Button
                   type="button"

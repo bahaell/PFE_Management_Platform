@@ -37,7 +37,7 @@ export interface DefenseTimelineEvent {
 
   jury: JuryMember[]
 
-  teacherRole?: 'president' | 'rapporteur' | 'encadrant' | null
+  teacherRole?: 'president' | 'rapporteur' | 'encadrant' | 'examiner' | null
 
   attachments: TimelineAttachment[]
 

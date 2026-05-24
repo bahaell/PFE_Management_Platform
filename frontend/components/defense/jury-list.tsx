@@ -30,7 +30,7 @@ export function JuryList({ jury }: JuryListProps) {
               <div>
                 <p className="text-sm font-medium text-foreground">{member.teacher.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {member.teacher.title} • {member.teacher.speciality}
+                  {member.teacher.grade} • {member.teacher.speciality}
                 </p>
               </div>
             </div>

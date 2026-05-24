@@ -7,7 +7,9 @@ import com.example.user_service.dto.RegistrationRequest;
 import com.example.user_service.dto.SkillDto;
 import com.example.user_service.dto.StudentProfileDto;
 import com.example.user_service.dto.TeacherAvailabilityDto;
+import com.example.user_service.dto.TeacherCapacityDto;
 import com.example.user_service.dto.TeacherProfileDto;
+import com.example.user_service.dto.TeacherRecommendationDto;
 import com.example.user_service.dto.UserDto;
 import com.example.user_service.dto.UserDocumentDto;
 import com.example.user_service.dto.UserUpdateRequest;
@@ -48,11 +50,21 @@ public class UserController {
     @GetMapping("/students")
     public ResponseEntity<List<StudentProfileDto>> getStudents(
         @RequestParam(required = false) String q,
-        @RequestParam(required = false) String level,
+        @RequestParam(required = false) String classLevel,
         @RequestParam(required = false) String department,
         @RequestParam(required = false) String academicYear
     ) {
-        return ResponseEntity.ok(userService.getStudents(q, level, department, academicYear));
+        return ResponseEntity.ok(userService.getStudents(q, classLevel, department, academicYear));
+    }
+
+    @GetMapping("/students/current-year")
+    public ResponseEntity<List<StudentProfileDto>> getCurrentYearStudents() {
+        return ResponseEntity.ok(userService.getCurrentYearStudents());
+    }
+
+    @GetMapping("/students/{id}/profile")
+    public ResponseEntity<StudentProfileDto> getStudentProfile(@PathVariable String id) {
+        return ResponseEntity.ok(userService.getStudentProfile(id));
     }
 
     @GetMapping("/teachers")
@@ -66,6 +78,23 @@ public class UserController {
         return ResponseEntity.ok(userService.getTeachers(q, grade, speciality, department, minYears));
     }
 
+    @GetMapping("/teachers/available")
+    public ResponseEntity<List<TeacherProfileDto>> getAvailableTeachers() {
+        return ResponseEntity.ok(userService.getAvailableTeachers());
+    }
+
+    @GetMapping("/teachers/{id}/capacity")
+    public ResponseEntity<TeacherCapacityDto> getTeacherCapacity(@PathVariable String id) {
+        return ResponseEntity.ok(userService.getTeacherCapacity(id));
+    }
+
+    @GetMapping("/teachers/recommendations")
+    public ResponseEntity<List<TeacherRecommendationDto>> getTeacherRecommendations(
+        @RequestParam(required = false) String studentId,
+        @RequestParam(required = false) String speciality
+    ) {
+        return ResponseEntity.ok(userService.getTeacherRecommendations(studentId, speciality));
+    }
 
     @GetMapping("/{id}/availability")
     public ResponseEntity<List<TeacherAvailabilityDto>> getTeacherAvailabilitiesById(

@@ -1,53 +1,40 @@
 'use client'
 
 import { MessageSquare, FileUp, CheckCircle, UserPlus, Zap, RefreshCw } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { TasksService } from '@/services/service_tasks'
 
 interface Activity {
-  id: number
+  id: string | number
   type: 'message' | 'upload' | 'status' | 'member' | 'task' | 'update'
   author: string
   action: string
   timestamp: string
 }
 
-export function ActivityTimeline() {
-  const activities: Activity[] = [
-    {
-      id: 1,
-      type: 'message',
-      author: 'Dr. Ahmed Hassan',
-      action: 'Added feedback on methodology section',
-      timestamp: '2 hours ago'
-    },
-    {
-      id: 2,
-      type: 'upload',
-      author: 'Ahmed Mohamed',
-      action: 'Uploaded new version of Project Proposal',
-      timestamp: '3 hours ago'
-    },
-    {
-      id: 3,
-      type: 'task',
-      author: 'Dr. Ahmed Hassan',
-      action: 'Created task: Model validation & testing',
-      timestamp: '1 day ago'
-    },
-    {
-      id: 4,
-      type: 'status',
-      author: 'System',
-      action: 'Project status changed to In Progress',
-      timestamp: '3 days ago'
-    },
-    {
-      id: 5,
-      type: 'member',
-      author: 'Dr. Ahmed Hassan',
-      action: 'Added as project supervisor',
-      timestamp: '1 week ago'
-    }
-  ]
+interface ActivityTimelineProps {
+  projectId?: string | number
+}
+
+function formatTimestamp(value?: string) {
+  if (!value) return 'Recently'
+  return new Date(value).toLocaleString()
+}
+
+export function ActivityTimeline({ projectId }: ActivityTimelineProps) {
+  const { data: tasks = [], isLoading, isError } = useQuery({
+    queryKey: ['project-task-activity', projectId],
+    queryFn: () => TasksService.getTasksByProject(projectId!),
+    enabled: Boolean(projectId),
+  })
+
+  const activities: Activity[] = tasks.map((task) => ({
+    id: task.id,
+    type: 'task',
+    author: task.assignee || 'Project Service',
+    action: `${task.status === 'done' ? 'Completed' : task.status === 'inProgress' ? 'Updated' : 'Created'} task: ${task.title}`,
+    timestamp: formatTimestamp(task.updatedAt ?? task.createdAt),
+  }))
 
   const getIcon = (type: string) => {
     const iconClass = 'w-4 h-4'
@@ -67,6 +54,11 @@ export function ActivityTimeline() {
       <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Activity Timeline</h3>
       
       <div className="space-y-3 sm:space-y-4">
+        {isLoading && <p className="text-sm text-muted-foreground">Loading activity...</p>}
+        {isError && <p className="text-sm text-destructive">Unable to load activity.</p>}
+        {!isLoading && !isError && activities.length === 0 && (
+          <p className="text-sm text-muted-foreground">No project activity yet.</p>
+        )}
         {activities.map((activity, idx) => (
           <div key={activity.id} className="flex gap-3 sm:gap-4 relative">
             {idx !== activities.length - 1 && (

@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge'
 import { usePresence } from '@/hooks/use-presence'
 
 interface Participant {
+  [key: string]: any
   id: string | number
-  name: string
-  avatar: string
-  role: string
-  online: boolean
+  name?: string
+  avatar?: string
+  role?: string
+  online?: boolean
 }
 
 interface DefenseInfo {
@@ -22,7 +23,7 @@ interface DefenseInfo {
 interface ParticipantsPanelProps {
   teacher?: Participant
   student?: Participant
-  jury?: Participant[]
+  jury?: any[]
   defense?: DefenseInfo
   onStartChat?: () => void
   onAssignTask?: () => void
@@ -54,15 +55,15 @@ export function ParticipantsPanel({
       <div key={participant.id} className="flex items-center gap-3 pb-3 border-b border-border last:border-b-0 last:pb-0 mb-3 last:mb-0">
         <div className="relative">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-white">
-            {participant.avatar}
+            {participant.avatar || participant.name?.slice(0, 2).toUpperCase() || 'NA'}
           </div>
           <Circle
             className={`w-3 h-3 absolute -bottom-0.5 -right-0.5 ${isOnline ? 'text-green-500 fill-green-500' : 'text-gray-400 fill-gray-400'}`}
           />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{participant.name}</p>
-        <p className="text-xs text-muted-foreground">{participant.role}</p>
+        <p className="text-sm font-medium text-foreground truncate">{participant.name || participant.teacher?.name || 'Participant'}</p>
+        <p className="text-xs text-muted-foreground">{participant.role || 'Member'}</p>
         </div>
       </div>
     )

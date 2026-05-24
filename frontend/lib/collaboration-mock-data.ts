@@ -14,7 +14,7 @@ export const projectMockData: CollaborationData = {
     startDate: '2024-01-15',
     deadline: '2024-06-30',
     progress: 65,
-    status: 'In Progress',
+    status: 'IN_PROGRESS',
   },
   teacher: {
     id: 'tch001',

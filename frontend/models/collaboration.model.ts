@@ -8,7 +8,7 @@ import type { Teacher } from './teacher.model'
 import type { StudentProfile } from './student.model'
 
 export interface CollaborationProjectInfo {
-  id: number
+  id: string | number
   title: string
   subject: string
   description: string
@@ -19,7 +19,7 @@ export interface CollaborationProjectInfo {
 }
 
 export interface CollaborationTeacherInfo {
-  id: number
+  id: string | number
   name: string
   avatar: string
   role: string
@@ -28,7 +28,7 @@ export interface CollaborationTeacherInfo {
 }
 
 export interface CollaborationStudentInfo {
-  id: number
+  id: string | number
   name: string
   avatar: string
   role: string

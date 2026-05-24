@@ -1,25 +1,29 @@
 package com.example.user_service.dto;
 
+import com.example.user_service.entity.TeacherGrade;
 import java.util.List;
 
 public class TeacherProfileDto extends UserDto {
-    private String grade;
+    private TeacherGrade grade;
     private String speciality;
     private String department;
     private String bio;
     private String researchInterests;
     private Integer yearsOfExperience;
     private Integer yearsOfService;
+    private Integer maxSupervisedStudents;
+    private Integer currentSupervisedStudents;
+    private String linkedinUrl;
     private List<SkillDto> skills;
 
     public TeacherProfileDto() {
     }
 
-    public String getGrade() {
+    public TeacherGrade getGrade() {
         return grade;
     }
 
-    public void setGrade(String grade) {
+    public void setGrade(TeacherGrade grade) {
         this.grade = grade;
     }
 
@@ -69,6 +73,30 @@ public class TeacherProfileDto extends UserDto {
 
     public void setYearsOfService(Integer yearsOfService) {
         this.yearsOfService = yearsOfService;
+    }
+
+    public Integer getMaxSupervisedStudents() {
+        return maxSupervisedStudents;
+    }
+
+    public void setMaxSupervisedStudents(Integer maxSupervisedStudents) {
+        this.maxSupervisedStudents = maxSupervisedStudents;
+    }
+
+    public Integer getCurrentSupervisedStudents() {
+        return currentSupervisedStudents;
+    }
+
+    public void setCurrentSupervisedStudents(Integer currentSupervisedStudents) {
+        this.currentSupervisedStudents = currentSupervisedStudents;
+    }
+
+    public String getLinkedinUrl() {
+        return linkedinUrl;
+    }
+
+    public void setLinkedinUrl(String linkedinUrl) {
+        this.linkedinUrl = linkedinUrl;
     }
 
     public List<SkillDto> getSkills() {

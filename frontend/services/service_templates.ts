@@ -4,6 +4,7 @@ function makeId(prefix = '') {
 }
 import renderTemplate from '../lib/placeholder-engine'
 import type { AcademicTemplate } from '../models/academic-template.model'
+import { AcademicDocumentsService } from './service_academic_documents'
 
 // In-memory mock templates store
 const templates: AcademicTemplate[] = [
@@ -67,7 +68,7 @@ export async function deleteTemplate(id: string): Promise<boolean> {
 }
 
 // For mock generation in the browser environment we return a static sample HTML file
-import { createDocument } from './service_academic_documents'
+// Removed createDocument import since it does not exist
 
 export async function generateDocumentFromTemplate(templateId: string, context: Record<string, any>): Promise<{ fileUrl: string; generatedAt: string } | null> {
   const tpl = templates.find((t) => t.id === templateId)
@@ -90,15 +91,17 @@ export async function generateDocumentFromTemplate(templateId: string, context: 
 
   // create an AdministrativeDocument record in the mock documents service
   try {
-    await createDocument({
+    await AcademicDocumentsService.createDocument({
       type: tpl.type,
       studentId: context?.student?.id ?? (context?.studentId as string) ?? 'unknown',
+      studentName: context?.student?.name ?? 'Student',
       teacherId: context?.teacher?.id,
       projectId: context?.project?.id,
       generatedAt: new Date().toISOString(),
       fileUrl,
       templateId: tpl.id,
-      requestedBy: context?.requestedBy ?? 'system',
+      deliveredTo: ['student'],
+      status: 'generated',
     })
   } catch (e) {
     // ignore in mock

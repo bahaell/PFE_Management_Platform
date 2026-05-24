@@ -1,17 +1,18 @@
 import React from 'react'
-import TemplateEditor from '../../../../../components/academic/TemplateEditor'
+import TemplateEditor from '../../../../components/academic/TemplateEditor'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export default function EditTemplatePage({ params }: Props) {
+export default async function EditTemplatePage({ params }: Props) {
+  const { id } = await params
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Edit Template</h1>
       {/* TemplateEditor expects prop id when editing */}
-      {/* @ts-expect-error server component passing to client */}
-      <TemplateEditor id={params.id} />
+      <TemplateEditor id={id} />
     </div>
   )
 }

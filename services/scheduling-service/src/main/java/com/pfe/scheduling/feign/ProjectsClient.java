@@ -20,22 +20,38 @@ public interface ProjectsClient {
      * GET /api/projects/{id}
      */
     @GetMapping("/api/projects/{id}")
-    ProjectDTO getById(@PathVariable("id") Long id);
+    ProjectDTO getById(@PathVariable("id") String id);
 
     /**
-     * Liste tous les projets qui doivent être planifiés (status = PENDING_DEFENSE).
-     * Utilisé par le solver Timefold pour construire le planning initial.
-     *
-     * GET /api/projects?status=PENDING_DEFENSE
+     * Liste les projets par statut. Le projects-service expose désormais les statuts:
+     * PENDING, APPROVED, IN_PROGRESS, DEFENDED, REJECTED, ARCHIVED.
      */
     @GetMapping("/api/projects")
     List<ProjectDTO> findByStatus(@RequestParam("status") String status);
 
+    @GetMapping("/api/projects/scheduling-candidates")
+    List<SchedulingProjectDTO> findSchedulingCandidates(@RequestParam("status") String status);
+
     // ── DTO inline (inner record) ────────────────────────────────
     record ProjectDTO(
-            Long id,
+            String id,
+            String title,
             String name,
-            String status, // ACTIVE | PENDING_DEFENSE | COMPLETED
-            String supervisorName) {
+            String status,
+            String supervisorName,
+            List<ProjectSupervisorDTO> supervisors) {
+    }
+
+    record ProjectSupervisorDTO(
+            String teacherId,
+            String role) {
+    }
+
+    record SchedulingProjectDTO(
+            String projectId,
+            String title,
+            String status,
+            String mainSupervisorId,
+            List<String> memberStudentIds) {
     }
 }

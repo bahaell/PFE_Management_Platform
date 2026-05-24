@@ -26,8 +26,8 @@ export async function validateUser(email: string, password: string): Promise<Use
       return data.user;
     }
     return null;
-  } catch (error) {
-    console.error('Login failed', error);
+  } catch (error: any) {
+    console.error('Login failed:', error?.message || error);
     return null;
   }
 }
@@ -45,8 +45,8 @@ export async function registerUser(userData: any): Promise<User | null> {
       return data.user;
     }
     return null;
-  } catch (error) {
-    console.error('Registration failed', error);
+  } catch (error: any) {
+    console.error('Registration failed:', error?.message || error);
     return null;
   }
 }

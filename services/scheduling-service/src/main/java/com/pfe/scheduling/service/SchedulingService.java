@@ -1,7 +1,7 @@
 package com.pfe.scheduling.service;
 
 import com.pfe.scheduling.dto.DefenseSessionRequest;
-import com.pfe.scheduling.entity.DefenseSession;
+import com.pfe.scheduling.solver.DefenseScheduleSlot;
 import com.pfe.scheduling.feign.ProjectsClient;
 import com.pfe.scheduling.feign.ResourceClient;
 import com.pfe.scheduling.feign.UserClient;
@@ -29,12 +29,13 @@ public class SchedulingService {
     private final SolverManager<DefenseTimetable, Long> solverManager;
     private final ResourceClient resourceClient;
     private final ProjectsClient projectsClient;
-    private final UserClient userClient;
+    private final UserClient     userClient;
 
-    private final Map<Long, SolverJob<DefenseTimetable, Long>> jobs = new ConcurrentHashMap<>();
+    private final Map<Long, SolverJob<DefenseTimetable, Long>> jobs =
+            new ConcurrentHashMap<>();
 
     // ─────────────────────────────────────────────────────────────
-    // SOLVE
+    //  SOLVE
     // ─────────────────────────────────────────────────────────────
 
     public Long solve(List<DefenseSessionRequest> requests) {
@@ -42,8 +43,7 @@ public class SchedulingService {
         // 1. Salles disponibles depuis resource-service
         List<Long> roomIds = resourceClient.getAvailableRooms()
                 .stream()
-                .filter(ResourceClient.RoomDTO::isAvailable)
-                .map(ResourceClient.RoomDTO::getId)
+                .map(ResourceClient.RoomDTO::id)
                 .toList();
 
         if (roomIds.isEmpty()) {
@@ -54,7 +54,7 @@ public class SchedulingService {
         List<TimeSlot> slots = buildTimeSlots(LocalDate.now(), 5);
 
         // 3. Construire les planning entities
-        List<DefenseSession> sessions = requests.stream()
+        List<DefenseScheduleSlot> sessions = requests.stream()
                 .map(this::buildSession)
                 .toList();
 
@@ -74,7 +74,7 @@ public class SchedulingService {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // GET RESULT
+    //  GET RESULT
     // ─────────────────────────────────────────────────────────────
 
     public DefenseTimetable getResult(Long jobId) throws Exception {
@@ -86,18 +86,21 @@ public class SchedulingService {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // BUILD SESSION
+    //  BUILD SESSION
     // ─────────────────────────────────────────────────────────────
 
-    private DefenseSession buildSession(DefenseSessionRequest r) {
+    private DefenseScheduleSlot buildSession(DefenseSessionRequest r) {
 
         // ── Projet ──────────────────────────────────────────────
-        String projectName = "Unknown";
+        String projectName    = "Unknown";
         String supervisorName = null;
 
         try {
             ProjectsClient.ProjectDTO project = projectsClient.getById(r.getProjectId());
-            projectName = project.name();
+            projectName = project.title() != null ? project.title() : project.name();
+            if (projectName == null) {
+                projectName = "Unknown";
+            }
             supervisorName = project.supervisorName();
         } catch (Exception e) {
             log.warn("Could not fetch project {} — using defaults: {}",
@@ -105,37 +108,39 @@ public class SchedulingService {
         }
 
         // ── Jury — noms + disponibilités ────────────────────────
-        List<String> juryNames = new ArrayList<>();
+        List<String> juryNames  = new ArrayList<>();
         List<String> juryAvails = new ArrayList<>();
 
-        if (r.getJuryMemberIds() != null) {
-            for (String juryId : r.getJuryMemberIds()) {
-                try {
-                    // Nom du juré
-                    UserClient.UserDto user = userClient.getUserById(juryId);
-                    juryNames.add(user.name());
+       if (r.getJuryMemberIds() != null) {
+    for (String juryId : r.getJuryMemberIds()) {
+        log.info(">>> Fetching jury member id='{}'", juryId);
+        try {
+            UserClient.UserDto user = userClient.getUserById(juryId);
+            log.info(">>> Got user: name='{}' email='{}'", user.name(), user.email());
 
-                    // Disponibilités → format "HH:mm_HH:mm"
-                    // ex: "08:00_12:00", "14:00_18:00"
-                    List<String> avails = userClient
-                            .getTeacherAvailability(juryId) 
-                            .stream()
-                            .map(a -> a.start() + "_" + a.end())
-                            .collect(Collectors.toList());
-
-                    juryAvails.addAll(avails);
-
-                    log.debug("Jury member {} ({}) — {} availabilities",
-                            juryId, user.name(), avails.size());
-
-                } catch (Exception e) {
-                    log.warn("Could not fetch jury member {} — skipping: {}",
-                            juryId, e.getMessage());
-                }
+            if (user.name() != null) {
+                juryNames.add(user.name());
             }
-        }
 
-        return DefenseSession.builder()
+            List<UserClient.TeacherAvailabilityDto> avails =
+                    userClient.getTeacherAvailability(juryId);
+
+            log.info(">>> Availabilities for '{}': count={}", juryId, avails.size());
+
+            avails.stream()
+                    .map(a -> a.start() + "_" + a.end())
+                    .forEach(juryAvails::add);
+
+        } catch (Exception e) {
+            log.error(">>> FAILED for jury id='{}' — [{}] {}",
+                    juryId,
+                    e.getClass().getSimpleName(),
+                    e.getMessage());
+        }
+    }
+}
+
+        return DefenseScheduleSlot.builder()
                 .projectId(r.getProjectId())
                 .projectName(projectName)
                 .supervisorName(supervisorName)
@@ -143,24 +148,23 @@ public class SchedulingService {
                 .juryMemberNames(juryNames)
                 .juryAvailabilities(juryAvails)
                 .durationMinutes(r.getDurationMinutes() != null
-                        ? r.getDurationMinutes()
-                        : 30)
+                        ? r.getDurationMinutes() : 30)
                 .preferredRoomId(r.getPreferredRoomId())
                 .build();
     }
 
     // ─────────────────────────────────────────────────────────────
-    // TIME SLOT BUILDER
+    //  TIME SLOT BUILDER
     // ─────────────────────────────────────────────────────────────
 
     private List<TimeSlot> buildTimeSlots(LocalDate start, int days) {
         List<TimeSlot> slots = new ArrayList<>();
 
         String[][] times = {
-                { "08:00", "10:00" },
-                { "10:00", "12:00" },
-                { "14:00", "16:00" },
-                { "16:00", "18:00" }
+            {"08:00", "10:00"},
+            {"10:00", "12:00"},
+            {"14:00", "16:00"},
+            {"16:00", "18:00"}
         };
 
         for (int d = 0; d < days; d++) {

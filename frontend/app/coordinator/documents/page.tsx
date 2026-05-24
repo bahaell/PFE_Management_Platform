@@ -122,7 +122,8 @@ export default function CoordinatorDocumentsPage() {
     }
   }
 
-  const handleCloneTemplateToDocument = (templateId: string) => {
+  const handleCloneTemplateToDocument = (templateOrId: any) => {
+    const templateId = typeof templateOrId === 'string' ? templateOrId : templateOrId?.id
     if (!studentId) {
       toast({
         title: "Select student first",

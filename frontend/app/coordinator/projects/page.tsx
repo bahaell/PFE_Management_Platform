@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/page-header'
 import { DataTable } from '@/components/data-table'
 import { Button } from '@/components/ui/button'
@@ -9,65 +9,216 @@ import { StatusBadge } from '@/components/status-badge'
 import { Plus, Eye, Edit2, Trash2 } from 'lucide-react'
 import { ProjectModal, type ProjectData } from '@/components/modals/project-modal'
 import { ProjectsService } from '@/services/service_projects'
+import { StudentsService } from '@/services/service_students'
+import { TeachersService } from '@/services/service_teachers'
+import { ProjectPhase, ProjectStatus, type ProjectBasic } from '@/models/project.model'
+import { useToast } from '@/hooks/use-toast'
 
-interface Project {
-  id: number
-  title: string
-  student: string
-  teacher: string
-  progress: number
-  status: 'accepted' | 'in_progress' | 'completed' | 'failed'
-  startDate: string
-  deadline: string
-}
+type ProjectTableStatus = 'pending' | 'validated' | 'rejected' | 'completed' | 'assigned'
 
 export default function ProjectsPage() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => ProjectsService.getAllProjects(),
   })
 
+  const { data: students = [], isLoading: isStudentsLoading } = useQuery({
+    queryKey: ['students'],
+    queryFn: () => StudentsService.getAllStudents(),
+  })
+
+  const { data: teachers = [], isLoading: isTeachersLoading } = useQuery({
+    queryKey: ['teachers'],
+    queryFn: () => TeachersService.getAllTeachers(),
+  })
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: (id: number | string) => ProjectsService.deleteProject(id),
+    onSuccess: () => {
+      setDeleteId(null)
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      toast({
+        title: 'Project deleted',
+        description: 'The project has been removed.',
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Unable to delete project',
+        description: error?.message ?? 'Please check that the API is reachable.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const saveProjectMutation = useMutation({
+    mutationFn: async (data: ProjectData) => {
+      const requiredSkills = data.requiredSkills
+        .split(',')
+        .map((skill) => skill.trim())
+        .filter(Boolean)
+
+      if (editingId) {
+        const currentProject = projects.find((project) => String(project.id) === String(editingId))
+        if (!currentProject) {
+          throw new Error('Project not found')
+        }
+
+        await ProjectsService.updateProject(editingId, {
+          title: data.title,
+          description: data.description,
+          type: data.type,
+          phase: data.phase,
+          academicYear: data.academicYear,
+          startDate: data.startDate,
+          deadline: data.deadline,
+          requiredSkills,
+        })
+
+        if (data.status !== currentProject.status) {
+          await ProjectsService.updateProjectStatus(editingId, data.status)
+        }
+
+        return
+      }
+
+      const createdProject = await ProjectsService.createProject({
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        status: data.status,
+        phase: data.phase,
+        academicYear: data.academicYear,
+        startDate: data.startDate,
+        deadline: data.deadline,
+        requiredSkills,
+      })
+
+      if (data.studentId) {
+        await ProjectsService.addProjectMember(createdProject.id, data.studentId, 'MEMBER')
+      }
+      if (data.teacherId) {
+        await ProjectsService.addProjectSupervisor(createdProject.id, data.teacherId, 'MAIN_SUPERVISOR')
+      }
+    },
+    onSuccess: () => {
+      setIsModalOpen(false)
+      setEditingId(null)
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      toast({
+        title: editingId ? 'Project updated' : 'Project created',
+        description: editingId ? 'The project has been saved.' : 'The project has been created.',
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: editingId ? 'Unable to update project' : 'Unable to create project',
+        description: error?.message ?? 'Please check the project data and API status.',
+        variant: 'destructive',
+      })
+    },
+  })
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | number | null>(null)
+  const [editingId, setEditingId] = useState<string | number | null>(null)
+  const [deleteId, setDeleteId] = useState<string | number | null>(null)
 
-  const selectedProject = selectedProjectId ? projects.find(p => p.id === selectedProjectId) : null
+  const selectedProject = selectedProjectId ? projects.find(p => String(p.id) === String(selectedProjectId)) : null
+  const editingProject = editingId ? projects.find(p => String(p.id) === String(editingId)) : null
 
-  const handleViewDetails = (id: number) => {
+  const handleViewDetails = (id: string | number) => {
     setSelectedProjectId(id)
     setIsDetailsOpen(true)
   }
 
   const handleAddProject = (data: ProjectData) => {
-    setIsModalOpen(false)
-    setEditingId(null)
-    queryClient.invalidateQueries({ queryKey: ['projects'] })
+    saveProjectMutation.mutate(data)
   }
 
-  const handleDelete = (id: number) => {
-    setDeleteId(null)
-    queryClient.invalidateQueries({ queryKey: ['projects'] })
+  const handleDelete = (id: number | string) => {
+    deleteProjectMutation.mutate(id)
   }
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string | number) => {
     setEditingId(id)
     setIsModalOpen(true)
   }
 
-  const tableData = projects.map((p, idx) => ({
-    id: p.id,
-    student: ['Ali Hassan', 'Noor Mohamed', 'Layla Ahmed'][idx] || 'Student',
-    subject: p.title,
-    teacher: ['Dr. Ahmed Hassan', 'Eng. Fatima Zahra', 'Prof. Mohammed Ali'][idx] || 'Teacher',
-    progress: p.progress,
-    status: (p.status === 'In Progress' ? 'in_progress' : 'accepted') as 'accepted' | 'in_progress' | 'completed' | 'failed',
-  }))
+  const mapProjectStatus = (status: ProjectStatus | string): ProjectTableStatus => {
+    if (status === ProjectStatus.PENDING) return 'pending'
+    if (status === ProjectStatus.IN_PROGRESS) return 'assigned'
+    if (status === ProjectStatus.DEFENDED || status === ProjectStatus.ARCHIVED) return 'completed'
+    if (status === ProjectStatus.REJECTED) return 'rejected'
+    return 'validated'
+  }
 
-  if (isLoading) {
+  const getPrimaryStudentId = (project: ProjectBasic) => {
+    return (project.members?.find((member) => member.role === 'LEADER') ?? project.members?.[0])?.studentId ?? ''
+  }
+
+  const getPrimaryTeacherId = (project: ProjectBasic) => {
+    return (
+      project.supervisors?.find((supervisor) => supervisor.role === 'MAIN_SUPERVISOR') ?? project.supervisors?.[0]
+    )?.teacherId ?? ''
+  }
+
+  const toModalData = (project?: ProjectBasic | null): ProjectData | undefined => {
+    if (!project) return undefined
+    return {
+      title: project.title,
+      description: project.description ?? '',
+      studentId: getPrimaryStudentId(project),
+      teacherId: getPrimaryTeacherId(project),
+      status: project.status,
+      type: project.type ?? 'INTERNAL',
+      phase: project.phase ?? ProjectPhase.PROPOSAL,
+      academicYear: project.academicYear ?? '',
+      startDate: project.startDate ?? '',
+      deadline: project.deadline ?? '',
+      requiredSkills: project.requiredSkills?.join(', ') ?? '',
+    }
+  }
+
+  const studentNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    students.forEach((student) => {
+      map.set(String(student.id), student.name)
+      if (student.studentId) map.set(String(student.studentId), student.name)
+    })
+    return map
+  }, [students])
+
+  const teacherNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    teachers.forEach((teacher) => {
+      map.set(String(teacher.id), teacher.name)
+    })
+    return map
+  }, [teachers])
+
+  const tableData = useMemo(() => projects.map((project) => {
+    const mainMember = project.members?.find((member) => member.role === 'LEADER') ?? project.members?.[0]
+    const mainSupervisor =
+      project.supervisors?.find((supervisor) => supervisor.role === 'MAIN_SUPERVISOR') ?? project.supervisors?.[0]
+    const studentId = mainMember?.studentId
+    const teacherId = mainSupervisor?.teacherId
+
+    return {
+      id: project.id,
+      student: studentId ? studentNameById.get(String(studentId)) ?? studentId : 'Unassigned',
+      subject: project.title,
+      teacher: teacherId ? teacherNameById.get(String(teacherId)) ?? teacherId : 'Unassigned',
+      progress: project.progress,
+      status: mapProjectStatus(project.status),
+    }
+  }), [projects, studentNameById, teacherNameById])
+
+  if (isLoading || isStudentsLoading || isTeachersLoading) {
     return (
       <div className="space-y-6">
         <PageHeader title="Project Monitoring" description="Loading..." />
@@ -152,8 +303,8 @@ export default function ProjectsPage() {
               <Button variant="outline" onClick={() => setDeleteId(null)}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={() => handleDelete(deleteId)}>
-                Delete
+              <Button variant="destructive" onClick={() => handleDelete(deleteId)} disabled={deleteProjectMutation.isPending}>
+                {deleteProjectMutation.isPending ? 'Deleting...' : 'Delete'}
               </Button>
             </div>
           </div>
@@ -184,7 +335,7 @@ export default function ProjectsPage() {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
                 <div className="mt-1">
-                  <StatusBadge status={selectedProject.status === 'In Progress' ? 'completed' : 'validated'} />
+                  <StatusBadge status={mapProjectStatus(selectedProject.status)} />
                 </div>
               </div>
 
@@ -214,6 +365,11 @@ export default function ProjectsPage() {
           setEditingId(null)
         }}
         onSubmit={handleAddProject}
+        initialData={toModalData(editingProject)}
+        students={students.map((student) => ({ id: String(student.id), name: student.name }))}
+        teachers={teachers.map((teacher) => ({ id: String(teacher.id), name: teacher.name }))}
+        isLoading={saveProjectMutation.isPending}
+        mode={editingProject ? 'edit' : 'create'}
       />
     </div>
   )

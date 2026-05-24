@@ -1,25 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DefenseTimeline } from '@/components/timeline/defense-timeline'
-import { MOCK_DEFENSE_TIMELINE } from '@/lib/defense-timeline-mock-data'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, Filter } from 'lucide-react'
+import { SchedulerService } from '@/services/service_scheduler'
+import { useAuth } from '@/providers/auth-provider'
+import type { DefenseTimelineEvent } from '@/lib/defense-timeline-mock-data'
 
 export default function StudentDefenseTimelinePage() {
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [events, setEvents] = useState<DefenseTimelineEvent[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const studentDefenses = MOCK_DEFENSE_TIMELINE.filter(event => 
-    event.student.name === 'Ahmed Yassine'
-  )
+  useEffect(() => {
+    SchedulerService.getTimelineEvents({ userRole: 'student', userId: user?.id })
+      .then(setEvents)
+      .catch(() => setEvents([]))
+      .finally(() => setIsLoading(false))
+  }, [user?.id])
 
-  const filteredEvents = studentDefenses.filter(event => {
-    const matchesSearch = searchQuery === '' || 
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = searchQuery === '' ||
       event.subject.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.student.name.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     const matchesStatus = statusFilter === 'all' || event.status === statusFilter
 
     return matchesSearch && matchesStatus
@@ -27,7 +35,6 @@ export default function StudentDefenseTimelinePage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Header - Fixed */}
       <div className="shrink-0 border-b border-border bg-card shadow-sm">
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
@@ -39,7 +46,6 @@ export default function StudentDefenseTimelinePage() {
         </div>
       </div>
 
-      {/* Filters - Fixed */}
       <div className="shrink-0 border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex flex-col sm:flex-row gap-3">
@@ -68,10 +74,13 @@ export default function StudentDefenseTimelinePage() {
         </div>
       </div>
 
-      {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto">
         <div className="container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <DefenseTimeline events={filteredEvents} />
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading timeline from scheduling-service...</p>
+          ) : (
+            <DefenseTimeline events={filteredEvents} />
+          )}
         </div>
       </div>
     </div>

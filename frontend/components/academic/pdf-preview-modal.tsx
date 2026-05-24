@@ -6,18 +6,20 @@ import { Download, X } from 'lucide-react'
 import type { AdministrativeDocument } from '@/models/academic-document.model'
 
 interface PDFPreviewModalProps {
-  open: boolean
+  open?: boolean
+  isOpen?: boolean
   document?: AdministrativeDocument | null
   onClose: () => void
 }
 
 export function PDFPreviewModal({
   open,
+  isOpen,
   document,
   onClose,
 }: PDFPreviewModalProps) {
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen ?? open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Aperçu du document</DialogTitle>

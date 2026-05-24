@@ -176,7 +176,7 @@ public class NotificationEventConsumer {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // DEFENSE
+    // DEFENSE (legacy — pfe.events.exchange)
     // ─────────────────────────────────────────────────────────────────────────
 
     @RabbitListener(queues = "${rabbitmq.queue.defense-request}")
@@ -212,6 +212,65 @@ public class NotificationEventConsumer {
                 .title("Jury Assignment")
                 .message("You have been assigned as jury for " + event.getStudentName() + "'s defense on " + event.getScheduledDate())
                 .data(toData("defenseId", event.getDefenseId()))
+                .build());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DEFENSE (nouveau — defense.exchange depuis scheduling-service)
+    //
+    // Le scheduling-service publie sur defense.exchange avec des routing keys :
+    //   defense.created | defense.updated | defense.cancelled | defense.rescheduled
+    //
+    // Payload :
+    //   { "defenseId": Long, "projectId": String, "academicYear": String, "status": String }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @RabbitListener(queues = RabbitMQConfig.DEFENSE_CREATED_QUEUE)
+    public void handleDefenseCreated(com.pfe.notification.event.DefenseEventDto event) {
+        log.info("📨 [defense.created] defenseId={} projectId={}", event.getDefenseId(), event.getProjectId());
+        // Notification générique — dans une vraie architecture on interrogerait project-service pour le nom de l'étudiant
+        notificationService.createNotification(CreateNotificationRequest.builder()
+                .userId(1L) // TODO: résoudre l'userId depuis projectId via project-service
+                .type(NotificationType.DEFENSE_CREATED)
+                .title("Soutenance créée")
+                .message("Une soutenance pour le projet #" + event.getProjectId() + " vient d'être créée (année " + event.getAcademicYear() + ")")
+                .data("{\"defenseId\":\"" + event.getDefenseId() + "\",\"projectId\":\"" + event.getProjectId() + "\"}")
+                .build());
+    }
+
+    @RabbitListener(queues = RabbitMQConfig.DEFENSE_UPDATED_QUEUE)
+    public void handleDefenseUpdated(com.pfe.notification.event.DefenseEventDto event) {
+        log.info("📨 [defense.updated] defenseId={} status={}", event.getDefenseId(), event.getStatus());
+        notificationService.createNotification(CreateNotificationRequest.builder()
+                .userId(1L)
+                .type(NotificationType.DEFENSE_UPDATED)
+                .title("Soutenance mise à jour")
+                .message("La soutenance #" + event.getDefenseId() + " (projet #" + event.getProjectId() + ") a été modifiée. Statut : " + event.getStatus())
+                .data("{\"defenseId\":\"" + event.getDefenseId() + "\",\"status\":\"" + event.getStatus() + "\"}")
+                .build());
+    }
+
+    @RabbitListener(queues = RabbitMQConfig.DEFENSE_CANCELLED_QUEUE)
+    public void handleDefenceCancelled(com.pfe.notification.event.DefenseEventDto event) {
+        log.info("📨 [defense.cancelled] defenseId={}", event.getDefenseId());
+        notificationService.createNotification(CreateNotificationRequest.builder()
+                .userId(1L)
+                .type(NotificationType.DEFENSE_CANCELLED)
+                .title("⚠️ Soutenance annulée")
+                .message("La soutenance #" + event.getDefenseId() + " pour le projet #" + event.getProjectId() + " a été annulée.")
+                .data("{\"defenseId\":\"" + event.getDefenseId() + "\"}")
+                .build());
+    }
+
+    @RabbitListener(queues = RabbitMQConfig.DEFENSE_RESCHEDULED_QUEUE)
+    public void handleDefenseRescheduled(com.pfe.notification.event.DefenseEventDto event) {
+        log.info("📨 [defense.rescheduled] defenseId={}", event.getDefenseId());
+        notificationService.createNotification(CreateNotificationRequest.builder()
+                .userId(1L)
+                .type(NotificationType.DEFENSE_RESCHEDULED)
+                .title("📅 Soutenance reportée")
+                .message("La soutenance #" + event.getDefenseId() + " pour le projet #" + event.getProjectId() + " a été reportée. Nouveau statut : " + event.getStatus())
+                .data("{\"defenseId\":\"" + event.getDefenseId() + "\",\"status\":\"" + event.getStatus() + "\"}")
                 .build());
     }
 

@@ -9,8 +9,9 @@ import type { AdministrativeDocument } from '@/models/academic-document.model'
 
 interface StudentDocumentListProps {
   documents: AdministrativeDocument[]
-  onRequest: (type: string) => void
+  onRequest?: (type: string) => void
   onPreview: (doc: AdministrativeDocument) => void
+  readOnly?: boolean
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -29,7 +30,7 @@ const DOC_TYPES = ['convention', 'encadrement', 'demande_pfe', 'pv_soutenance', 
 
 export function StudentDocumentList({
   documents,
-  onRequest,
+  onRequest = () => {},
   onPreview,
 }: StudentDocumentListProps) {
   const [activePhase, setActivePhase] = useState<'before' | 'after_supervisor' | 'after_approval' | 'after_defense'>('before')

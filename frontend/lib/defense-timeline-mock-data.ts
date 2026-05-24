@@ -18,7 +18,7 @@ export interface DefenseTimelineEvent {
     tags: string[]
   }
   jury: JuryMember[]
-  teacherRole?: 'president' | 'rapporteur' | 'encadrant' | null
+  teacherRole?: 'president' | 'rapporteur' | 'encadrant' | 'examiner' | null
   attachments: {
     id: string
     name: string

@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
+import { SubjectsService } from '@/services/service_subjects';
 
 export default function NewSubjectPage() {
   const router = useRouter();
@@ -70,20 +71,17 @@ export default function NewSubjectPage() {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      const newSubject = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...formData,
-        maxStudents: parseInt(formData.maxStudents),
+      await SubjectsService.createSubject({
+        title: formData.title,
+        description: formData.description,
         technologies: formData.technologies.split(',').map((t) => t.trim()).filter((t) => t),
-        createdAt: new Date().toISOString(),
-      };
-
-      console.log('[v0] New subject created:', newSubject);
+        type: 'INTERNAL',
+        status: 'PENDING',
+      });
 
       toast({
-        title: 'Success',
-        description: 'Subject created successfully',
+        title: 'Subject submitted',
+        description: 'The subject is pending coordinator review.',
       });
 
       router.push('/teacher/subjects');

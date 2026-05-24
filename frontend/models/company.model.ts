@@ -6,7 +6,7 @@ export interface ExternalCompany {
   phone: string
   country: string
   city: string
-  status: "pending" | "approved" | "blacklisted"
+  status: "pending" | "approved" | "blacklisted" | "rejected"
   blacklistReason?: string
   createdAt: string
   updatedAt: string

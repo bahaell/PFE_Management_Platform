@@ -22,7 +22,7 @@ export interface TeacherDefense {
     status: 'scheduled' | 'completed' | 'in-progress'
   }
   jury: JuryMember[]
-  teacherRole: 'president' | 'rapporteur' | 'encadrant'
+  teacherRole: 'president' | 'rapporteur' | 'encadrant' | 'examiner'
   attachments?: {
     id: string
     name: string

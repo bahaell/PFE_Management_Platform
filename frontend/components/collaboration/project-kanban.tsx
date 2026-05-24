@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, GripVertical, Maximize2 } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { Button } from '@/components/ui/button'
@@ -9,9 +10,10 @@ import { useModalManager } from '@/hooks/use-modal-manager'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/providers/auth-provider'
 import { getTaskPermissions, canDragTask } from '@/lib/permissions/kanban-permissions'
+import { TasksService } from '@/services/service_tasks'
 
 interface Task {
-  id: number
+  id: string | number
   title: string
   description: string
   priority: 'low' | 'medium' | 'high'
@@ -26,23 +28,56 @@ interface Tasks {
   done: Task[]
 }
 
-export function ProjectKanban() {
+interface ProjectKanbanProps {
+  projectId?: string | number
+}
+
+function normalizeTask(task: any): Task {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description ?? '',
+    priority: task.priority === 'HIGH' ? 'high' : task.priority === 'MEDIUM' ? 'medium' : task.priority ?? 'low',
+    assignee: task.assignee ?? 'Unassigned',
+    assigneeId: task.assigneeId ?? '',
+    dueDate: task.dueDate ?? new Date().toISOString().slice(0, 10),
+  }
+}
+
+function groupTasks(items: any[]): Tasks {
+  return {
+    todo: items.filter((task) => task.status === 'todo').map(normalizeTask),
+    inProgress: items.filter((task) => task.status === 'inProgress').map(normalizeTask),
+    done: items.filter((task) => task.status === 'done').map(normalizeTask),
+  }
+}
+
+function taskStatusFromColumn(column: keyof Tasks) {
+  if (column === 'inProgress') return 'inProgress'
+  if (column === 'done') return 'done'
+  return 'todo'
+}
+
+export function ProjectKanban({ projectId }: ProjectKanbanProps) {
   const { user, isLoading } = useAuth()
   const { open } = useModalManager()
+  const queryClient = useQueryClient()
   
   const [tasks, setTasks] = useState<Tasks>({
-    todo: [
-      { id: 2, title: 'ML algorithm implementation', description: 'Build the core prediction model', priority: 'high', assignee: 'Ahmed Ben Ali', assigneeId: 'std001', dueDate: '2024-02-15' },
-      { id: 3, title: 'Model validation & testing', description: 'Comprehensive testing with metrics', priority: 'medium', assignee: 'Ahmed Ben Ali', assigneeId: 'std001', dueDate: '2024-02-25' },
-      { id: 4, title: 'API development', description: 'RESTful API for model serving', priority: 'medium', assignee: 'Ahmed Ben Ali', assigneeId: 'std001', dueDate: '2024-03-05' }
-    ],
-    inProgress: [
-      { id: 1, title: 'Data preprocessing', description: 'Clean and normalize dataset', priority: 'high', assignee: 'Ahmed Ben Ali', assigneeId: 'std001', dueDate: '2024-02-08' }
-    ],
-    done: [
-      { id: 5, title: 'Environment setup', description: 'Configure development environment', priority: 'low', assignee: 'Ahmed Ben Ali', assigneeId: 'std001', dueDate: '2024-01-30' }
-    ]
+    todo: [],
+    inProgress: [],
+    done: [],
   })
+
+  const { data: apiTasks = [], isLoading: tasksLoading, isError } = useQuery({
+    queryKey: ['project-tasks', projectId],
+    queryFn: () => TasksService.getTasksByProject(projectId!),
+    enabled: Boolean(projectId),
+  })
+
+  useEffect(() => {
+    setTasks(groupTasks(apiTasks))
+  }, [apiTasks])
 
   const columns = [
     { key: 'todo', title: 'To Do', color: 'border-red-300 bg-red-50 dark:bg-red-950/20' },
@@ -69,6 +104,8 @@ export function ProjectKanban() {
     if (daysLeft === 1) return { text: 'Tomorrow', color: 'text-yellow-600' }
     return { text: `${daysLeft}d left`, color: 'text-muted-foreground' }
   }
+
+  const invalidateTasks = () => queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] })
 
   const handleDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result
@@ -112,6 +149,10 @@ export function ProjectKanban() {
         [sourceColumn]: sourceCol,
         [destColumn]: destCol,
       })
+
+      if (projectId) {
+        void TasksService.updateTaskStatus(removed.id, taskStatusFromColumn(destColumn)).then(invalidateTasks)
+      }
     }
   }
 
@@ -125,9 +166,17 @@ export function ProjectKanban() {
       ...tasks,
       [column]: [...tasks[column as keyof Tasks], newTask],
     })
+
+    if (projectId) {
+      void TasksService.createTask({
+        ...newTask,
+        status: taskStatusFromColumn(column as keyof Tasks),
+        projectId,
+      }).then(invalidateTasks)
+    }
   }
 
-  const handleUpdateTask = (taskId: number, updates: Partial<Task>) => {
+  const handleUpdateTask = (taskId: string | number, updates: Partial<Task>) => {
     const updatedTasks = { ...tasks }
     
     Object.keys(updatedTasks).forEach((column) => {
@@ -142,9 +191,16 @@ export function ProjectKanban() {
     })
 
     setTasks(updatedTasks)
+
+    if (projectId) {
+      const task = Object.values(updatedTasks).flat().find((item) => item.id === taskId)
+      if (task) {
+        void TasksService.updateTask(taskId, { ...task, ...updates, projectId }).then(invalidateTasks)
+      }
+    }
   }
 
-  const handleDeleteTask = (taskId: number) => {
+  const handleDeleteTask = (taskId: string | number) => {
     const updatedTasks = { ...tasks }
     
     Object.keys(updatedTasks).forEach((column) => {
@@ -153,6 +209,10 @@ export function ProjectKanban() {
     })
 
     setTasks(updatedTasks)
+
+    if (projectId) {
+      void TasksService.deleteTask(taskId).then(invalidateTasks)
+    }
   }
 
   const handleTaskClick = (task: Task) => {
@@ -199,6 +259,7 @@ export function ProjectKanban() {
   const userRole = user?.role || 'student'
   const userId = user?.id || 'std001'
   const canCreateTasks = getTaskPermissions(userRole, userId).canCreate
+  const totalTasks = tasks.todo.length + tasks.inProgress.length + tasks.done.length
 
   return (
     <>
@@ -217,7 +278,21 @@ export function ProjectKanban() {
         </div>
 
         <div className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-hidden">
+          {tasksLoading && (
+            <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+              Loading tasks...
+            </div>
+          )}
+          {isError && (
+            <div className="h-full flex items-center justify-center text-sm text-destructive">
+              Unable to load project tasks.
+            </div>
+          )}
+          {!tasksLoading && !isError && (
           <DragDropContext onDragEnd={handleDragEnd}>
+            {totalTasks === 0 && (
+              <p className="px-1 pb-3 text-sm text-muted-foreground">No tasks yet.</p>
+            )}
             <div className="flex gap-3 sm:gap-4 h-full pb-2 px-1">
               {columns.map((col) => (
                 <div key={col.key} className="w-72 sm:w-80 flex-shrink-0 flex flex-col">
@@ -307,6 +382,7 @@ export function ProjectKanban() {
               ))}
             </div>
           </DragDropContext>
+          )}
         </div>
       </div>
     </>

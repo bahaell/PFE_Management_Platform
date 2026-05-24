@@ -4,6 +4,38 @@ import type { CoordinatorProfile } from '@/models/coordinator.model'
 import type { Skill } from '@/models/skill.model'
 import { apiClient } from '@/lib/api-client'
 
+function teacherGradeToApi(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  const normalized = value.trim().toUpperCase().replace(/[-\s]+/g, '_')
+  if (normalized === 'ASSOCIATE' || normalized === 'ASSOCIATE_PROFESSOR') return 'MAITRE_ASSISTANT'
+  if (normalized === 'PROFESSOR') return 'PROFESSOR'
+  if (normalized === 'ASSISTANT') return 'ASSISTANT'
+  if (normalized === 'DOCTOR') return 'DOCTOR'
+  return normalized
+}
+
+function normalizeProfilePayload(role: string, data: Partial<StudentProfile | Teacher | CoordinatorProfile>) {
+  const payload: Record<string, unknown> = { ...(data as Record<string, unknown>) }
+  const normalizedRole = role.toLowerCase()
+
+  if (normalizedRole === 'teacher' && payload.grade !== undefined) {
+    payload.grade = teacherGradeToApi(payload.grade)
+  }
+
+  if (normalizedRole === 'student') {
+    if (payload.level !== undefined && payload.classLevel === undefined) {
+      payload.classLevel = payload.level
+      delete payload.level
+    }
+    if (payload.studentId !== undefined && payload.studentNumber === undefined) {
+      payload.studentNumber = payload.studentId
+      delete payload.studentId
+    }
+  }
+
+  return payload
+}
+
 export const ProfileService = {
   async getProfile(role: string): Promise<StudentProfile | Teacher | CoordinatorProfile | null> {
     try {
@@ -18,17 +50,18 @@ export const ProfileService = {
   },
 
   async createProfile(role: string, data: StudentProfile | Teacher | CoordinatorProfile): Promise<StudentProfile | Teacher | CoordinatorProfile> {
-    return apiClient.put<StudentProfile | Teacher | CoordinatorProfile>('/api/users/me/profile', data)
+    return apiClient.put<StudentProfile | Teacher | CoordinatorProfile>('/api/users/me/profile', normalizeProfilePayload(role, data))
   },
 
   async updateProfile(role: string, data: Partial<StudentProfile | Teacher | CoordinatorProfile>): Promise<StudentProfile | Teacher | CoordinatorProfile | null> {
     try {
-      const response = await apiClient.put<any>('/api/users/me/profile', data)
+      const response = await apiClient.put<any>('/api/users/me/profile', normalizeProfilePayload(role, data))
       if (response && response[role.toLowerCase()]) {
         return response[role.toLowerCase()]
       }
       return response
-    } catch {
+    } catch (error) {
+      console.error('Failed to update profile', error)
       return null
     }
   },

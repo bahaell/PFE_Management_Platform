@@ -1,11 +1,17 @@
 export interface ProjectDocument {
-  id: string;
+  id: string | number;
   name: string;
-  version: number;
-  uploadedBy: string;
-  uploadedAt: string;
-  size: number;
-  contentType: string;
+  title?: string;
+  description?: string;
+  version?: number;
+  uploadedBy?: string;
+  uploadedAt?: string;
+  createdAt?: string;
+  status?: string;
+  size?: any;
+  contentType?: string;
+  type?: string;
+  fileType?: string;
   fileUrl?: string;
-  projectId: string;
+  projectId?: string | number;
 }

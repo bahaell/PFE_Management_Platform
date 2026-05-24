@@ -143,7 +143,7 @@ export function CommitSidebar({
               transition={{ delay: 0.1 + idx * 0.05 }}
             >
               <button
-                onClick={() => onSelectDocument(doc.id)}
+                onClick={() => onSelectDocument(String(doc.id))}
                 className={cn(
                   'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 group',
                   selectedDocumentId === doc.id

@@ -11,10 +11,14 @@ com\pfe\notification\config\RabbitMQConfig.class
 com\pfe\notification\event\CommitCreatedEvent.class
 com\pfe\notification\event\BaseEvent.class
 com\pfe\notification\event\TaskUpdatedEvent.class
+com\pfe\notification\messaging\NotificationEventConsumer$1.class
 com\pfe\notification\model\Notification.class
 com\pfe\notification\event\DefenseRequestCreatedEvent$DefenseRequestCreatedEventBuilder.class
 com\pfe\notification\model\NotificationType.class
+com\pfe\notification\config\RestTemplateConfig.class
+com\pfe\notification\dto\ParticipantDto$ParticipantDtoBuilder.class
 com\pfe\notification\event\DefenseRequestCreatedEvent$DefenseRequestCreatedEventBuilderImpl.class
+com\pfe\notification\dto\ParticipantDto.class
 com\pfe\notification\model\DeviceToken.class
 com\pfe\notification\event\AcademicDocumentGeneratedEvent.class
 com\pfe\notification\event\DefenseScheduledEvent$DefenseScheduledEventBuilderImpl.class
@@ -68,3 +72,5 @@ com\pfe\notification\event\SubjectApplicationUpdatedEvent.class
 com\pfe\notification\event\DefenseRequestCreatedEvent.class
 com\pfe\notification\model\DeviceToken$DeviceTokenBuilder.class
 com\pfe\notification\event\UserCreatedEvent$UserCreatedEventBuilderImpl.class
+com\pfe\notification\event\DefenseEventDto.class
+com\pfe\notification\event\NewChatMessageEvent.class

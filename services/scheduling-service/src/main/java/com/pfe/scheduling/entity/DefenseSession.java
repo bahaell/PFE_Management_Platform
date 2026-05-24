@@ -1,35 +1,61 @@
 package com.pfe.scheduling.entity;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
-import com.pfe.scheduling.solver.TimeSlot;
+import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
 
-@PlanningEntity
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "defense_sessions")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class DefenseSession {
 
-    @PlanningId
-    private Long projectId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private String projectName;
-    private String supervisorName;
+    @Column(nullable = false, unique = true)
+    private String projectId;
 
-    private List<String>   juryMemberIds;
-    private List<String> juryMemberNames;       // ← noms récupérés via UserClient
-
-    // disponibilités de chaque juré : "MONDAY_08:00_12:00"
-    // format simple pour que Timefold puisse comparer
-    private List<String> juryAvailabilities;    // ← nouveau
-
-    private int  durationMinutes;
-    private Long preferredRoomId;
-
-    @PlanningVariable(valueRangeProviderRefs = "timeSlotRange")
-    private TimeSlot timeSlot;
-
-    @PlanningVariable(valueRangeProviderRefs = "roomIdRange")
     private Long roomId;
+    private String roomNameSnapshot;
+
+    @Column(nullable = false)
+    private String academicYear;
+
+    private LocalDate date;
+    private LocalTime startTime;
+    private LocalTime endTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DefenseStatus status;
+
+    @Column(nullable = false)
+    private boolean manuallyScheduled = false;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (status == null) {
+            status = DefenseStatus.PENDING;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

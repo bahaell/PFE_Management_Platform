@@ -1,6 +1,8 @@
 package com.example.projects.dto;
 
 import com.example.projects.entity.ProjectStatus;
+import com.example.projects.entity.ProjectPhase;
+import com.example.projects.entity.ProjectType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,10 +21,14 @@ public class ProjectResponse {
     private String title;
     private String subject;
     private String description;
+    private ProjectType type;
     private ProjectStatus status;
+    private ProjectPhase phase;
     private Integer progress;
-    private String supervisorId;
-    private Set<String> studentIds;
+    private String academicYear;
+    private UUID subjectId;
+    private Set<ProjectMemberResponse> members;
+    private Set<ProjectSupervisorResponse> supervisors;
     private String companyId;
     private Set<String> requiredSkills;
     private LocalDateTime startDate;

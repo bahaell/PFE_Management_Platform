@@ -4,7 +4,7 @@ import ai.timefold.solver.core.api.solver.SolverManager;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import ai.timefold.solver.core.api.solver.SolverFactory;
-import com.pfe.scheduling.entity.DefenseSession;
+import com.pfe.scheduling.solver.DefenseScheduleSlot;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
@@ -16,7 +16,7 @@ public class TimefoldConfig {
     public SolverFactory<DefenseTimetable> solverFactory() {
         SolverConfig solverConfig = new SolverConfig()
                 .withSolutionClass(DefenseTimetable.class)
-                .withEntityClasses(DefenseSession.class)
+                .withEntityClasses(DefenseScheduleSlot.class)
                 .withConstraintProviderClass(DefenseConstraintProvider.class)
                 .withTerminationConfig(new TerminationConfig()
                         .withSpentLimit(Duration.ofSeconds(30)));

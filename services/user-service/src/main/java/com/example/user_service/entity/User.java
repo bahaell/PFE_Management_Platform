@@ -5,8 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -38,11 +40,19 @@ public class User {
     private String avatar;
 
     private String department;
-    private String level;
-    private String studentId;
+
+    @Enumerated(EnumType.STRING)
+    private StudentLevel classLevel;
+    private String studentNumber;
+    private String groupName;
+    private String cvUrl;
+    private String portfolioUrl;
+    private String githubUrl;
+    private boolean validated = false;
     private String academicYear;
     private String interests;
-    private String grade;
+    @Enumerated(EnumType.STRING)
+    private TeacherGrade grade;
     private String speciality;
     private String bio;
     private String researchInterests;
@@ -50,6 +60,36 @@ public class User {
     private Integer yearsOfService;
     private String office;
     private String responsibilities;
+
+    // ── Coordinator Administrative Info ───────────────────────────────────────
+    private String position;
+    @Enumerated(EnumType.STRING)
+    private ResponsibilityLevel responsibilityLevel;
+    @Column(columnDefinition = "TEXT")
+    private String managedAcademicYearsJson;
+    private String signatureUrl;
+    private String administrativeCode;
+
+    // ── Capacity (for AI recommendation) ─────────────────────────────────────
+    private Integer maxSupervisedStudents = 5;
+    private Integer currentSupervisedStudents = 0;
+
+    // ── Social & Extended Profile ──────────────────────────────────────────────
+    private String linkedinUrl;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
 
     @Column(columnDefinition = "TEXT")
     private String skillsJson;
@@ -153,20 +193,60 @@ public class User {
         this.department = department;
     }
 
-    public String getLevel() {
-        return level;
+    public StudentLevel getClassLevel() {
+        return classLevel;
     }
 
-    public void setLevel(String level) {
-        this.level = level;
+    public void setClassLevel(StudentLevel classLevel) {
+        this.classLevel = classLevel;
     }
 
-    public String getStudentId() {
-        return studentId;
+    public String getStudentNumber() {
+        return studentNumber;
     }
 
-    public void setStudentId(String studentId) {
-        this.studentId = studentId;
+    public void setStudentNumber(String studentNumber) {
+        this.studentNumber = studentNumber;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public String getCvUrl() {
+        return cvUrl;
+    }
+
+    public void setCvUrl(String cvUrl) {
+        this.cvUrl = cvUrl;
+    }
+
+    public String getPortfolioUrl() {
+        return portfolioUrl;
+    }
+
+    public void setPortfolioUrl(String portfolioUrl) {
+        this.portfolioUrl = portfolioUrl;
+    }
+
+    public String getGithubUrl() {
+        return githubUrl;
+    }
+
+    public void setGithubUrl(String githubUrl) {
+        this.githubUrl = githubUrl;
+    }
+
+    public boolean isValidated() {
+        return validated;
+    }
+
+    public void setValidated(boolean validated) {
+        this.validated = validated;
     }
 
     public String getAcademicYear() {
@@ -185,11 +265,11 @@ public class User {
         this.interests = interests;
     }
 
-    public String getGrade() {
+    public TeacherGrade getGrade() {
         return grade;
     }
 
-    public void setGrade(String grade) {
+    public void setGrade(TeacherGrade grade) {
         this.grade = grade;
     }
 
@@ -249,11 +329,91 @@ public class User {
         this.responsibilities = responsibilities;
     }
 
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
+
+    public ResponsibilityLevel getResponsibilityLevel() {
+        return responsibilityLevel;
+    }
+
+    public void setResponsibilityLevel(ResponsibilityLevel responsibilityLevel) {
+        this.responsibilityLevel = responsibilityLevel;
+    }
+
+    public String getManagedAcademicYearsJson() {
+        return managedAcademicYearsJson;
+    }
+
+    public void setManagedAcademicYearsJson(String managedAcademicYearsJson) {
+        this.managedAcademicYearsJson = managedAcademicYearsJson;
+    }
+
+    public String getSignatureUrl() {
+        return signatureUrl;
+    }
+
+    public void setSignatureUrl(String signatureUrl) {
+        this.signatureUrl = signatureUrl;
+    }
+
+    public String getAdministrativeCode() {
+        return administrativeCode;
+    }
+
+    public void setAdministrativeCode(String administrativeCode) {
+        this.administrativeCode = administrativeCode;
+    }
+
     public String getSkillsJson() {
         return skillsJson;
     }
 
     public void setSkillsJson(String skillsJson) {
         this.skillsJson = skillsJson;
+    }
+
+    public Integer getMaxSupervisedStudents() {
+        return maxSupervisedStudents;
+    }
+
+    public void setMaxSupervisedStudents(Integer maxSupervisedStudents) {
+        this.maxSupervisedStudents = maxSupervisedStudents;
+    }
+
+    public Integer getCurrentSupervisedStudents() {
+        return currentSupervisedStudents;
+    }
+
+    public void setCurrentSupervisedStudents(Integer currentSupervisedStudents) {
+        this.currentSupervisedStudents = currentSupervisedStudents;
+    }
+
+    public String getLinkedinUrl() {
+        return linkedinUrl;
+    }
+
+    public void setLinkedinUrl(String linkedinUrl) {
+        this.linkedinUrl = linkedinUrl;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

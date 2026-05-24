@@ -1,8 +1,13 @@
 import type { Teacher } from './teacher.model'
 
-export type JuryRole = 'president' | 'rapporteur' | 'encadrant'
+export type JuryRole = 'president' | 'rapporteur' | 'encadrant' | 'examiner'
 
 export interface JuryMember {
-  teacher: Teacher
-  role: JuryRole
+  [key: string]: any
+  id?: string | number
+  teacher?: Teacher
+  role: JuryRole | string
+  name?: string
+  avatar?: string
+  online?: boolean
 }

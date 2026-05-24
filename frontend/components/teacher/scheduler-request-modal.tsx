@@ -84,6 +84,7 @@ export function SchedulerRequestModal({ isOpen, onClose, student }: SchedulerReq
             bio: '',
             researchInterests: '',
             yearsOfExperience: 0,
+            yearsOfService: 0,
             skills: [],
           },
           skills: [],

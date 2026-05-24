@@ -3,12 +3,19 @@
  * Handles authentication, base URLs, and error reporting.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082';
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
-export interface ApiError {
-  message: string;
+export class ApiError extends Error {
   status?: number;
   errors?: Record<string, string>;
+
+  constructor(message: string, status?: number, errors?: Record<string, string>) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.errors = errors;
+    Object.setPrototypeOf(this, ApiError.prototype);
+  }
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -16,11 +23,11 @@ async function handleResponse<T>(response: Response): Promise<T> {
   const data = isJson ? await response.json() : null;
 
   if (!response.ok) {
-    const error: ApiError = {
-      message: data?.message || response.statusText || 'An unexpected error occurred',
-      status: response.status,
-      errors: data?.errors,
-    };
+    const error = new ApiError(
+      data?.message || response.statusText || 'An unexpected error occurred',
+      response.status,
+      data?.errors
+    );
 
     // Global handling for specific status codes
     if (response.status === 401) {
@@ -40,11 +47,11 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const apiClient = {
   async get<T>(path: string, options: RequestInit = {}): Promise<T> {
-    return this.request<T>(path, { ...options, method: 'GET' });
+    return apiClient.request<T>(path, { ...options, method: 'GET' });
   },
 
   async post<T>(path: string, body: any, options: RequestInit = {}): Promise<T> {
-    return this.request<T>(path, {
+    return apiClient.request<T>(path, {
       ...options,
       method: 'POST',
       body: JSON.stringify(body),
@@ -52,7 +59,7 @@ export const apiClient = {
   },
 
   async put<T>(path: string, body: any, options: RequestInit = {}): Promise<T> {
-    return this.request<T>(path, {
+    return apiClient.request<T>(path, {
       ...options,
       method: 'PUT',
       body: JSON.stringify(body),
@@ -60,7 +67,7 @@ export const apiClient = {
   },
 
   async patch<T>(path: string, body: any, options: RequestInit = {}): Promise<T> {
-    return this.request<T>(path, {
+    return apiClient.request<T>(path, {
       ...options,
       method: 'PATCH',
       body: JSON.stringify(body),
@@ -68,7 +75,7 @@ export const apiClient = {
   },
 
   async delete<T>(path: string, options: RequestInit = {}): Promise<T> {
-    return this.request<T>(path, { ...options, method: 'DELETE' });
+    return apiClient.request<T>(path, { ...options, method: 'DELETE' });
   },
 
   async request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -89,7 +96,16 @@ export const apiClient = {
       headers,
     };
 
-    const response = await fetch(url, config);
+    let response: Response;
+    try {
+      response = await fetch(url, config);
+    } catch (err) {
+      throw new ApiError(
+        `Unable to reach the API at ${url}. Check that the backend is running and the Next.js API proxy is configured.`,
+        0
+      );
+    }
+
     return handleResponse<T>(response);
   },
 };

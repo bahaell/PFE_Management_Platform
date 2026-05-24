@@ -7,17 +7,20 @@ import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface RequestDocumentModalProps {
-  open: boolean
+  open?: boolean
+  isOpen?: boolean
   documentType?: string | null
+  studentId?: string
   onClose: () => void
-  onSubmit: (message: string) => void
+  onSubmit?: (message: string) => void
 }
 
 export function RequestDocumentModal({
   open,
+  isOpen,
   documentType,
   onClose,
-  onSubmit,
+  onSubmit = () => {},
 }: RequestDocumentModalProps) {
   const [message, setMessage] = useState('')
 
@@ -28,7 +31,7 @@ export function RequestDocumentModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen ?? open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Demander un document</DialogTitle>

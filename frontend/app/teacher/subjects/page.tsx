@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
@@ -24,11 +25,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Plus, Search, Filter, BookOpen, Users, Trash2, Edit } from 'lucide-react'
-import { ProjectsService } from '@/services/service_projects'
+import { SubjectsService } from '@/services/service_subjects'
 import { StudentsService } from '@/services/service_students'
+import { getAuthState } from '@/lib/auth'
 
 interface Subject {
-  id: string
+  id: any
   title: string
   description: string
   domain: string
@@ -40,9 +42,15 @@ interface Subject {
 }
 
 export default function TeacherSubjectsPage() {
-  const { data: projects = [] } = useQuery({
-    queryKey: ['teacher-subjects'],
-    queryFn: () => ProjectsService.getAllProjects(),
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const currentUser = getAuthState()
+  const { data: apiSubjects = [] } = useQuery({
+    queryKey: ['teacher-subjects', currentUser?.id],
+    queryFn: () => SubjectsService.getAllSubjects({
+      teacherId: currentUser?.id,
+      role: currentUser?.id ? 'TEACHER' : undefined,
+    }),
   })
 
   const { data: allStudents = [] } = useQuery({
@@ -60,19 +68,34 @@ export default function TeacherSubjectsPage() {
   const [editFormData, setEditFormData] = useState<Subject | null>(null)
   const [selectedApplicants, setSelectedApplicants] = useState<Set<string>>(new Set())
 
+  const { data: subjectApplications = [], isLoading: isLoadingApplications } = useQuery({
+    queryKey: ['subject-applications', selectedSubject?.id],
+    queryFn: () => SubjectsService.getApplicationsBySubject(String(selectedSubject?.id)),
+    enabled: isApplicantsOpen && !!selectedSubject?.id,
+  })
+
+  const reviewApplicationMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'ACCEPTED' | 'REJECTED' }) =>
+      SubjectsService.updateApplicationStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subject-applications', selectedSubject?.id] })
+      queryClient.invalidateQueries({ queryKey: ['teacher-subjects', currentUser?.id] })
+    },
+  })
+
   const subjects: Subject[] = useMemo(() => {
-    return projects.map((p, idx) => ({
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      domain: p.subject,
-      technologies: ['Python', 'React', 'Node.js'],
+    return apiSubjects.map((subject, idx) => ({
+      id: subject.id,
+      title: subject.title,
+      description: subject.description,
+      domain: subject.type === 'EXTERNAL' ? subject.companyName || 'External' : 'Internal',
+      technologies: subject.technologies,
       level: ['L3', 'M1', 'M2'][idx % 3] || 'M2',
       maxStudents: 2 + (idx % 3),
-      progress: p.progress,
-      status: 'validated' as const,
+      progress: 0,
+      status: subject.status === 'ACCEPTED' || subject.status === 'APPROVED' ? 'validated' as const : subject.status === 'REJECTED' ? 'rejected' as const : 'pending' as const,
     }))
-  }, [projects])
+  }, [apiSubjects])
 
   const domains = useMemo(() => [...new Set(subjects.map(s => s.domain))], [subjects])
   const technologies = useMemo(() => [...new Set(subjects.flatMap(s => s.technologies))], [subjects])
@@ -125,11 +148,16 @@ export default function TeacherSubjectsPage() {
   }
 
   const handleSaveApplicants = () => {
-    if (selectedSubject) {
-      console.log(`Assigned ${selectedApplicants.size} students to ${selectedSubject.title}`)
-      setIsApplicantsOpen(false)
-    }
+    selectedApplicants.forEach((applicationId) => {
+      reviewApplicationMutation.mutate({ id: applicationId, status: 'ACCEPTED' })
+    })
+    setSelectedApplicants(new Set())
   }
+
+  const applicantRows = subjectApplications.map((application) => {
+    const student = allStudents.find((item) => String(item.id) === application.studentId)
+    return { application, student }
+  })
 
   return (
     <div className="space-y-6">
@@ -137,7 +165,7 @@ export default function TeacherSubjectsPage() {
         title="My Subjects"
         description="Manage your validated PFE subjects"
         action={
-          <Button>
+          <Button onClick={() => router.push('/teacher/subjects/new')}>
             <Plus className="w-4 h-4 mr-2" />
             New Subject
           </Button>
@@ -276,6 +304,7 @@ export default function TeacherSubjectsPage() {
                     variant="outline" 
                     className="flex-1"
                     onClick={() => handleViewApplicants(subject)}
+                    disabled={subject.status !== 'validated'}
                   >
                     <Users className="w-4 h-4 mr-1" />
                     Students
@@ -399,7 +428,7 @@ export default function TeacherSubjectsPage() {
           <DialogHeader>
             <DialogTitle>Assign Students to {selectedSubject?.title}</DialogTitle>
             <DialogDescription>
-              Select up to {selectedSubject?.maxStudents} students to assign to this subject
+              Review the students who applied after this subject was accepted
             </DialogDescription>
           </DialogHeader>
 
@@ -413,21 +442,41 @@ export default function TeacherSubjectsPage() {
 
             {/* Students List */}
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {allStudents.map((student) => (
-                <div key={student.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              {isLoadingApplications && (
+                <p className="text-sm text-muted-foreground text-center py-6">Loading applicants...</p>
+              )}
+              {!isLoadingApplications && applicantRows.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">No students have applied yet.</p>
+              )}
+              {applicantRows.map(({ application, student }) => (
+                <div key={application.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                   <input
                     type="checkbox"
-                    id={student.id}
-                    checked={selectedApplicants.has(student.id)}
-                    onChange={() => handleToggleApplicant(student.id)}
-                    disabled={selectedApplicants.size >= (selectedSubject?.maxStudents || 0) && !selectedApplicants.has(student.id)}
+                    id={application.id}
+                    checked={selectedApplicants.has(application.id)}
+                    onChange={() => handleToggleApplicant(application.id)}
+                    disabled={
+                      application.status !== 'PENDING' ||
+                      (selectedApplicants.size >= (selectedSubject?.maxStudents || 0) && !selectedApplicants.has(application.id))
+                    }
                     className="w-4 h-4"
                   />
-                  <label htmlFor={student.id} className="flex-1 cursor-pointer">
-                    <p className="font-medium text-sm">{student.name}</p>
-                    <p className="text-xs text-muted-foreground">{student.email}</p>
+                  <label htmlFor={application.id} className="flex-1 cursor-pointer">
+                    <p className="font-medium text-sm">{student?.name ?? application.studentId}</p>
+                    <p className="text-xs text-muted-foreground">{student?.email ?? application.studentId}</p>
                   </label>
-                  <Badge variant="outline" className="text-xs">{student.level}</Badge>
+                  <Badge variant="outline" className="text-xs">{application.status.toLowerCase()}</Badge>
+                  {application.status === 'PENDING' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => reviewApplicationMutation.mutate({ id: application.id, status: 'REJECTED' })}
+                      disabled={reviewApplicationMutation.isPending}
+                    >
+                      Reject
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -437,7 +486,7 @@ export default function TeacherSubjectsPage() {
             <Button variant="outline" onClick={() => setIsApplicantsOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveApplicants} disabled={selectedApplicants.size === 0}>
+            <Button onClick={handleSaveApplicants} disabled={selectedApplicants.size === 0 || reviewApplicationMutation.isPending}>
               Assign {selectedApplicants.size} Student{selectedApplicants.size !== 1 ? 's' : ''}
             </Button>
           </DialogFooter>

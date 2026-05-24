@@ -1,244 +1,538 @@
-import type { Teacher } from '@/models/teacher.model'
-import type { Room } from '@/models/room.model'
 import type { JuryMember } from '@/models/jury.model'
-import type { SchedulerProject, ScheduledDefenseEntry, PendingDefenseRequest, SchedulerStatistics } from '@/models/scheduler.model'
+import type { Teacher } from '@/models/teacher.model'
+import type {
+  PendingDefenseRequest,
+  ScheduledDefenseEntry,
+  SchedulerProject,
+  SchedulerRecommendedSlot,
+  SchedulerStatistics,
+} from '@/models/scheduler.model'
+import type { DefenseTimelineEvent } from '@/lib/defense-timeline-mock-data'
+import type { TeacherDefense } from '@/lib/teacher-defense-mock-data'
+import { apiClient } from '@/lib/api-client'
 
-interface Project {
-  id: string
-  studentName: string
-  subject: string
-  assignedTeacher: Teacher
-  skills: string[]
-  status: 'pending' | 'scheduled' | 'completed'
-}
+export type DefenseStatus = 'PENDING' | 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED' | 'POSTPONED'
+export type JuryRole = 'PRESIDENT' | 'RAPPORTEUR' | 'SUPERVISOR' | 'EXAMINER'
+export type UiJuryRole = 'president' | 'rapporteur' | 'encadrant' | 'examiner'
 
-interface RecommendedSlot {
+export interface BackendDefenseSession {
   id: number
-  time: string
-  startTime: string
-  endTime: string
-  room: Room
-  jury: JuryMember[]
-  confidence: number
-  conflicts: string[]
-  isRecommended: boolean
-  aiReasoning: string[]
+  projectId: string
+  roomId?: number
+  roomNameSnapshot?: string
+  academicYear: string
+  date?: string
+  startTime?: string
+  endTime?: string
+  status: DefenseStatus
+  manuallyScheduled?: boolean
+  createdAt?: string
+  updatedAt?: string
+  jury?: BackendDefenseJury[]
 }
 
-const MOCK_ROOMS: Room[] = [
-  { 
-    id: 1, 
-    name: 'Room A - Amphitheater', 
-    capacity: 50, 
-    location: 'Building A',
-    status: 'available',
-    description: 'Large amphitheater',
-    equipment: {
-      projector: { present: true, status: 'ok' },
-      smartBoard: { present: true, status: 'ok' },
-      speakers: { present: true, status: 'ok' },
-      microphone: { present: true, status: 'ok' },
-      hdmiSystem: { present: true, status: 'ok' },
-      recordingCamera: { present: true, status: 'ok' },
-      airConditioning: { present: true, status: 'ok' },
-      ethernet: { present: true, status: 'ok' },
-      wifi: { present: true, status: 'ok' },
-      screen: { present: true, status: 'ok' }
+export interface BackendDefenseJury {
+  id?: number
+  defenseSessionId?: number
+  teacherId: string
+  role: JuryRole
+}
+
+export interface CreateDefensePayload {
+  projectId: string
+  roomId?: number
+  roomNameSnapshot?: string
+  academicYear?: string
+  date?: string
+  startTime?: string
+  endTime?: string
+  status?: DefenseStatus
+  manuallyScheduled?: boolean
+}
+
+export interface AcademicPeriod {
+  id?: number
+  name?: string
+  academicYear: string
+  startDate?: string
+  endDate?: string
+  active?: boolean
+}
+
+interface BackendProject {
+  id?: string
+  projectId?: string
+  title?: string
+  subject?: string
+  status?: string
+  members?: { studentId: string }[]
+  supervisors?: { teacherId: string; role?: string }[]
+  mainSupervisorId?: string
+  memberStudentIds?: string[]
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  return apiClient.request<T>(path, {
+    method,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+}
+
+function currentAcademicYear(): string {
+  const year = new Date().getFullYear()
+  return `${year}-${year + 1}`
+}
+
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'NA'
+}
+
+function projectLabel(projectId: string): string {
+  return projectId?.startsWith('proj-') ? `Project ${projectId.replace('proj-', '')}` : `Project ${projectId || 'TBD'}`
+}
+
+function statusToUi(status: DefenseStatus): ScheduledDefenseEntry['status'] {
+  return status === 'COMPLETED' ? 'completed' : 'scheduled'
+}
+
+function statusToTimeline(status: DefenseStatus, date?: string, startTime?: string): DefenseTimelineEvent['status'] {
+  if (status === 'CANCELLED' || status === 'POSTPONED') return 'cancelled'
+  if (status === 'COMPLETED') return 'completed'
+  if (date && startTime && new Date(`${date}T${startTime}`) < new Date()) return 'completed'
+  return 'scheduled'
+}
+
+function placeholderTeacher(teacherId: string, role: UiJuryRole): Teacher {
+  return {
+    id: teacherId,
+    name: `Teacher ${teacherId}`,
+    email: '',
+    phone: '',
+    gender: '',
+    birthdate: '',
+    avatar: null,
+    role: 'teacher',
+    grade: role === 'president' ? 'Professor' : 'Teacher',
+    speciality: 'Not provided',
+    department: 'Not provided',
+    bio: '',
+    researchInterests: '',
+    yearsOfExperience: 0,
+    yearsOfService: 0,
+    skills: [],
+  }
+}
+
+function backendRoleToUi(role: JuryRole): UiJuryRole {
+  if (role === 'PRESIDENT') return 'president'
+  if (role === 'RAPPORTEUR') return 'rapporteur'
+  if (role === 'EXAMINER') return 'examiner'
+  return 'encadrant'
+}
+
+function mapJuryMember(jury: BackendDefenseJury): JuryMember {
+  const role = backendRoleToUi(jury.role)
+  return {
+    id: jury.id ?? jury.teacherId,
+    teacher: placeholderTeacher(jury.teacherId, role),
+    role,
+  }
+}
+
+function mapBackendSessionToUIEntry(session: BackendDefenseSession): ScheduledDefenseEntry {
+  return {
+    id: session.id,
+    projectId: session.projectId,
+    roomId: session.roomId,
+    projectName: projectLabel(session.projectId),
+    student: 'Student assigned to project',
+    date: session.date || 'TBD',
+    time: session.startTime ? `${session.startTime} - ${session.endTime || '??:??'}` : 'TBD',
+    room: session.roomNameSnapshot || (session.roomId ? `Room ${session.roomId}` : 'Room TBD'),
+    jury: (session.jury || []).map(mapJuryMember),
+    status: statusToUi(session.status),
+  }
+}
+
+function mapBackendSessionToTimelineEvent(session: BackendDefenseSession, teacherRole: UiJuryRole | null = null): DefenseTimelineEvent {
+  const title = projectLabel(session.projectId)
+  const start = session.startTime || 'TBD'
+  return {
+    id: String(session.id),
+    date: session.date || 'TBD',
+    time: start,
+    room: session.roomNameSnapshot || (session.roomId ? `Room ${session.roomId}` : 'Room TBD'),
+    status: statusToTimeline(session.status, session.date, session.startTime),
+    student: {
+      name: 'Student assigned to project',
+      avatar: 'ST',
+      email: '',
     },
-    bookings: []
+    subject: {
+      title,
+      description: `Defense session for ${title}`,
+      tags: [],
+    },
+    jury: (session.jury || []).map(mapJuryMember),
+    teacherRole,
+    attachments: [],
+    timeline: {
+      arrival: start,
+      setup: start,
+      presentation: start,
+      qa: '',
+      deliberation: '',
+      result: '',
+    },
+    progress: {
+      thesisSubmitted: session.status !== 'PENDING',
+      slidesUploaded: session.status !== 'PENDING',
+      documentsComplete: session.status !== 'PENDING',
+    },
   }
-]
+}
 
-const MOCK_TEACHERS: Teacher[] = [
-  { 
-    id: 'dr-sami', 
-    name: 'Dr. Sami Ahmed', 
-    email: 'sami@university.edu',
-    phone: '+216 90 000 001',
-    gender: 'Male',
-    birthdate: '1975-03-20',
-    avatar: 'SA',
-    role: 'teacher',
-    grade: 'Professor', 
-    speciality: 'Artificial Intelligence', 
-    department: 'Computer Science',
-    bio: 'AI expert',
-    researchInterests: 'ML, DL',
-    yearsOfExperience: 20,
-    skills: [
-      { id: 'skill-1', name: 'Machine Learning', category: 'ML', relevance: 95 },
-      { id: 'skill-2', name: 'Deep Learning', category: 'ML', relevance: 95 }
-    ]
-  },
-  { 
-    id: 'dr-hatem', 
-    name: 'Dr. Hatem Hassan', 
-    email: 'hatem@university.edu',
-    phone: '+216 90 000 002',
-    gender: 'Male',
-    birthdate: '1980-05-15',
-    avatar: 'HH',
-    role: 'teacher',
-    grade: 'Associate Professor', 
-    speciality: 'Data Science', 
-    department: 'Computer Science',
-    bio: 'Data science expert',
-    researchInterests: 'Big Data, Mining',
-    yearsOfExperience: 15,
-    skills: [
-      { id: 'skill-1', name: 'Data Mining', category: 'DS', relevance: 90 }
-    ]
+function mapBackendSessionToTeacherDefense(session: BackendDefenseSession, teacherRole: UiJuryRole = 'encadrant'): TeacherDefense {
+  const event = mapBackendSessionToTimelineEvent(session, teacherRole)
+  return {
+    id: String(session.id),
+    student: event.student,
+    subject: {
+      title: event.subject.title,
+      description: event.subject.description,
+      technologies: event.subject.tags,
+    },
+    defense: {
+      date: event.date,
+      time: event.time,
+      room: event.room,
+      duration: '45 min',
+      status: event.status === 'completed' ? 'completed' : 'scheduled',
+    },
+    jury: event.jury,
+    teacherRole,
+    attachments: event.attachments,
   }
-]
+}
 
-let MOCK_PROJECTS: Project[] = [
-  { id: 'proj-1', studentName: 'Ahmed Youssef', subject: 'AI Traffic System Optimization', assignedTeacher: MOCK_TEACHERS[0], skills: ['Machine Learning', 'Computer Vision', 'Deep Learning'], status: 'pending' },
-  { id: 'proj-2', studentName: 'Mariem Khaled', subject: 'Blockchain Voting Platform', assignedTeacher: MOCK_TEACHERS[1], skills: ['Blockchain', 'Cryptography', 'Web Development'], status: 'pending' }
-]
+function mapBackendProjectToSchedulerProject(project: BackendProject): SchedulerProject {
+  const id = project.projectId || project.id || ''
+  const supervisorId = project.mainSupervisorId || project.supervisors?.[0]?.teacherId || 'supervisor'
+  const studentId = project.memberStudentIds?.[0] || project.members?.[0]?.studentId || 'student'
 
-let MOCK_SCHEDULED_DEFENSES: ScheduledDefenseEntry[] = []
-
-let MOCK_PENDING_REQUESTS: PendingDefenseRequest[] = [
-  { id: 1, project: { id: 'proj-1', studentName: 'Ahmed Youssef', subject: 'AI Traffic System Optimization', assignedTeacher: MOCK_TEACHERS[0], skills: ['Machine Learning'], status: 'pending' }, requestedDateRange: { from: '2024-03-01', to: '2024-03-15' }, priority: 'high' }
-]
+  return {
+    id,
+    studentName: `Student ${studentId}`,
+    subject: project.title || project.subject || projectLabel(id),
+    assignedTeacher: placeholderTeacher(supervisorId, 'encadrant'),
+    skills: [],
+    status: project.status === 'DEFENDED' ? 'completed' : project.status === 'IN_PROGRESS' ? 'scheduled' : 'pending',
+  }
+}
 
 export const SchedulerService = {
-  async createTeacher(teacher: Teacher): Promise<Teacher> {
-    const newTeacher = { ...teacher, role: 'teacher' as const }
-    MOCK_TEACHERS.push(newTeacher)
-    return Promise.resolve(newTeacher)
+  async getRawDefenses(): Promise<BackendDefenseSession[]> {
+    return request<BackendDefenseSession[]>('GET', '/api/schedule/defenses')
   },
 
-  async getTeacherById(id: string): Promise<Teacher | null> {
-    return Promise.resolve(MOCK_TEACHERS.find(t => t.id === id) || null)
+  async getDefenseJury(defenseId: number): Promise<BackendDefenseJury[]> {
+    return request<BackendDefenseJury[]>('GET', `/api/schedule/defenses/${defenseId}/jury`)
   },
 
-  async getAllTeachers(): Promise<Teacher[]> {
-    return Promise.resolve(MOCK_TEACHERS)
-  },
-
-  async updateTeacher(id: string, updates: Partial<Teacher>): Promise<Teacher | null> {
-    const teacher = MOCK_TEACHERS.find(t => t.id === id)
-    if (!teacher) return Promise.resolve(null)
-    Object.assign(teacher, updates, { id, role: 'teacher' })
-    return Promise.resolve(teacher)
-  },
-
-  async deleteTeacher(id: string): Promise<boolean> {
-    const initialLength = MOCK_TEACHERS.length
-    const filtered = MOCK_TEACHERS.filter(t => t.id !== id)
-    if (filtered.length < initialLength) {
-      MOCK_TEACHERS.length = 0
-      MOCK_TEACHERS.push(...filtered)
-      return Promise.resolve(true)
-    }
-    return Promise.resolve(false)
-  },
-
-  async createProject(project: Project): Promise<Project> {
-    const newProject = { ...project, id: `proj-${Date.now()}` }
-    MOCK_PROJECTS.push(newProject)
-    return Promise.resolve(newProject)
-  },
-
-  async getProjectById(id: string): Promise<Project | null> {
-    return Promise.resolve(MOCK_PROJECTS.find(p => p.id === id) || null)
-  },
-
-  async getAllProjects(): Promise<Project[]> {
-    return Promise.resolve(MOCK_PROJECTS)
-  },
-
-  async updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
-    const project = MOCK_PROJECTS.find(p => p.id === id)
-    if (!project) return Promise.resolve(null)
-    Object.assign(project, updates, { id })
-    return Promise.resolve(project)
-  },
-
-  async deleteProject(id: string): Promise<boolean> {
-    const initialLength = MOCK_PROJECTS.length
-    MOCK_PROJECTS = MOCK_PROJECTS.filter(p => p.id !== id)
-    return Promise.resolve(MOCK_PROJECTS.length < initialLength)
-  },
-
-  async getRoomById(id: number): Promise<Room | null> {
-    return Promise.resolve(MOCK_ROOMS.find(r => r.id === id) || null)
-  },
-
-  async getAllRooms(): Promise<Room[]> {
-    return Promise.resolve(MOCK_ROOMS)
-  },
-
-  async createPendingRequest(request: PendingDefenseRequest): Promise<PendingDefenseRequest> {
-    const newRequest = { ...request, id: Math.max(...MOCK_PENDING_REQUESTS.map(r => r.id), 0) + 1 }
-    MOCK_PENDING_REQUESTS.push(newRequest)
-    return Promise.resolve(newRequest)
-  },
-
-  async getPendingRequestById(id: number): Promise<PendingDefenseRequest | null> {
-    return Promise.resolve(MOCK_PENDING_REQUESTS.find(r => r.id === id) || null)
-  },
-
-  async getAllPendingRequests(): Promise<PendingDefenseRequest[]> {
-    return Promise.resolve(MOCK_PENDING_REQUESTS)
-  },
-
-  async updatePendingRequest(id: number, updates: Partial<PendingDefenseRequest>): Promise<PendingDefenseRequest | null> {
-    const request = MOCK_PENDING_REQUESTS.find(r => r.id === id)
-    if (!request) return Promise.resolve(null)
-    Object.assign(request, updates, { id })
-    return Promise.resolve(request)
-  },
-
-  async deletePendingRequest(id: number): Promise<boolean> {
-    const initialLength = MOCK_PENDING_REQUESTS.length
-    MOCK_PENDING_REQUESTS = MOCK_PENDING_REQUESTS.filter(r => r.id !== id)
-    return Promise.resolve(MOCK_PENDING_REQUESTS.length < initialLength)
-  },
-
-  async createScheduledDefense(defense: ScheduledDefenseEntry): Promise<ScheduledDefenseEntry> {
-    const newDefense = { ...defense, id: Math.max(...MOCK_SCHEDULED_DEFENSES.map(d => d.id), 0) + 1 }
-    MOCK_SCHEDULED_DEFENSES.push(newDefense)
-    return Promise.resolve(newDefense)
-  },
-
-  async getScheduledDefenseById(id: number): Promise<ScheduledDefenseEntry | null> {
-    return Promise.resolve(MOCK_SCHEDULED_DEFENSES.find(d => d.id === id) || null)
+  async getRawDefensesWithJury(): Promise<BackendDefenseSession[]> {
+    const sessions = await this.getRawDefenses()
+    const juryBySession = await Promise.all(
+      sessions.map((session) => this.getDefenseJury(session.id).catch(() => []))
+    )
+    return sessions.map((session, index) => ({
+      ...session,
+      jury: juryBySession[index],
+    }))
   },
 
   async getAllScheduledDefenses(): Promise<ScheduledDefenseEntry[]> {
-    return Promise.resolve(MOCK_SCHEDULED_DEFENSES)
+    const sessions = await this.getRawDefensesWithJury()
+    return sessions
+      .filter((session) => ['SCHEDULED', 'ONGOING', 'COMPLETED'].includes(session.status))
+      .map(mapBackendSessionToUIEntry)
+  },
+
+  async getScheduledDefenseById(id: number): Promise<ScheduledDefenseEntry | null> {
+    try {
+      const session = await request<BackendDefenseSession>('GET', `/api/schedule/defenses/${id}`)
+      session.jury = await this.getDefenseJury(id).catch(() => [])
+      return mapBackendSessionToUIEntry(session)
+    } catch {
+      return null
+    }
+  },
+
+  async getTimelineEvents(options?: { userRole?: 'student' | 'teacher' | 'coordinator'; userId?: string }): Promise<DefenseTimelineEvent[]> {
+    const sessions = await this.getRawDefensesWithJury()
+    return sessions
+      .filter((session) => options?.userRole === 'coordinator' || session.status !== 'PENDING')
+      .filter((session) => {
+        if (options?.userRole !== 'teacher' || !options.userId) return true
+        return (session.jury || []).some((member) => member.teacherId === options.userId)
+      })
+      .map((session) => mapBackendSessionToTimelineEvent(session, options?.userRole === 'teacher' ? 'encadrant' : null))
+  },
+
+  async getTeacherDefenses(teacherId?: string): Promise<TeacherDefense[]> {
+    const sessions = await this.getRawDefensesWithJury()
+    return sessions
+      .filter((session) => session.status !== 'PENDING')
+      .filter((session) => !teacherId || (session.jury || []).some((member) => member.teacherId === teacherId))
+      .map((session) => {
+        const teacherRole = (session.jury || []).find((member) => member.teacherId === teacherId)?.role
+        return mapBackendSessionToTeacherDefense(session, teacherRole ? backendRoleToUi(teacherRole) : 'encadrant')
+      })
+  },
+
+  async getTeacherDefenseById(id: number): Promise<TeacherDefense | null> {
+    try {
+      const session = await request<BackendDefenseSession>('GET', `/api/schedule/defenses/${id}`)
+      session.jury = await this.getDefenseJury(id).catch(() => [])
+      return mapBackendSessionToTeacherDefense(session)
+    } catch {
+      return null
+    }
+  },
+
+  async createDefense(payload: CreateDefensePayload): Promise<ScheduledDefenseEntry> {
+    const session = await request<BackendDefenseSession>('POST', '/api/schedule/defenses', {
+      academicYear: payload.academicYear || currentAcademicYear(),
+      status: payload.status || 'PENDING',
+      manuallyScheduled: payload.manuallyScheduled ?? true,
+      ...payload,
+    })
+    return mapBackendSessionToUIEntry(session)
+  },
+
+  async updateDefense(id: number, payload: Partial<CreateDefensePayload>): Promise<ScheduledDefenseEntry> {
+    const session = await request<BackendDefenseSession>('PUT', `/api/schedule/defenses/${id}?forceOverride=true`, payload)
+    session.jury = await this.getDefenseJury(id).catch(() => [])
+    return mapBackendSessionToUIEntry(session)
   },
 
   async updateScheduledDefense(id: number, updates: Partial<ScheduledDefenseEntry>): Promise<ScheduledDefenseEntry | null> {
-    const defense = MOCK_SCHEDULED_DEFENSES.find(d => d.id === id)
-    if (!defense) return Promise.resolve(null)
-    Object.assign(defense, updates, { id })
-    return Promise.resolve(defense)
+    const backendUpdates: Partial<BackendDefenseSession> = {}
+    if (updates.date && updates.date !== 'TBD') backendUpdates.date = updates.date
+    if (updates.room) backendUpdates.roomNameSnapshot = updates.room
+    if (updates.time && updates.time !== 'TBD') {
+      const parts = updates.time.split('-').map((part) => part.trim())
+      backendUpdates.startTime = parts[0]
+      if (parts[1]) backendUpdates.endTime = parts[1]
+    }
+    const session = await request<BackendDefenseSession>('PUT', `/api/schedule/defenses/${id}?forceOverride=true`, backendUpdates)
+    return mapBackendSessionToUIEntry(session)
   },
 
   async deleteScheduledDefense(id: number): Promise<boolean> {
-    const initialLength = MOCK_SCHEDULED_DEFENSES.length
-    MOCK_SCHEDULED_DEFENSES = MOCK_SCHEDULED_DEFENSES.filter(d => d.id !== id)
-    return Promise.resolve(MOCK_SCHEDULED_DEFENSES.length < initialLength)
-  },
-
-  async generateRecommendedSlots(projectId?: string): Promise<RecommendedSlot[]> {
-    if (!projectId) return Promise.resolve([])
-    const project = MOCK_PROJECTS.find(p => p.id === projectId)
-    if (!project) return Promise.resolve([])
-    return Promise.resolve([])
+    await request<void>('DELETE', `/api/schedule/defenses/${id}`)
+    return true
   },
 
   async getStatistics(): Promise<SchedulerStatistics> {
-    return Promise.resolve({
-      totalScheduledDefenses: MOCK_SCHEDULED_DEFENSES.length,
-      pendingRequests: MOCK_PENDING_REQUESTS.length,
-      roomUtilization: {},
-      teacherLoad: {}
+    const sessions = await this.getRawDefensesWithJury()
+    const scheduled = sessions.filter((session) => session.status !== 'PENDING')
+    const pending = sessions.filter((session) => session.status === 'PENDING')
+    const roomUtilization: Record<string, number> = {}
+    const teacherLoad: Record<string, number> = {}
+
+    scheduled.forEach((session) => {
+      const room = session.roomNameSnapshot || (session.roomId ? `Room ${session.roomId}` : 'Unassigned')
+      roomUtilization[room] = (roomUtilization[room] || 0) + 1
+      ;(session.jury || []).forEach((member) => {
+        teacherLoad[member.teacherId] = (teacherLoad[member.teacherId] || 0) + 1
+      })
     })
+
+    return {
+      totalScheduledDefenses: scheduled.length,
+      pendingRequests: pending.length,
+      roomUtilization,
+      teacherLoad,
+    }
   },
+
+  async createTeacher(teacher: Teacher): Promise<Teacher> { return teacher },
+  async getTeacherById(id: string): Promise<Teacher | null> {
+    try {
+      const user = await apiClient.get<any>(`/api/users/${id}`)
+      return {
+        id: String(user.id ?? id),
+        name: user.name ?? user.fullName ?? user.email ?? `Teacher ${id}`,
+        email: user.email ?? '',
+        phone: user.phone ?? '',
+        gender: user.gender ?? '',
+        birthdate: user.birthdate ?? '',
+        avatar: user.avatar ?? null,
+        role: 'teacher',
+        grade: user.grade ?? 'Teacher',
+        speciality: user.speciality ?? user.specialty ?? '',
+        department: user.department ?? '',
+        bio: user.bio ?? '',
+        researchInterests: user.researchInterests ?? '',
+        yearsOfExperience: user.yearsOfExperience ?? 0,
+        yearsOfService: user.yearsOfService ?? 0,
+        skills: user.skills ?? [],
+      }
+    } catch {
+      return null
+    }
+  },
+  async getAllTeachers(): Promise<Teacher[]> {
+    const users = await apiClient.get<any[]>('/api/users/teachers')
+    return users.map((user) => ({
+      id: String(user.id),
+      name: user.name ?? user.fullName ?? user.email ?? `Teacher ${user.id}`,
+      email: user.email ?? '',
+      phone: user.phone ?? '',
+      gender: user.gender ?? '',
+      birthdate: user.birthdate ?? '',
+      avatar: user.avatar ?? null,
+      role: 'teacher',
+      grade: user.grade ?? 'Teacher',
+      speciality: user.speciality ?? user.specialty ?? '',
+      department: user.department ?? '',
+      bio: user.bio ?? '',
+      researchInterests: user.researchInterests ?? '',
+      yearsOfExperience: user.yearsOfExperience ?? 0,
+      yearsOfService: user.yearsOfService ?? 0,
+      skills: user.skills ?? [],
+    }))
+  },
+  async updateTeacher(_id: string, _updates: Partial<Teacher>): Promise<Teacher | null> { return null },
+  async deleteTeacher(_id: string): Promise<boolean> { return false },
+
+  async createProject(project: SchedulerProject): Promise<SchedulerProject> { return project },
+  async getProjectById(id: string): Promise<SchedulerProject | null> {
+    try {
+      const project = await apiClient.get<BackendProject>(`/api/projects/${id}`)
+      return mapBackendProjectToSchedulerProject(project)
+    } catch {
+      return null
+    }
+  },
+  async getAllProjects(): Promise<SchedulerProject[]> {
+    const projects = await apiClient.get<BackendProject[]>('/api/projects/scheduling-candidates?status=IN_PROGRESS')
+    return projects.map(mapBackendProjectToSchedulerProject)
+  },
+  async updateProject(_id: string, _updates: Partial<SchedulerProject>): Promise<SchedulerProject | null> { return null },
+  async deleteProject(_id: string): Promise<boolean> { return false },
+
+  async createPendingRequest(pendingRequest: PendingDefenseRequest): Promise<PendingDefenseRequest> {
+    await request<BackendDefenseSession>('POST', '/api/schedule/defenses', {
+      projectId: pendingRequest.project.id,
+      academicYear: currentAcademicYear(),
+      status: 'PENDING',
+      manuallyScheduled: false,
+    })
+    return pendingRequest
+  },
+
+  async getPendingRequestById(id: number): Promise<PendingDefenseRequest | null> {
+    const requests = await this.getAllPendingRequests()
+    return requests.find((request) => request.id === id) || null
+  },
+
+  async getAllPendingRequests(): Promise<PendingDefenseRequest[]> {
+    const sessions = await this.getRawDefensesWithJury()
+    return sessions
+      .filter((session) => session.status === 'PENDING')
+      .map((session) => ({
+        id: session.id,
+        project: {
+          id: session.projectId,
+          studentName: 'Student assigned to project',
+          subject: projectLabel(session.projectId),
+          assignedTeacher: placeholderTeacher('supervisor', 'encadrant'),
+          skills: [],
+          status: 'pending',
+        },
+        requestedDateRange: {
+          from: session.date || new Date().toISOString().slice(0, 10),
+          to: session.date || new Date().toISOString().slice(0, 10),
+        },
+        priority: 'medium',
+      }))
+  },
+
+  async updatePendingRequest(id: number, _updates: Partial<PendingDefenseRequest>): Promise<PendingDefenseRequest | null> {
+    return this.getPendingRequestById(id)
+  },
+
+  async deletePendingRequest(id: number): Promise<boolean> {
+    return this.deleteScheduledDefense(id)
+  },
+
+  async generateRecommendedSlots(_projectId?: string): Promise<SchedulerRecommendedSlot[]> {
+    const today = new Date().toISOString().slice(0, 10)
+    const rooms = await apiClient.get<any[]>(`/api/rooms/available?date=${today}&startTime=08:00&endTime=10:00&capacity=0`)
+    return rooms.slice(0, 3).map((room, index) => ({
+      id: `${today}-${room.id}-${index}`,
+      time: '08:00 - 10:00',
+      startTime: '08:00',
+      endTime: '10:00',
+      room: {
+        id: room.id,
+        name: room.name,
+        capacity: room.capacity,
+        location: room.location,
+        building: room.building,
+        floor: room.floor,
+        status: room.status,
+      },
+      jury: [],
+      confidence: Math.max(70, 95 - index * 10),
+      conflicts: [],
+      isRecommended: index === 0,
+      aiReasoning: ['Room is available for the selected academic slot'],
+    }))
+  },
+
+  async solveSchedule(requests: unknown[]): Promise<{ jobId: number }> {
+    return request<{ jobId: number }>('POST', '/api/schedule/solve', requests)
+  },
+
+  async addJuryMember(defenseId: number, teacherId: string, role: JuryRole, forceOverride = false): Promise<BackendDefenseJury> {
+    const q = new URLSearchParams({ teacherId, role, forceOverride: String(forceOverride) })
+    return request<BackendDefenseJury>('POST', `/api/schedule/defenses/${defenseId}/jury?${q}`)
+  },
+
+  async updateJuryMember(defenseId: number, juryId: number, teacherId: string, role: JuryRole, forceOverride = false): Promise<BackendDefenseJury> {
+    const q = new URLSearchParams({ teacherId, role, forceOverride: String(forceOverride) })
+    return request<BackendDefenseJury>('PUT', `/api/schedule/defenses/${defenseId}/jury/${juryId}?${q}`)
+  },
+
+  async deleteJuryMember(defenseId: number, juryId: number): Promise<boolean> {
+    await request<void>('DELETE', `/api/schedule/defenses/${defenseId}/jury/${juryId}`)
+    return true
+  },
+
+  async getAcademicPeriods(): Promise<AcademicPeriod[]> {
+    return request<AcademicPeriod[]>('GET', '/api/schedule/periods')
+  },
+
+  async getActiveAcademicPeriod(): Promise<AcademicPeriod> {
+    return request<AcademicPeriod>('GET', '/api/schedule/periods/active')
+  },
+
+  async createAcademicPeriod(period: AcademicPeriod): Promise<AcademicPeriod> {
+    return request<AcademicPeriod>('POST', '/api/schedule/periods', period)
+  },
+
+  async activateAcademicPeriod(id: number): Promise<AcademicPeriod> {
+    return request<AcademicPeriod>('PUT', `/api/schedule/periods/${id}/activate`)
+  },
+
+  mapJuryMember,
 }
 
-export { MOCK_TEACHERS }
+export default SchedulerService

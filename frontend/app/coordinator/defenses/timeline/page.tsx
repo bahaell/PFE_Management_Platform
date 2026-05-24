@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DefenseTimeline } from '@/components/timeline/defense-timeline'
-import { MOCK_DEFENSE_TIMELINE } from '@/lib/defense-timeline-mock-data'
-import { MOCK_ROOMS } from '@/lib/scheduler-mock-data'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, Filter, Download } from 'lucide-react'
+import { SchedulerService } from '@/services/service_scheduler'
+import { RoomsService } from '@/services/service_rooms'
+import type { DefenseTimelineEvent } from '@/lib/defense-timeline-mock-data'
+import type { RoomWithEquipment } from '@/lib/room-mock-data'
 
 export default function CoordinatorDefenseTimelinePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -15,7 +17,21 @@ export default function CoordinatorDefenseTimelinePage() {
   const [roomFilter, setRoomFilter] = useState<string>('all')
   const [roleFilter, setRoleFilter] = useState<string>('all')
 
-  const filteredEvents = MOCK_DEFENSE_TIMELINE.filter(event => {
+  const [events, setEvents] = useState<DefenseTimelineEvent[]>([])
+  const [rooms, setRooms] = useState<RoomWithEquipment[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      SchedulerService.getTimelineEvents({ userRole: 'coordinator' }),
+      RoomsService.getAllRooms()
+    ]).then(([eventsData, roomsData]) => {
+      setEvents(eventsData)
+      setRooms(roomsData)
+    }).finally(() => setIsLoading(false))
+  }, [])
+
+  const filteredEvents = events.filter(event => {
     const matchesSearch = searchQuery === '' || 
       event.subject.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.student.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -28,10 +44,10 @@ export default function CoordinatorDefenseTimelinePage() {
   })
 
   const stats = {
-    total: MOCK_DEFENSE_TIMELINE.length,
-    scheduled: MOCK_DEFENSE_TIMELINE.filter(e => e.status === 'scheduled').length,
-    completed: MOCK_DEFENSE_TIMELINE.filter(e => e.status === 'completed').length,
-    cancelled: MOCK_DEFENSE_TIMELINE.filter(e => e.status === 'cancelled').length
+    total: events.length,
+    scheduled: events.filter(e => e.status === 'scheduled').length,
+    completed: events.filter(e => e.status === 'completed').length,
+    cancelled: events.filter(e => e.status === 'cancelled').length
   }
 
   return (
@@ -108,8 +124,8 @@ export default function CoordinatorDefenseTimelinePage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Rooms</SelectItem>
-                  {MOCK_ROOMS.map(room => (
-                    <SelectItem key={room.id} value={room.name.split(' ')[1]}>
+                  {rooms.map(room => (
+                    <SelectItem key={room.id} value={room.name.split(' ')[1] || room.name}>
                       {room.name}
                     </SelectItem>
                   ))}
@@ -135,7 +151,11 @@ export default function CoordinatorDefenseTimelinePage() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <DefenseTimeline events={filteredEvents} />
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading timeline from scheduling-service...</p>
+          ) : (
+            <DefenseTimeline events={filteredEvents} />
+          )}
         </div>
       </div>
     </div>

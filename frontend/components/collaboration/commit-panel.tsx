@@ -18,7 +18,7 @@ interface CommitPanelProps {
   isReadOnly?: boolean
 }
 
-const containerVariants = {
+const containerVariants: any = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -26,7 +26,7 @@ const containerVariants = {
   }
 }
 
-const itemVariants = {
+const itemVariants: any = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } },
   exit: { opacity: 0, y: -20 }
@@ -43,12 +43,12 @@ export function CommitPanel({ projectId = '1', isReadOnly = false }: CommitPanel
 
   const { data: commits = [], isLoading } = useQuery({
     queryKey: ['commits', projectId],
-    queryFn: () => CommitService.getCommits()
+    queryFn: () => CommitService.getCommits(projectId)
   })
 
   const { data: overallProgress = 0 } = useQuery({
     queryKey: ['commits-progress', projectId],
-    queryFn: () => CommitService.getOverallProgress()
+    queryFn: () => CommitService.getOverallProgress(projectId)
   })
 
   const addCommitMutation = useMutation({
@@ -60,15 +60,16 @@ export function CommitPanel({ projectId = '1', isReadOnly = false }: CommitPanel
         throw new Error('Progress must be between 0 and 100')
       }
 
-      const previousProgress = commits.length > 0 ? commits[0].newProgress : 0
+      const documentId = commits[0]?.documentId
+      if (!documentId) {
+        throw new Error('Select or upload a document before adding official feedback')
+      }
       return CommitService.addCommit({
+        documentId,
         teacherId: 'teacher-1',
-        teacherName: 'Dr. Ahmed Hassan',
-        teacherAvatar: 'AH',
         comment: comment.trim(),
-        previousProgress,
         newProgress,
-        attachments: attachmentFiles
+        attachments: attachmentFiles.map(({ name, url, type }) => ({ name, url, type }))
       })
     },
     onSuccess: () => {
@@ -89,18 +90,6 @@ export function CommitPanel({ projectId = '1', isReadOnly = false }: CommitPanel
         title: 'Error',
         description: error.message,
         variant: 'destructive'
-      })
-    }
-  })
-
-  const deleteCommitMutation = useMutation({
-    mutationFn: (commitId: string) => CommitService.deleteCommit(commitId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commits', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['commits-progress', projectId] })
-      toast({
-        title: 'Success',
-        description: 'Commit deleted successfully!'
       })
     }
   })
@@ -202,17 +191,6 @@ export function CommitPanel({ projectId = '1', isReadOnly = false }: CommitPanel
                           </p>
                         </div>
                       </div>
-                      {!isReadOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteCommitMutation.mutate(commit.id)}
-                          disabled={deleteCommitMutation.isPending}
-                          className="flex-shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      )}
                     </div>
 
                     {/* Comment */}

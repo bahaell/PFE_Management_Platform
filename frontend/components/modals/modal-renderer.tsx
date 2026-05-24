@@ -9,6 +9,12 @@ import { EditTaskModalContent } from './edit-task-modal-content'
 import { ChatModalContent } from './chat-modal-content'
 import { CommitsModalContent } from './commits-modal-content'
 
+const AnyTasksExpansionModalContent = TasksExpansionModalContent as any
+const AnyAddTaskModalContent = AddTaskModalContent as any
+const AnyEditTaskModalContent = EditTaskModalContent as any
+const AnyChatModalContent = ChatModalContent as any
+const AnyCommitsModalContent = CommitsModalContent as any
+
 export function ModalRenderer() {
   const { stack, close } = useModalManager()
   
@@ -51,35 +57,35 @@ export function ModalRenderer() {
                 className="fixed inset-0"
               >
                 {modal.type === 'expand-tasks' && (
-                  <TasksExpansionModalContent
+                  <AnyTasksExpansionModalContent
                     {...modal.props}
                     onClose={() => close(modal.id)}
                   />
                 )}
                 
                 {modal.type === 'add-task' && (
-                  <AddTaskModalContent
+                  <AnyAddTaskModalContent
                     {...modal.props}
                     onClose={() => close(modal.id)}
                   />
                 )}
                 
                 {modal.type === 'edit-task' && (
-                  <EditTaskModalContent
+                  <AnyEditTaskModalContent
                     {...modal.props}
                     onClose={() => close(modal.id)}
                   />
                 )}
 
                 {modal.type === 'chat' && (
-                  <ChatModalContent
+                  <AnyChatModalContent
                     {...modal.props}
                     onClose={() => close(modal.id)}
                   />
                 )}
 
                 {modal.type === 'commits' && (
-                  <CommitsModalContent
+                  <AnyCommitsModalContent
                     {...modal.props}
                     onClose={() => close(modal.id)}
                   />

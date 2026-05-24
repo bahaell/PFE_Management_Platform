@@ -1,0 +1,26 @@
+# Dependencies and build outputs
+node_modules/
+.next/
+out/
+build/
+dist/
+target/
+*/target/
+runtime-logs/
+*.log
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+**/firebase-key.json
+**/firebase-service-account.json
+**/*service-account*.json
+**/*key.json
+
+# IDE and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

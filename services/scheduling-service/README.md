@@ -1,313 +1,123 @@
-Voilà le guide step by step complet :
+# Scheduling Service
 
---- 
+Ce service gere la planification des soutenances PFE.
 
-## Pré-requis — tout doit être UP
+## Microservices necessaires
 
-```
-✅ docker compose up -d
-✅ config-server     :8888
-✅ discovery-service :8761
-✅ user-service      :8082
-✅ projects-service  :8083
-✅ resource-service  :8086
-✅ scheduling-service:8087
-```
+Pour tester correctement les APIs de `scheduling-service`, demarrer au minimum :
 
----
+1. `discovery-service` sur `8761`
+2. `user-service` sur `8082`
+3. `projects-service` sur `8081`
+4. `resource-service` sur `8083`
+5. `scheduling-service` sur `8084`
 
-## Step 1 — Créer un Teacher dans user-service
+Services utiles selon le scenario :
 
-```
-POST http://localhost:8082/api/auth/register
-```
-```json
-{
-  "name": "Dr. Sami Ahmed",
-  "email": "sami@uni.tn",
-  "password": "password123",
-  "role": "teacher"
-}
-```
-**Sauvegarde le `id` retourné** → ex: `"abc-123"`
+- `gateway` sur `8080` si le frontend consomme les APIs via gateway.
+- `notification-service` sur `8085` si tu veux recevoir les evenements RabbitMQ de creation, modification, report ou annulation de soutenance.
+- `rabbitmq` sur `5672` pour publier les evenements de soutenance.
+- PostgreSQL avec les bases `user_service_db`, `projects_db`, `resource_db` et `defense_db`.
 
----
+`scheduling-service` depend directement de :
 
-## Step 2 — Ajouter des disponibilités au Teacher
+- `user-service` pour recuperer les enseignants et leurs disponibilites.
+- `projects-service` pour recuperer les projets a planifier.
+- `resource-service` pour recuperer les salles disponibles.
 
-```
-POST http://localhost:8082/api/users/me/availability
-Authorization: Bearer {token_du_step1}
-```
-```json
-{
-  "start": "08:00",
-  "end": "12:00",
-  "isRecurrent": true,
-  "onlyDuringPFE": true
-}
+## Alimenter les donnees de test
+
+Le script `scripts/seed-schedule-api.ps1` cree des donnees coherentes via les APIs :
+
+- 3 enseignants avec disponibilites.
+- 2 etudiants.
+- 1 coordinateur.
+- 3 salles avec disponibilites de salle.
+- 2 projets au statut `IN_PROGRESS`.
+- 1 periode academique active.
+- 2 soutenances deja planifiees avec jury.
+
+Executer les services requis, puis lancer :
+
+```powershell
+cd D:\PFE_Management_Platform\PFE_Management_Platform-main\services\scheduling-service
+.\scripts\seed-schedule-api.ps1
 ```
 
-Ajoute un 2ème créneau :
-```json
-{
-  "start": "14:00",
-  "end": "18:00",
-  "isRecurrent": true,
-  "onlyDuringPFE": true
-}
+Pour alimenter la base et lancer directement le solver Timefold :
+
+```powershell
+.\scripts\seed-schedule-api.ps1 -RunSolver
 ```
 
-**Vérifie :**
-```
-GET http://localhost:8082/api/users/{id}/availability
+Le script est idempotent : si les users, rooms, projets ou soutenances existent deja, il les reutilise.
+
+## Endpoints principaux
+
+```http
+GET  /api/schedule/periods
+GET  /api/schedule/periods/active
+POST /api/schedule/periods
+PUT  /api/schedule/periods/{id}/activate
+
+GET    /api/schedule/defenses
+GET    /api/schedule/defenses/{id}
+POST   /api/schedule/defenses
+PUT    /api/schedule/defenses/{id}
+DELETE /api/schedule/defenses/{id}
+
+GET  /api/schedule/defenses/{id}/jury
+POST /api/schedule/defenses/{id}/jury?teacherId={id}&role={role}
+
+POST /api/schedule/solve
+GET  /api/schedule/result/{jobId}
 ```
 
----
+## Payload solver
 
-## Step 3 — Créer un 2ème Teacher (jury member)
+Le script affiche un payload pret a envoyer a `POST /api/schedule/solve`.
 
-```
-POST http://localhost:8082/api/auth/register
-```
-```json
-{
-  "name": "Dr. Hatem Hassan",
-  "email": "hatem@uni.tn",
-  "password": "password123",
-  "role": "teacher"
-}
-```
-**Sauvegarde le `id`** → ex: `"def-456"`
+Exemple de structure :
 
-Ajoute ses disponibilités :
-```
-POST http://localhost:8082/api/users/me/availability
-Authorization: Bearer {token_dr_hatem}
-```
-```json
-{
-  "start": "08:00",
-  "end": "18:00",
-  "isRecurrent": true,
-  "onlyDuringPFE": true
-}
-```
-
----
-
-## Step 4 — Créer des Rooms dans resource-service
-
-```
-POST http://localhost:8086/api/rooms
-```
-```json
-{
-  "name": "Salle A101",
-  "capacity": 30,
-  "hasProjector": true,
-  "hasWhiteboard": true,
-  "building": "Bloc A",
-  "available": true
-}
-```
-
-2ème salle :
-```json
-{
-  "name": "Salle B202",
-  "capacity": 20,
-  "hasProjector": false,
-  "hasWhiteboard": true,
-  "building": "Bloc B",
-  "available": true
-}
-```
-
-**Vérifie les IDs retournés** → ex: `roomId=1`, `roomId=2`
-
-**Vérifie les salles disponibles :**
-```
-GET http://localhost:8086/api/rooms/available
-```
-
----
-
-## Step 5 — Créer des Pending Requests
-
-```
-POST http://localhost:8087/api/schedule/pending
-```
-```json
-{
-  "projectId": "proj-1",
-  "projectName": "AI Traffic System",
-  "studentName": "Ahmed Youssef",
-  "assignedTeacherName": "Dr. Sami Ahmed",
-  "dateRangeFrom": "2026-04-20",
-  "dateRangeTo": "2026-04-30",
-  "priority": "high"
-}
-```
-
-2ème request :
-```json
-{
-  "projectId": "proj-2",
-  "projectName": "Blockchain Voting",
-  "studentName": "Mariem Khaled",
-  "assignedTeacherName": "Dr. Hatem Hassan",
-  "dateRangeFrom": "2026-04-20",
-  "dateRangeTo": "2026-04-30",
-  "priority": "medium"
-}
-```
-
-**Vérifie :**
-```
-GET http://localhost:8087/api/schedule/pending
-```
-
----
-
-## Step 6 — Lancer le Solver Timefold
-
-> ⚠️ Utilise les vrais IDs des teachers créés en Step 1 et 3
-
-```
-POST http://localhost:8087/api/schedule/solve
-```
 ```json
 [
   {
-    "projectId": 1,
-    "juryMemberIds": [1, 2],
+    "projectId": "project-uuid",
+    "juryMemberIds": ["teacher-id-1", "teacher-id-2"],
     "preferredRoomId": 1,
-    "durationMinutes": 30,
-    "notBefore": "2026-04-26T08:00:00",
-    "notAfter": "2026-04-30T18:00:00"
-  },
-  {
-    "projectId": 2,
-    "juryMemberIds": [2, 3],
-    "preferredRoomId": null,
-    "durationMinutes": 30,
-    "notBefore": "2026-04-26T08:00:00",
-    "notAfter": "2026-04-30T18:00:00"
+    "durationMinutes": 60,
+    "notBefore": "2026-05-25T08:00:00",
+    "notAfter": "2026-06-07T18:00:00"
   }
 ]
 ```
 
-**Réponse immédiate :**
-```json
-{ "jobId": 1745100000000 }
+La reponse de `POST /solve` retourne un `jobId`. Attendre environ 30 secondes, puis appeler :
+
+```http
+GET http://localhost:8084/api/schedule/result/{jobId}
 ```
 
-> 💡 Le solver tourne **en arrière-plan pendant 30 secondes** — ne fais pas le GET tout de suite
+## Ordre de demarrage local
 
----
+```powershell
+# Terminal 1
+cd D:\PFE_Management_Platform\PFE_Management_Platform-main\services\discovery
+.\mvnw.cmd spring-boot:run
 
-## Step 7 — Attendre 30 secondes puis récupérer le résultat
+# Terminal 2
+cd D:\PFE_Management_Platform\PFE_Management_Platform-main\services\user-service
+.\mvnw.cmd spring-boot:run
 
+# Terminal 3
+cd D:\PFE_Management_Platform\PFE_Management_Platform-main\services\projects
+.\mvnw.cmd spring-boot:run
+
+# Terminal 4
+cd D:\PFE_Management_Platform\PFE_Management_Platform-main\services\resource-service
+.\mvnw.cmd spring-boot:run
+
+# Terminal 5
+cd D:\PFE_Management_Platform\PFE_Management_Platform-main\services\scheduling-service
+.\mvnw.cmd spring-boot:run
 ```
-GET http://localhost:8087/api/schedule/result/1745100000000
-```
-
-**Résultat attendu :**
-```json
-{
-  "sessions": [
-    {
-      "projectId": 1,
-      "projectName": "AI Traffic System",
-      "timeSlot": {
-        "date": "2026-04-26",
-        "startTime": "08:00",
-        "endTime": "10:00"
-      },
-      "roomId": 1
-    },
-    {
-      "projectId": 2,
-      "projectName": "Blockchain Voting",
-      "timeSlot": {
-        "date": "2026-04-26",
-        "startTime": "10:00",
-        "endTime": "12:00"
-      },
-      "roomId": 2
-    }
-  ],
-  "score": "0hard/0soft"   ← 0 violations = solution parfaite
-}
-```
-
----
-
-## Step 8 — Sauvegarder le résultat comme ScheduledDefense
-
-Après avoir le résultat du solver, crée les defenses officielles :
-
-```
-POST http://localhost:8087/api/schedule/defenses
-```
-```json
-{
-  "projectName": "AI Traffic System",
-  "student": "Ahmed Youssef",
-  "date": "2026-04-26",
-  "time": "08:00",
-  "room": "Salle A101",
-  "juryMemberNames": ["Dr. Sami Ahmed", "Dr. Hatem Hassan"],
-  "status": "scheduled"
-}
-```
-
----
-
-## Step 9 — Vérifier les statistiques
-
-```
-GET http://localhost:8087/api/schedule/statistics
-```
-
-**Résultat attendu :**
-```json
-{
-  "totalScheduledDefenses": 1,
-  "pendingRequests": 2,
-  "roomUtilization": {
-    "Salle A101": 1
-  },
-  "teacherLoad": {
-    "Dr. Sami Ahmed": 1,
-    "Dr. Hatem Hassan": 1
-  }
-}
-```
-
----
-
-## Résumé du flow
-
-```
-Register Teachers (Step 1-3)
-        ↓
-Add Availabilities (Step 2)
-        ↓
-Create Rooms (Step 4)
-        ↓
-Create Pending Requests (Step 5)
-        ↓
-POST /solve → jobId (Step 6)
-        ↓
-Wait 30s
-        ↓
-GET /result/{jobId} (Step 7)
-        ↓
-POST /defenses (Step 8)
-        ↓
-GET /statistics (Step 9)
-```
-
-> ⚠️ **Si le solver retourne un score négatif** comme `-2hard/0soft` — ça veut dire qu'il y a des conflits non résolus (pas assez de salles ou de créneaux). Ajoute plus de salles dans resource-service et relance.

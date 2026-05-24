@@ -1,4 +1,4 @@
-import type { JuryMember } from './jury.model'
+import type { JuryMember, JuryRole } from './jury.model'
 
 export type DefenseStatus = 'scheduled' | 'completed' | 'cancelled' | 'in-progress'
 

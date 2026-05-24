@@ -1,105 +1,67 @@
-import type { Notification } from "@/models/notification.model"
+import type { Notification, NotificationEventType } from "@/models/notification.model"
+import { apiClient } from "@/lib/api-client"
 
-const NOTIFICATION_SERVICE_URL = "http://localhost:8085/api"
+interface BackendNotification {
+  id: number
+  type: NotificationEventType
+  title: string
+  message: string
+  read?: boolean
+  isRead?: boolean
+  createdAt: string
+  data?: string
+}
+
+function resolveNumericUserId(userId: string): number {
+  const legacyIds: Record<string, number> = {
+    std001: 1,
+    tch001: 2,
+    coo001: 3,
+  }
+  return legacyIds[userId] ?? (Number.parseInt(userId, 10) || 1)
+}
+
+function mapNotification(item: BackendNotification, userId: string): Notification {
+  return {
+    id: String(item.id),
+    userId,
+    title: item.title,
+    message: item.message,
+    type: item.type,
+    read: Boolean(item.read ?? item.isRead),
+    createdAt: item.createdAt,
+    data: item.data,
+  }
+}
 
 export const NotificationService = {
-  /**
-   * Fetch all notifications for a given userId
-   * GET /api/notifications/{userId}
-   */
   async getNotifications(userId: string): Promise<Notification[]> {
-    if (!userId || userId.trim() === "") return []
-    
-    // Map mock string IDs to backend numeric IDs
-    let numericId = userId
-    if (userId === "std001") numericId = "1"
-    else if (userId === "tch001") numericId = "2"
-    else if (userId === "coo001") numericId = "3"
-
-    try {
-      const res = await fetch(`${NOTIFICATION_SERVICE_URL}/notifications/${numericId}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      return res.json()
-    } catch (error) {
-      console.error("[NotificationService] getNotifications error:", error)
-      return []
-    }
+    if (!userId?.trim()) return []
+    const numericId = resolveNumericUserId(userId)
+    const items = await apiClient.get<BackendNotification[]>(`/api/notifications/${numericId}`)
+    return items.map((item) => mapNotification(item, userId))
   },
 
-  /**
-   * Fetch only unread notifications for a given userId
-   * GET /api/notifications/{userId}/unread
-   */
   async getUnreadNotifications(userId: string): Promise<Notification[]> {
-    if (!userId || userId.trim() === "") return []
-    
-    // Map mock string IDs to backend numeric IDs
-    let numericId = userId
-    if (userId === "std001") numericId = "1"
-    else if (userId === "tch001") numericId = "2"
-    else if (userId === "coo001") numericId = "3"
-
-    try {
-      const res = await fetch(`${NOTIFICATION_SERVICE_URL}/notifications/${numericId}/unread`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      return res.json()
-    } catch (error) {
-      console.error("[NotificationService] getUnreadNotifications error:", error)
-      return []
-    }
+    if (!userId?.trim()) return []
+    const numericId = resolveNumericUserId(userId)
+    const items = await apiClient.get<BackendNotification[]>(`/api/notifications/${numericId}/unread`)
+    return items.map((item) => mapNotification(item, userId))
   },
 
-  /**
-   * Mark a notification as read
-   * PATCH /api/notifications/{id}/read
-   */
   async markAsRead(notificationId: string): Promise<boolean> {
-    try {
-      const res = await fetch(`${NOTIFICATION_SERVICE_URL}/notifications/${notificationId}/read`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-      })
-      return res.ok
-    } catch (error) {
-      console.error("[NotificationService] markAsRead error:", error)
-      return false
-    }
+    await apiClient.patch<void>(`/api/notifications/${notificationId}/read`, {})
+    return true
   },
 
-  /**
-   * Register a device FCM token for push notifications
-   * POST /api/devices
-   */
   async registerDeviceToken(userId: string, token: string): Promise<boolean> {
-    try {
-      let numericId = userId
-      if (userId === "std001") numericId = "1"
-      else if (userId === "tch001") numericId = "2"
-      else if (userId === "coo001") numericId = "3"
-
-      const res = await fetch(`${NOTIFICATION_SERVICE_URL}/devices`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: parseInt(numericId) || 1, token }),
-      })
-      return res.ok
-    } catch (error) {
-      console.error("[NotificationService] registerDeviceToken error:", error)
-      return false
-    }
+    await apiClient.post<void>('/api/devices', {
+      userId: resolveNumericUserId(userId),
+      token,
+    })
+    return true
   },
 
-  /**
-   * Get unread count (derived from unread list)
-   */
   async getUnreadCount(userId: string): Promise<number> {
     const unread = await NotificationService.getUnreadNotifications(userId)
     return unread.length

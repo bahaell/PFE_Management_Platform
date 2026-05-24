@@ -16,19 +16,46 @@ import { ProjectKanban } from '@/components/collaboration/project-kanban'
 import { DocumentVersionsPanel } from '@/components/collaboration/document-versions-panel'
 import { ActivityTimeline } from '@/components/collaboration/activity-timeline'
 import { ProjectsService } from '@/services/service_projects'
-import { projectMockData } from '@/lib/collaboration-mock-data'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import type { ProjectBasic } from '@/models/project.model'
+
+function initials(value?: string) {
+  return value?.split(/[.\s_-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'NA'
+}
+
+function buildProjectParticipants(project: ProjectBasic) {
+  const supervisorId = project.supervisors?.find((item) => item.role === 'MAIN_SUPERVISOR')?.teacherId ?? project.supervisors?.[0]?.teacherId ?? 'supervisor'
+  const studentId = project.members?.[0]?.studentId ?? 'student'
+  const jury = project.supervisors?.filter((item) => item.teacherId !== supervisorId).map((item) => ({
+    id: item.teacherId,
+    name: `Teacher ${item.teacherId}`,
+    avatar: initials(item.teacherId),
+    role: item.role === 'CO_SUPERVISOR' ? 'Co-supervisor' : 'Jury Member',
+    online: false,
+  })) ?? []
+
+  return {
+    teacher: {
+      id: supervisorId,
+      name: `Teacher ${supervisorId}`,
+      avatar: initials(supervisorId),
+      role: 'Supervisor',
+      online: false,
+    },
+    student: {
+      id: studentId,
+      name: `Student ${studentId}`,
+      avatar: initials(studentId),
+      role: 'Student',
+      online: false,
+    },
+    jury,
+  }
+}
 
 export default function TeacherProjectPage() {
   const params = useParams()
   const projectId = params?.id as string
-  const juryParticipants = projectMockData.jury.map((member, index) => ({
-    id: Number(member.teacher.id) || index + 1,
-    name: member.teacher.name,
-    avatar: member.teacher.avatar || member.teacher.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(),
-    role: member.role === 'president' ? 'Jury President' : 'Jury Member',
-    online: false,
-  }))
   const [activeTab, setActiveTab] = useState('overview')
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
@@ -67,12 +94,14 @@ export default function TeacherProjectPage() {
     )
   }
 
+  const participants = buildProjectParticipants(project)
+
   return (
     <div className="flex flex-col h-screen overflow-y-auto">
       <div className="shrink-0 px-4 sm:px-6 pt-4 pb-2">
         <div className="flex items-start justify-between gap-4">
           <PageHeader
-            title={`${project.title} - ${projectMockData.student.name}`}
+            title={`${project.title} - ${participants.student.name}`}
             description={project.description}
           />
           
@@ -90,8 +119,8 @@ export default function TeacherProjectPage() {
                 <div className="mt-4">
                   <ProjectInfoSidebar
                     project={project}
-                    teacher={projectMockData.teacher}
-                    student={projectMockData.student}
+                    teacher={participants.teacher}
+                    student={participants.student}
                   />
                 </div>
               </SheetContent>
@@ -109,10 +138,9 @@ export default function TeacherProjectPage() {
                 </SheetHeader>
                 <div className="mt-4">
                   <ParticipantsPanel
-                    teacher={projectMockData.teacher}
-                    student={projectMockData.student}
-                    jury={juryParticipants}
-                    defense={projectMockData.defense}
+                    teacher={participants.teacher}
+                    student={participants.student}
+                    jury={participants.jury}
                   />
                 </div>
               </SheetContent>
@@ -135,8 +163,8 @@ export default function TeacherProjectPage() {
               <div className="p-4">
                 <ProjectInfoSidebar
                   project={project}
-                  teacher={projectMockData.teacher}
-                  student={projectMockData.student}
+                  teacher={participants.teacher}
+                  student={participants.student}
                 />
               </div>
             </CollapsibleSidebar>
@@ -176,7 +204,7 @@ export default function TeacherProjectPage() {
                         </div>
                         <div>
                           <p className="text-sm sm:text-base text-muted-foreground">Student</p>
-                          <p className="font-semibold text-foreground">{projectMockData.student.name}</p>
+                          <p className="font-semibold text-foreground">{participants.student.name}</p>
                         </div>
                       </div>
                     </div>
@@ -201,17 +229,17 @@ export default function TeacherProjectPage() {
 
               <TabsContent value="chat" className="h-full m-0 p-4 sm:p-6 data-[state=inactive]:hidden">
                 <ProjectChatPanel 
-                  projectId={projectMockData.project.id.toString()}
+                  projectId={project.id.toString()}
                   participantsIds={[
-                    projectMockData.student.id.toString(), 
-                    projectMockData.teacher.id.toString(), 
-                    ...(projectMockData.jury?.map(j => j.id.toString()) || [])
+                    participants.student.id.toString(),
+                    participants.teacher.id.toString(),
+                    ...(participants.jury?.map(j => j.id.toString()) || [])
                   ]} 
                 />
               </TabsContent>
 
               <TabsContent value="tasks" className="h-full m-0 p-4 sm:p-6 overflow-hidden data-[state=inactive]:hidden">
-                <ProjectKanban />
+                <ProjectKanban projectId={project.id} />
               </TabsContent>
 
               <TabsContent value="documents" className="h-full m-0 p-4 sm:p-6 overflow-y-auto data-[state=inactive]:hidden">
@@ -219,7 +247,7 @@ export default function TeacherProjectPage() {
               </TabsContent>
 
               <TabsContent value="activity" className="h-full m-0 p-4 sm:p-6 overflow-y-auto data-[state=inactive]:hidden">
-                <ActivityTimeline />
+                <ActivityTimeline projectId={project.id} />
               </TabsContent>
             </div>
           </Tabs>
@@ -237,10 +265,9 @@ export default function TeacherProjectPage() {
             >
               <div className="p-4">
                 <ParticipantsPanel
-                  teacher={projectMockData.teacher}
-                  student={projectMockData.student}
-                  jury={juryParticipants}
-                  defense={projectMockData.defense}
+                  teacher={participants.teacher}
+                  student={participants.student}
+                  jury={participants.jury}
                 />
               </div>
             </CollapsibleSidebar>

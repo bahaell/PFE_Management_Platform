@@ -9,5 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface ProjectDocumentRepository extends JpaRepository<ProjectDocument, UUID> {
-    List<ProjectDocument> findByProjectId(UUID projectId);
+    List<ProjectDocument> findByProjectIdOrderByCreatedAtDesc(UUID projectId);
+    int countByProjectId(UUID projectId);
 }

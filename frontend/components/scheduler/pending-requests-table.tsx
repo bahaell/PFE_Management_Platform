@@ -1,17 +1,29 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DataTable } from '@/components/data-table'
-import { Calendar, Eye, Zap, Users } from 'lucide-react'
-import { MOCK_PENDING_REQUESTS } from '@/lib/scheduler-mock-data'
+import { Calendar, Zap, Users } from 'lucide-react'
+import { SchedulerService } from '@/services/service_scheduler'
+import type { PendingDefenseRequest } from '@/models/scheduler.model'
 
 interface PendingRequestsTableProps {
   onAutoSchedule?: (id: number) => void
 }
 
 export function PendingRequestsTable({ onAutoSchedule }: PendingRequestsTableProps) {
+  const [requests, setRequests] = useState<PendingDefenseRequest[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    SchedulerService.getAllPendingRequests()
+      .then(setRequests)
+      .catch(() => setRequests([]))
+      .finally(() => setIsLoading(false))
+  }, [])
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -29,16 +41,19 @@ export function PendingRequestsTable({ onAutoSchedule }: PendingRequestsTablePro
         <Calendar className="w-5 h-5" />
         Pending Scheduling Requests
       </h3>
-      <DataTable
-        columns={[
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading pending requests...</p>
+      ) : (
+        <DataTable
+          columns={[
           { 
             id: 'project-info',
             header: 'Project', 
             accessor: 'project',
-            render: (project) => (
+            render: (_value, row) => (
               <div className="flex flex-col">
-                <span className="font-medium text-foreground">{project.subject}</span>
-                <span className="text-xs text-muted-foreground">Student: {project.studentName}</span>
+                <span className="font-medium text-foreground">{row.project.subject}</span>
+                <span className="text-xs text-muted-foreground">Student: {row.project.studentName}</span>
               </div>
             )
           },
@@ -46,40 +61,40 @@ export function PendingRequestsTable({ onAutoSchedule }: PendingRequestsTablePro
             id: 'encadrant',
             header: 'Encadrant', 
             accessor: 'project',
-            render: (project) => (
+            render: (_value, row) => (
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{project.assignedTeacher.name}</span>
+                <span className="text-sm">{row.project.assignedTeacher.name}</span>
               </div>
             )
           },
           {
             header: 'Date Range',
             accessor: 'requestedDateRange',
-            render: (dateRange) => (
+            render: (_value, row) => (
               <span className="text-sm text-foreground">
-                {new Date(dateRange.from).toLocaleDateString()} - {new Date(dateRange.to).toLocaleDateString()}
+                {new Date(row.requestedDateRange.from).toLocaleDateString()} - {new Date(row.requestedDateRange.to).toLocaleDateString()}
               </span>
             )
           },
           {
             header: 'Priority',
             accessor: 'priority',
-            render: (priority) => (
-              <Badge className={`${getPriorityColor(priority)} border`}>
-                {priority.charAt(0).toUpperCase() + priority.slice(1)}
+            render: (_value, row) => (
+              <Badge className={`${getPriorityColor(row.priority)} border`}>
+                {row.priority.charAt(0).toUpperCase() + row.priority.slice(1)}
               </Badge>
             )
           },
           {
             header: 'Actions',
             accessor: 'id',
-            render: (id) => (
+            render: (_value, row) => (
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   className="flex items-center gap-1 bg-primary hover:bg-primary/90"
-                  onClick={() => onAutoSchedule?.(id)}
+                  onClick={() => onAutoSchedule?.(row.id)}
                 >
                   <Zap className="w-3 h-3" />
                   Auto-Schedule & Assign Jury
@@ -88,8 +103,9 @@ export function PendingRequestsTable({ onAutoSchedule }: PendingRequestsTablePro
             )
           }
         ]}
-        data={MOCK_PENDING_REQUESTS}
-      />
+          data={requests}
+        />
+      )}
     </Card>
   )
 }

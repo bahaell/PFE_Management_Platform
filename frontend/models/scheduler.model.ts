@@ -12,7 +12,7 @@ export interface SchedulerProject {
 }
 
 export interface SchedulerRecommendedSlot {
-  id: number
+  id: any
   time: string
   startTime: string
   endTime: string
@@ -25,7 +25,9 @@ export interface SchedulerRecommendedSlot {
 }
 
 export interface ScheduledDefenseEntry {
-  id: number
+  id: any
+  projectId?: string
+  roomId?: number
   projectName: string
   student: string
   date: string
@@ -35,8 +37,11 @@ export interface ScheduledDefenseEntry {
   status: 'scheduled' | 'completed'
 }
 
+export type Jury = JuryMember[]
+export type ScheduledDefense = ScheduledDefenseEntry
+
 export interface PendingDefenseRequest {
-  id: number
+  id: any
   project: SchedulerProject
   requestedDateRange: { from: string; to: string }
   priority: 'low' | 'medium' | 'high'

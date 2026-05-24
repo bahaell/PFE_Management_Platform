@@ -9,7 +9,9 @@ import com.example.user_service.dto.RegistrationRequest;
 import com.example.user_service.dto.SkillDto;
 import com.example.user_service.dto.StudentProfileDto;
 import com.example.user_service.dto.TeacherAvailabilityDto;
+import com.example.user_service.dto.TeacherCapacityDto;
 import com.example.user_service.dto.TeacherProfileDto;
+import com.example.user_service.dto.TeacherRecommendationDto;
 import com.example.user_service.dto.UserDto;
 import com.example.user_service.dto.UserDocumentDto;
 import com.example.user_service.dto.UserUpdateRequest;
@@ -37,9 +39,19 @@ public interface UserService {
 
     ProfileDataDto updateCurrentProfile(ProfileUpdateRequest request);
 
-    List<StudentProfileDto> getStudents(String query, String level, String department, String academicYear);
+    List<StudentProfileDto> getStudents(String query, String classLevel, String department, String academicYear);
+
+    List<StudentProfileDto> getCurrentYearStudents();
+
+    StudentProfileDto getStudentProfile(String id);
 
     List<TeacherProfileDto> getTeachers(String query, String grade, String speciality, String department, Integer minYears);
+
+    List<TeacherProfileDto> getAvailableTeachers();
+
+    TeacherCapacityDto getTeacherCapacity(String id);
+
+    List<TeacherRecommendationDto> getTeacherRecommendations(String studentId, String speciality);
 
     List<TeacherAvailabilityDto> getCurrentTeacherAvailabilities();
 

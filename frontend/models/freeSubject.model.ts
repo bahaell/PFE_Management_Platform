@@ -6,7 +6,7 @@ export interface FreeSubjectRequest {
   studentName: string
   teacherId?: string
   teacherName?: string
-  status: "pending" | "accepted" | "rejected" | "validated"
+  status: "pending" | "under_review" | "accepted" | "rejected" | "validated" | "auto_rejected"
   subjectTitle: string
   subjectDescription: string
   motivation: string

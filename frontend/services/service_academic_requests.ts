@@ -256,4 +256,14 @@ export const AcademicRequestsService = {
       )
     )
   },
+
+  getPhaseLockStatus(_documentType?: string) {
+    return {
+      phase: 'after_supervisor',
+      requiredPhase: 'after_supervisor',
+      locked: false,
+      isLocked: false,
+      message: '',
+    }
+  },
 }

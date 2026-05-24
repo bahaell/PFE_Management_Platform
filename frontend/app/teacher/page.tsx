@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { BookOpen, Users, ClipboardList, Plus, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { ProjectsService } from '@/services/service_projects'
+import { ProjectStatus } from '@/models/project.model'
 
 export default function TeacherDashboard() {
   const { user } = useAuth()
@@ -25,7 +26,7 @@ export default function TeacherDashboard() {
     studentName: ['Ali Hassan', 'Noor Mohamed', 'Layla Ahmed', 'Omar Hassan'][idx] || 'Student',
     subject: p.title,
     progress: `${p.progress}%`,
-    status: (p.status === 'In Progress' ? 'ongoing' : 'completed') as const,
+    status: p.status === ProjectStatus.IN_PROGRESS ? 'ongoing' : 'completed',
   }))
 
   if (isLoading) {

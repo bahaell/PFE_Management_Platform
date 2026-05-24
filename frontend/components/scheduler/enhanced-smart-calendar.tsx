@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
 interface CalendarEvent {
-  date: number
+  date: number | string
   title: string
   type: 'confirmed' | 'recommended' | 'available'
   time?: string
@@ -14,25 +14,24 @@ interface CalendarEvent {
 
 interface EnhancedSmartCalendarProps {
   onDateSelect?: (date: number) => void
+  events?: CalendarEvent[]
 }
 
-export function EnhancedSmartCalendar({ onDateSelect }: EnhancedSmartCalendarProps) {
+export function EnhancedSmartCalendar({ onDateSelect, events = [] }: EnhancedSmartCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date(2024, 1))
-
-  const events: CalendarEvent[] = [
-    { date: 5, title: 'Defense - Ahmed Mohamed', type: 'confirmed', time: '14:00' },
-    { date: 8, title: 'Recommended slot', type: 'recommended' },
-    { date: 12, title: 'Recommended slot', type: 'recommended' },
-    { date: 15, title: 'Defense - Fatima Hassan', type: 'confirmed', time: '10:00' },
-    { date: 20, title: 'Available slot', type: 'available' }
-  ]
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
   const emptyDays = Array.from({ length: firstDayOfMonth }, () => null)
 
-  const getEventForDate = (date: number) => events.find(e => e.date === date)
+  const getEventForDate = (date: number) => events.find(e => {
+    if (typeof e.date === 'number') return e.date === date
+    const parsed = new Date(e.date)
+    return parsed.getFullYear() === currentMonth.getFullYear() &&
+      parsed.getMonth() === currentMonth.getMonth() &&
+      parsed.getDate() === date
+  })
   const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })
 
   const getTypeStyles = (type: string) => {
