@@ -48,9 +48,10 @@ function currentAcademicYear(): string {
 
 function authHeaders(roleOverride?: 'STUDENT' | 'TEACHER' | 'COORDINATOR') {
   const user = getAuthState()
+  const role = roleOverride ?? user?.role?.toUpperCase()
   return {
     ...(user?.id ? { 'X-User-Id': user.id } : {}),
-    'X-User-Role': roleOverride ?? user?.role?.toUpperCase() ?? '',
+    ...(role ? { 'X-User-Role': role } : {}),
   }
 }
 
