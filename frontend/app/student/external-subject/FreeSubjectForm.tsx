@@ -23,11 +23,13 @@ import { X, Upload, FileText, Sparkles, Save } from "lucide-react"
 
 interface FreeSubjectFormProps {
   onSubmit: (data: any) => Promise<void>
-  onGenerateRecommendations: (data: any) => Promise<void>
   isLoading?: boolean
+  teachers?: { id: string; name: string }[]
+  selectedTeacher?: { id: string; name: string } | null
+  onSelectTeacher?: (id: string, name: string) => void
 }
 
-export function FreeSubjectForm({ onSubmit, onGenerateRecommendations, isLoading = false }: FreeSubjectFormProps) {
+export function FreeSubjectForm({ onSubmit, isLoading = false, teachers = [], selectedTeacher = null, onSelectTeacher }: FreeSubjectFormProps) {
   const [formData, setFormData] = useState({
     companyName: "",
     companyDescription: "",
@@ -82,9 +84,7 @@ export function FreeSubjectForm({ onSubmit, onGenerateRecommendations, isLoading
     }
   }
 
-  const handleGenerateRecommendations = async () => {
-    await onGenerateRecommendations(formData)
-  }
+  // teacher selection handled by parent via props.onSelectTeacher
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -397,21 +397,32 @@ export function FreeSubjectForm({ onSubmit, onGenerateRecommendations, isLoading
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-blue-500" />
-              Academic Supervisor Recommendation (AI)
+              Select Academic Supervisor
             </CardTitle>
-            <CardDescription>Generate intelligent recommendation based on your subject</CardDescription>
+            <CardDescription>Select a supervisor from the list</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGenerateRecommendations}
-              disabled={isLoading || !formData.subjectDescription || !formData.companyDescription}
-              className="w-full bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {isLoading ? "Generating..." : "Generate AI Recommendation"}
-            </Button>
+            <div>
+              <Label htmlFor="teacherSelect">Supervisor *</Label>
+              <Select value={selectedTeacher?.id ?? ""} onValueChange={(val) => {
+                const t = teachers.find(x => x.id === val)
+                if (t && onSelectTeacher) onSelectTeacher(t.id, t.name)
+              }}>
+                <SelectTrigger id="teacherSelect">
+                  <SelectValue placeholder="Select a supervisor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="mt-2">
+              <Button size="sm" onClick={handleSaveAsDraft}>
+                Save draft
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

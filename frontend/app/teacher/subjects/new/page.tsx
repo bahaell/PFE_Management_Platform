@@ -25,10 +25,10 @@ export default function NewSubjectPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    domain: '',
-    level: 'L3',
     technologies: '',
-    maxStudents: '1',
+    domain: '',
+    level: '',
+    maxStudents: '',
   });
 
   const handleChange = (field: string, value: string) => {
@@ -60,15 +60,6 @@ export default function NewSubjectPage() {
       return;
     }
 
-    if (!formData.domain.trim()) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please enter a domain',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       await SubjectsService.createSubject({
@@ -77,6 +68,9 @@ export default function NewSubjectPage() {
         technologies: formData.technologies.split(',').map((t) => t.trim()).filter((t) => t),
         type: 'INTERNAL',
         status: 'PENDING',
+        domain: formData.domain?.trim() || undefined,
+        level: formData.level?.trim() || undefined,
+        maxStudents: formData.maxStudents ? Number(formData.maxStudents) : undefined,
       });
 
       toast({
@@ -149,37 +143,6 @@ export default function NewSubjectPage() {
                 />
               </div>
 
-              {/* Domain */}
-              <div className="space-y-2">
-                <Label htmlFor="domain" className="text-sm font-medium">
-                  Domain *
-                </Label>
-                <Input
-                  id="domain"
-                  placeholder="e.g., Web Development, Data Science"
-                  value={formData.domain}
-                  onChange={(e) => handleChange('domain', e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-
-              {/* Level */}
-              <div className="space-y-2">
-                <Label htmlFor="level" className="text-sm font-medium">
-                  Level *
-                </Label>
-                <Select value={formData.level} onValueChange={(value) => handleChange('level', value)}>
-                  <SelectTrigger id="level" disabled={isLoading}>
-                    <SelectValue placeholder="Select a level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="L3">L3 (Licence 3)</SelectItem>
-                    <SelectItem value="M1">M1 (Master 1)</SelectItem>
-                    <SelectItem value="M2">M2 (Master 2)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               {/* Technologies */}
               <div className="space-y-2">
                 <Label htmlFor="technologies" className="text-sm font-medium">
@@ -194,22 +157,47 @@ export default function NewSubjectPage() {
                 />
               </div>
 
-              {/* Maximum Students */}
-              <div className="space-y-2">
-                <Label htmlFor="maxStudents" className="text-sm font-medium">
-                  Maximum Number of Students *
-                </Label>
-                <Input
-                  id="maxStudents"
-                  type="number"
-                  min="1"
-                  max="100"
-                  placeholder="e.g., 5"
-                  value={formData.maxStudents}
-                  onChange={(e) => handleChange('maxStudents', e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
+                {/* Domain */}
+                <div className="space-y-2">
+                  <Label htmlFor="domain" className="text-sm font-medium">
+                    Domain
+                  </Label>
+                  <Input
+                    id="domain"
+                    placeholder="e.g., Machine Learning"
+                    value={formData.domain}
+                    onChange={(e) => handleChange('domain', e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Level */}
+                <div className="space-y-2">
+                  <Label htmlFor="level" className="text-sm font-medium">
+                    Level
+                  </Label>
+                  <Input
+                    id="level"
+                    placeholder="e.g., M2"
+                    value={formData.level}
+                    onChange={(e) => handleChange('level', e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Max Students */}
+                <div className="space-y-2">
+                  <Label htmlFor="maxStudents" className="text-sm font-medium">
+                    Max Students
+                  </Label>
+                  <Input
+                    id="maxStudents"
+                    placeholder="e.g., 4"
+                    value={formData.maxStudents}
+                    onChange={(e) => handleChange('maxStudents', e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
 
               {/* Submit Buttons */}
               <div className="flex gap-3 pt-4">

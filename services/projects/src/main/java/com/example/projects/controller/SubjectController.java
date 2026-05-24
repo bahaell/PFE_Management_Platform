@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,7 +46,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @RestController
-@RequestMapping({"/api/subjects", "/api/projects/subjects"})
+@RequestMapping({ "/api/subjects", "/api/projects/subjects" })
 @RequiredArgsConstructor
 public class SubjectController {
 
@@ -108,8 +109,48 @@ public class SubjectController {
                 .academicYear(normalizeAcademicYear(request.getAcademicYear()))
                 .teacherId(resolveTeacherId(userId, request.getTeacherId()))
                 .companyName(request.getCompanyName())
+                .domain(request.getDomain())
+                .level(request.getLevel())
+                .maxStudents(request.getMaxStudents())
                 .build();
         return new ResponseEntity<>(toDto(subjectRepository.save(subject)), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SubjectResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody SubjectRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        String normalizedRole = normalizeRole(userRole);
+        if (normalizedRole != null && !"TEACHER".equals(normalizedRole)) {
+            throw new ForbiddenException("Only the owning teacher can edit this subject.");
+        }
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Subject not found: " + id));
+        if (userId != null && !userId.isBlank() && subject.getTeacherId() != null
+                && !userId.equals(subject.getTeacherId())) {
+            throw new ForbiddenException("Only the teacher who created the subject can edit it.");
+        }
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            subject.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            subject.setDescription(request.getDescription());
+        }
+        if (request.getTechnologies() != null) {
+            subject.setTechnologies(request.getTechnologies());
+        }
+        if (request.getDomain() != null) {
+            subject.setDomain(request.getDomain());
+        }
+        if (request.getLevel() != null) {
+            subject.setLevel(request.getLevel());
+        }
+        if (request.getMaxStudents() != null) {
+            subject.setMaxStudents(request.getMaxStudents());
+        }
+        return ResponseEntity.ok(toDto(subjectRepository.save(subject)));
     }
 
     @PatchMapping("/{id}/status")
@@ -156,7 +197,8 @@ public class SubjectController {
         if (application.getStatus() == SubjectApplicationStatus.REJECTED) {
             application.setStatus(SubjectApplicationStatus.PENDING);
         }
-        return new ResponseEntity<>(toApplicationDto(subjectApplicationRepository.save(application)), HttpStatus.CREATED);
+        return new ResponseEntity<>(toApplicationDto(subjectApplicationRepository.save(application)),
+                HttpStatus.CREATED);
     }
 
     @GetMapping("/applications/student/{studentId}")
@@ -192,9 +234,44 @@ public class SubjectController {
         application.setStatus(status);
         SubjectApplication saved = subjectApplicationRepository.save(application);
         if (status == SubjectApplicationStatus.ACCEPTED) {
-            assignAcceptedStudent(subject, saved.getStudentId(), resolveTeacherId(teacherId, subject.getTeacherId()));
+            try {
+                assignAcceptedStudent(subject, saved.getStudentId(),
+                        resolveTeacherId(teacherId, subject.getTeacherId()));
+            } catch (BadRequestException bre) {
+                // propagate known bad request exceptions
+                throw bre;
+            } catch (Exception ex) {
+                // convert unexpected server errors into a BadRequest with details to avoid
+                // generic 500s
+                throw new BadRequestException("Unable to assign accepted student: " + ex.getMessage());
+            }
         }
         return ResponseEntity.ok(toApplicationDto(saved));
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/applications/{applicationId}")
+    @Transactional
+    public ResponseEntity<Void> deleteApplication(
+            @PathVariable UUID applicationId,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        // Allow students to cancel their own application, or teachers/coordinators to
+        // remove it
+        String normalizedRole = normalizeRole(userRole);
+        SubjectApplication application = subjectApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Subject application not found: " + applicationId));
+
+        // If requester is student, ensure ownership
+        if (normalizedRole != null && "STUDENT".equals(normalizedRole)) {
+            if (userId == null || !userId.equals(application.getStudentId())) {
+                throw new ForbiddenException("Students can only cancel their own applications.");
+            }
+        }
+
+        // Teachers/coordinators may remove applications as part of admin workflows; no
+        // further checks here
+        subjectApplicationRepository.delete(application);
+        return ResponseEntity.noContent().build();
     }
 
     private SubjectResponse toDto(Subject subject) {
@@ -208,6 +285,9 @@ public class SubjectController {
                 .academicYear(subject.getAcademicYear())
                 .teacherId(subject.getTeacherId())
                 .companyName(subject.getCompanyName())
+                .domain(subject.getDomain())
+                .level(subject.getLevel())
+                .maxStudents(subject.getMaxStudents())
                 .createdAt(subject.getCreatedAt())
                 .build();
     }
@@ -282,7 +362,7 @@ public class SubjectController {
                         .progress(0)
                         .academicYear(subject.getAcademicYear())
                         .subject(subject)
-                        .requiredSkills(subject.getTechnologies() != null ? subject.getTechnologies() : new HashSet<>())
+                        //.requiredSkills(subject.getTechnologies() != null ? new HashSet<>(subject.getTechnologies()) : new HashSet<>())
                         .build()));
 
         if (teacherId != null && !teacherId.isBlank()

@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getTaskPermissions, canModifyField, type UserRole } from '@/lib/permissions/kanban-permissions'
 
 interface Task {
-  id: number
+  id: string | number
   title: string
   description: string
   priority: 'low' | 'medium' | 'high'
@@ -31,13 +31,14 @@ interface EditTaskPanelProps {
   isOpen: boolean
   onClose: () => void
   task: Task | null
-  onUpdate: (taskId: number, updates: Partial<Task>) => void
-  onDelete: (taskId: number) => void
+  onUpdate: (taskId: string | number, updates: Partial<Task>) => void
+  onDelete: (taskId: string | number) => void
   userRole: UserRole // Added user role
   userId: string // Added user ID
+  assignees?: { id: string; name: string }[]
 }
 
-export function EditTaskPanel({ isOpen, onClose, task, onUpdate, onDelete, userRole, userId }: EditTaskPanelProps) {
+export function EditTaskPanel({ isOpen, onClose, task, onUpdate, onDelete, userRole, userId, assignees }: EditTaskPanelProps) {
   const permissions = task ? getTaskPermissions(userRole, userId, task.assigneeId) : {
     canEdit: false,
     canDelete: false,
@@ -290,16 +291,17 @@ export function EditTaskPanel({ isOpen, onClose, task, onUpdate, onDelete, userR
                   Assignee
                 </Label>
                 <Select
-                  value={formData.assigneeId}
+                  value={formData.assigneeId || 'UNASSIGNED'}
                   onValueChange={(value) => {
-                    const assigneeMap: Record<string, string> = {
-                      'std001': 'Ahmed Ben Ali',
-                      'tch001': 'Dr. Fatima Zahra',
+                    if (value === 'UNASSIGNED') {
+                      setFormData({ ...formData, assigneeId: '', assignee: 'Unassigned' })
+                      return
                     }
+                    const selected = (assignees || []).find(a => a.id === value)
                     setFormData({ 
                       ...formData, 
                       assigneeId: value,
-                      assignee: assigneeMap[value] || 'Unknown'
+                      assignee: selected?.name || 'Unknown'
                     })
                   }}
                   disabled={!permissions.canAssign}
@@ -308,8 +310,10 @@ export function EditTaskPanel({ isOpen, onClose, task, onUpdate, onDelete, userR
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="std001">Ahmed Ben Ali</SelectItem>
-                    <SelectItem value="tch001">Dr. Fatima Zahra</SelectItem>
+                    <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+                    {(assignees || []).map(a => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {!permissions.canAssign && (

@@ -3,7 +3,18 @@
  * Handles authentication, base URLs, and error reporting.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+// Default base URL mapping for development across multiple microservices.
+// If NEXT_PUBLIC_API_BASE_URL is set, use it as a fallback for unknown routes.
+const DEV_SERVICE_MAP: Record<string, string> = {
+  '/api/subjects': 'http://localhost:8081', // projects service
+  '/api/tasks': 'http://localhost:8081', // projects service (tasks endpoint)
+  '/api/free-subjects': 'http://localhost:8081', // projects service
+  '/api/projects/free-subjects': 'http://localhost:8081', // projects service
+  '/api/users': 'http://localhost:8082', // user service
+  '/api/notifications': 'http://localhost:8085', // notification service
+}
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'development' ? '' : '');
 
 export class ApiError extends Error {
   status?: number;
@@ -79,7 +90,17 @@ export const apiClient = {
   },
 
   async request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
+    let url: string
+    if (path.startsWith('http')) {
+      url = path
+    } else if (process.env.NODE_ENV === 'development') {
+      // Determine which dev service should handle this path by matching prefixes.
+      const match = Object.keys(DEV_SERVICE_MAP).find(prefix => path.startsWith(prefix))
+      const serviceBase = match ? DEV_SERVICE_MAP[match] : BASE_URL || window.location.origin
+      url = `${serviceBase}${path}`
+    } else {
+      url = `${BASE_URL}${path}`
+    }
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
 
@@ -96,14 +117,57 @@ export const apiClient = {
       headers,
     };
 
-    let response: Response;
+    // Dev logging: request details
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const method = (config.method || 'GET').toString()
+        const headersObj: Record<string, string> = {}
+        if (headers && typeof (headers as any).entries === 'function') {
+          for (const [k, v] of (headers as Headers).entries()) {
+            headersObj[k] = v
+          }
+        }
+        const bodyPreview = options.body && typeof options.body === 'string' ? options.body : JSON.stringify(options.body)
+        // eslint-disable-next-line no-console
+        console.debug('[apiClient] request ->', { method, url, headers: headersObj, body: bodyPreview })
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    let response: Response | null = null;
     try {
       response = await fetch(url, config);
     } catch (err) {
-      throw new ApiError(
-        `Unable to reach the API at ${url}. Check that the backend is running and the Next.js API proxy is configured.`,
-        0
-      );
+      // Fallback: if we're in the browser and the path is a relative API path, try origin-prefixed URL
+      try {
+        if (typeof window !== 'undefined' && !path.startsWith('http')) {
+          const originUrl = `${window.location.origin}${path}`
+          response = await fetch(originUrl, config)
+        }
+      } catch (err2) {
+        // ignore second-level errors
+      }
+
+      if (!response) {
+        throw new ApiError(
+          `Unable to reach the API at ${url}. Check that the backend is running and the Next.js API proxy is configured.`,
+          0
+        )
+      }
+    }
+
+    // Dev logging: response details
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const clone = response.clone()
+        const isJson = clone.headers.get('content-type')?.includes('application/json')
+        const respBody = isJson ? await clone.json().catch(() => null) : await clone.text().catch(() => null)
+        // eslint-disable-next-line no-console
+        console.debug('[apiClient] response <-', { url, status: response.status, body: respBody })
+      } catch (err) {
+        // ignore
+      }
     }
 
     return handleResponse<T>(response);

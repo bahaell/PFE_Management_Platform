@@ -1,43 +1,41 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Edit2, Trash2, Eye } from 'lucide-react'
 import { StatusBadge } from '@/components/status-badge'
-import { ApplicationModal, type ApplicationData } from '@/components/modals/application-modal'
-import { ProjectsService } from '@/services/service_projects'
-import type { ProjectBasic } from '@/models/project.model'
+import { SubjectsService } from '@/services/service_subjects'
+import type { SubjectApplication } from '@/services/service_subjects'
 
 export default function ApplicationsPage() {
-  const { data: projects = [], isLoading } = useQuery({
+  const { data: applications = [], isLoading } = useQuery({
     queryKey: ['applications'],
-    queryFn: () => ProjectsService.getAllProjects(),
+    queryFn: () => SubjectsService.getApplicationsByStudent(),
   })
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [deleteId, setDeleteId] = useState<number | null>(null)
-  const [viewingId, setViewingId] = useState<number | null>(null)
-  const [appliedIds, setAppliedIds] = useState<number[]>([])
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [viewingId, setViewingId] = useState<string | null>(null)
 
-  const handleEditApplication = (data: ApplicationData) => {
-    setIsModalOpen(false)
-    setEditingId(null)
+  const queryClient = useQueryClient()
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => SubjectsService.cancelApplication(id),
+    onSuccess: () => {
+      // refresh applications list
+      queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: ['subject-applications'] })
+      setDeleteId(null)
+    },
+  })
+
+  const handleDelete = (id: string) => {
+    // call cancel API
+    cancelMutation.mutate(id)
   }
 
-  const handleDelete = (id: number) => {
-    setAppliedIds(appliedIds.filter(aid => aid !== id))
-    setDeleteId(null)
-  }
-
-  const handleEdit = (id: number) => {
-    setEditingId(id)
-    setIsModalOpen(true)
-  }
-
-  const viewingApplication = viewingId ? projects.find((p) => p.id === viewingId) : undefined
+  const viewingApplication: SubjectApplication | undefined = viewingId ? (applications as SubjectApplication[]).find((a) => String(a.id) === String(viewingId)) : undefined
 
   if (isLoading) {
     return (
@@ -70,46 +68,35 @@ export default function ApplicationsPage() {
               </tr>
             </thead>
             <tbody>
-              {projects.map((project) => (
-                <tr key={project.id} className="border-b border-border hover:bg-secondary/30 transition-colors">
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground font-medium">{project.title}</td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-muted-foreground">{project.subject}</td>
+              {(applications as SubjectApplication[]).map((application) => (
+                <tr key={application.id} className="border-b border-border hover:bg-secondary/30 transition-colors">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground font-medium">{application.subjectTitle}</td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-muted-foreground">{/* area not available on application, leave blank or show subjectTitle */}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <StatusBadge status={appliedIds.includes(project.id) ? 'validated' : 'pending'} />
+                    <StatusBadge status={String(application.status).toLowerCase() as any} />
                   </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-muted-foreground whitespace-nowrap">{project.startDate}</td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-muted-foreground whitespace-nowrap">{application.createdAt ?? application.updatedAt}</td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
                     <div className="flex gap-2 justify-end flex-wrap">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setViewingId(project.id)}
+                        onClick={() => setViewingId(String(application.id))}
                         className="gap-1"
                       >
                         <Eye className="w-3 h-3" />
                         <span className="hidden sm:inline">View</span>
                       </Button>
-                      {!appliedIds.includes(project.id) && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(project.id)}
-                            className="gap-1"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                            <span className="hidden sm:inline">Edit</span>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-destructive gap-1"
-                            onClick={() => setDeleteId(project.id)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span className="hidden sm:inline">Cancel</span>
-                          </Button>
-                        </>
+                      {application.status === 'PENDING' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive gap-1"
+                          onClick={() => setDeleteId(String(application.id))}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span className="hidden sm:inline">Cancel</span>
+                        </Button>
                       )}
                     </div>
                   </td>
@@ -120,7 +107,7 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      {projects.length === 0 && (
+      {applications.length === 0 && (
         <div className="text-center py-12 bg-card rounded-lg border border-border">
           <p className="text-sm sm:text-base text-muted-foreground">No applications yet. Browse subjects to get started!</p>
         </div>
@@ -152,21 +139,21 @@ export default function ApplicationsPage() {
             <div className="space-y-3 mb-6">
               <div>
                 <p className="text-xs text-muted-foreground">Subject</p>
-                <p className="text-sm sm:text-base font-medium text-foreground">{viewingApplication.title}</p>
+                <p className="text-sm sm:text-base font-medium text-foreground">{viewingApplication.subjectTitle}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Area</p>
-                <p className="text-sm sm:text-base font-medium text-foreground">{viewingApplication.subject}</p>
+                <p className="text-sm sm:text-base font-medium text-foreground">{viewingApplication.subjectId}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Status</p>
                 <div className="mt-1">
-                  <StatusBadge status={appliedIds.includes(viewingApplication.id) ? 'validated' : 'pending'} />
+                  <StatusBadge status={String(viewingApplication.status).toLowerCase() as any} />
                 </div>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Application Date</p>
-                <p className="text-sm sm:text-base font-medium text-foreground">{viewingApplication.startDate}</p>
+                <p className="text-sm sm:text-base font-medium text-foreground">{viewingApplication.createdAt ?? viewingApplication.updatedAt}</p>
               </div>
             </div>
             <Button variant="outline" className="w-full" onClick={() => setViewingId(null)}>
@@ -175,15 +162,7 @@ export default function ApplicationsPage() {
           </div>
         </div>
       )}
-
-      <ApplicationModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditingId(null)
-        }}
-        onSubmit={handleEditApplication}
-      />
+      
     </div>
   )
 }

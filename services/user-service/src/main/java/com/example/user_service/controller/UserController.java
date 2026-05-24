@@ -131,6 +131,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getCurrentStudentDocuments());
     }
 
+    @GetMapping("/me/teaching-documents")
+    public ResponseEntity<List<UserDocumentDto>> getCurrentTeacherDocuments() {
+        return ResponseEntity.ok(userService.getCurrentTeacherDocuments());
+    }
+
     @GetMapping("/documents")
     public ResponseEntity<List<UserDocumentDto>> getCoordinatorManagedDocuments(
         @RequestParam(required = false) String studentId

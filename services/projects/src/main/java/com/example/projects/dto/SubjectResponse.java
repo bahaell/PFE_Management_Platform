@@ -25,5 +25,8 @@ public class SubjectResponse {
     private String academicYear;
     private String teacherId;
     private String companyName;
+    private String domain;
+    private String level;
+    private Integer maxStudents;
     private LocalDateTime createdAt;
 }

@@ -44,7 +44,9 @@ function mapTask(task: BackendTask): Task {
     status: toUiStatus(task.status),
     priority: toUiPriority(task.priority),
     assigneeId: task.assigneeId,
-    assignee: task.assigneeId ? `Student ${task.assigneeId}` : 'Unassigned',
+    // Prefer backend-provided assignee name when available. If backend only provides id,
+    // leave assignee empty so the calling UI can resolve the name from project members.
+    assignee: (task as any).assigneeName || (task as any).assignee || (task.assigneeId ? '' : 'Unassigned'),
     dueDate: task.dueDate?.slice(0, 10),
     projectId: task.projectId,
     createdAt: task.createdAt,
@@ -58,7 +60,7 @@ function toPayload(task: Partial<Task> & { projectId: string | number }) {
     description: task.description ?? '',
     status: toBackendStatus(task.status),
     priority: toBackendPriority(task.priority),
-    assigneeId: task.assigneeId || undefined,
+    assigneeId: task.assigneeId && task.assigneeId !== 'UNASSIGNED' ? task.assigneeId : undefined,
     dueDate: task.dueDate ? `${task.dueDate}T00:00:00` : undefined,
     projectId: String(task.projectId),
   }
@@ -66,7 +68,8 @@ function toPayload(task: Partial<Task> & { projectId: string | number }) {
 
 export const TasksService = {
   async getTasksByProject(projectId: string | number): Promise<Task[]> {
-    const tasks = await apiClient.get<BackendTask[]>(`/api/tasks/project/${projectId}`)
+    const id = String(projectId)
+    const tasks = await apiClient.get<BackendTask[]>(`/api/tasks/project/${encodeURIComponent(id)}`)
     return tasks.map(mapTask)
   },
 

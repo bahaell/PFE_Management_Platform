@@ -63,6 +63,12 @@ public class Subject {
 
     private String companyName;
 
+    private String domain;
+
+    private String level;
+
+    private Integer maxStudents;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

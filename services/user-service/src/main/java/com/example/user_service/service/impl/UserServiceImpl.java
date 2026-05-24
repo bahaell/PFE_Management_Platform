@@ -287,6 +287,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<UserDocumentDto> getCurrentTeacherDocuments() {
+        User teacher = getAuthenticatedTeacher();
+        return userDocumentRepository.findByTeacherIdOrderByCreatedAtDesc(teacher.getId()).stream()
+            .map(this::toUserDocumentDto)
+            .collect(Collectors.toList());
+    }
+
+    @Override
     public List<UserDocumentDto> getCoordinatorManagedDocuments(String studentId) {
         User coordinator = getAuthenticatedCoordinator();
         List<UserDocument> docs = (studentId == null || studentId.isBlank())
@@ -310,6 +318,9 @@ public class UserServiceImpl implements UserService {
         document.setCreatedAt(LocalDateTime.now().toString());
         document.setStudent(student);
         document.setCoordinator(coordinator);
+        if (request.getTeacherId() != null && !request.getTeacherId().isBlank()) {
+            document.setTeacher(getTeacherByIdOrThrow(request.getTeacherId()));
+        }
         return toUserDocumentDto(userDocumentRepository.save(document));
     }
 
@@ -336,6 +347,13 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getStudentId() != null && !request.getStudentId().isBlank() && !request.getStudentId().equals(document.getStudent().getId())) {
             document.setStudent(getStudentByIdOrThrow(request.getStudentId()));
+        }
+        if (request.getTeacherId() != null) {
+            if (request.getTeacherId().isBlank()) {
+                document.setTeacher(null);
+            } else if (document.getTeacher() == null || !request.getTeacherId().equals(document.getTeacher().getId())) {
+                document.setTeacher(getTeacherByIdOrThrow(request.getTeacherId()));
+            }
         }
 
         return toUserDocumentDto(userDocumentRepository.save(document));
@@ -430,6 +448,7 @@ public class UserServiceImpl implements UserService {
         teacherAvailabilityRepository.findByTeacherIdOrderByStartTimeAsc(id).forEach(teacherAvailabilityRepository::delete);
         userDocumentRepository.findByStudentIdOrderByCreatedAtDesc(id).forEach(userDocumentRepository::delete);
         userDocumentRepository.findByCoordinatorIdOrderByCreatedAtDesc(id).forEach(userDocumentRepository::delete);
+        userDocumentRepository.findByTeacherIdOrderByCreatedAtDesc(id).forEach(userDocumentRepository::delete);
         userRepository.deleteById(id);
     }
 
@@ -465,6 +484,14 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Target user must be a student");
         }
         return student;
+    }
+
+    private User getTeacherByIdOrThrow(String teacherId) {
+        User teacher = getUserByIdOrThrow(teacherId);
+        if (teacher.getRole() != UserRole.TEACHER) {
+            throw new IllegalArgumentException("Target user must be a teacher");
+        }
+        return teacher;
     }
 
     private User getUserByIdOrThrow(String userId) {
@@ -837,6 +864,10 @@ public class UserServiceImpl implements UserService {
         dto.setCreatedAt(document.getCreatedAt());
         dto.setStudentId(document.getStudent().getId());
         dto.setStudentName(document.getStudent().getName());
+        if (document.getTeacher() != null) {
+            dto.setTeacherId(document.getTeacher().getId());
+            dto.setTeacherName(document.getTeacher().getName());
+        }
         dto.setCoordinatorId(document.getCoordinator().getId());
         dto.setCoordinatorName(document.getCoordinator().getName());
         return dto;

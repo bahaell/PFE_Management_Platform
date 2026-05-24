@@ -11,6 +11,7 @@ import { Search, MessageCircle, FileText, TrendingUp, Clock, CheckCircle2, Alert
 import { motion } from 'framer-motion'
 import { AnimatedCard } from '@/components/animations/animated-card'
 import { useModalManager } from '@/hooks/use-modal-manager'
+import { StudentsService } from '@/services/service_students'
 import { ProjectsService } from '@/services/service_projects'
 import { usePresence } from '@/hooks/use-presence'
 import { useAuth } from '@/providers/auth-provider'
@@ -26,17 +27,18 @@ export default function TeacherProjectsPage() {
     enabled: !!user?.id,
   })
 
-  const studentNames = ['Ahmed Mohamed', 'Sara Ali', 'Omar Hassan', 'Layla Ahmed']
-  const studentEmails = ['ahmed@student.edu', 'sara@student.edu', 'omar@student.edu', 'layla@student.edu']
+  const studentNames = []
+  const studentEmails = []
 
   const enrichedProjects = projects.map((p, idx) => ({
     id: p.id,
     title: p.title,
+    // placeholder: will be replaced from studentMap when available
     student: {
-      id: 'std001', // Using mock ID for presence
-      name: studentNames[idx] || 'Student',
-      email: studentEmails[idx] || 'student@edu',
-      avatar: studentNames[idx]?.split(' ').map((n: string) => n[0]).join('') || 'ST',
+      id: (p as any).members && (p as any).members.length > 0 ? (p as any).members[0].studentId : '',
+      name: '',
+      email: '',
+      avatar: '',
     },
     progress: p.progress,
     status: (p.progress > 70 ? 'on-track' : p.progress > 40 ? 'at-risk' : 'pending') as 'on-track' | 'at-risk' | 'completed' | 'pending',
@@ -49,7 +51,34 @@ export default function TeacherProjectsPage() {
   const studentIds = Array.from(new Set(enrichedProjects.map((p) => p.student.id)))
   const { presenceMap } = usePresence(studentIds)
 
-  const filteredProjects = enrichedProjects.filter(
+  // Fetch student profiles for members of the fetched projects
+  const { data: studentMap = {}, isLoading: studentsLoading } = useQuery({
+    queryKey: ['project-students', studentIds],
+    queryFn: async () => {
+      const ids = studentIds.filter(Boolean)
+      const entries = await Promise.all(ids.map(async (id) => {
+        const s = await StudentsService.getStudentById(id)
+        return [id, s]
+      }))
+      return Object.fromEntries(entries.filter(([, v]) => v)) as Record<string, any>
+    },
+    enabled: studentIds.length > 0,
+  })
+
+  const filteredProjects = enrichedProjects.map((project) => {
+    // If we have the studentMap entry, enrich the project's student info
+    const sid = project.student.id
+    const student = (studentMap as Record<string, any>)?.[sid]
+    return {
+      ...project,
+      student: {
+        id: sid,
+        name: student?.name || (`Student ${sid ?? ''}`),
+        email: student?.email || '',
+        avatar: student?.name ? student.name.charAt(0).toUpperCase() : (sid ? sid.toString().charAt(0).toUpperCase() : 'S'),
+      }
+    }
+  }).filter(
     (project) =>
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.student.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -75,29 +104,31 @@ export default function TeacherProjectsPage() {
     { label: 'Unread Messages', value: filteredProjects.reduce((sum, p) => sum + p.unreadMessages, 0), icon: MessageCircle, color: 'text-purple-600' },
   ]
 
-  const mockTasks = {
-    todo: [
-      { id: 1, title: 'Literature Review', description: 'Complete the literature review section', priority: 'high' as const, assignee: 'Student', assigneeId: 'student-1', dueDate: '2024-02-25' },
-      { id: 2, title: 'Data Collection', description: 'Gather required data sets', priority: 'medium' as const, assignee: 'Student', assigneeId: 'student-1', dueDate: '2024-02-28' },
-    ],
-    inProgress: [
-      { id: 3, title: 'System Design', description: 'Create system architecture diagram', priority: 'high' as const, assignee: 'Student', assigneeId: 'student-1', dueDate: '2024-02-20' },
-    ],
-    done: [
-      { id: 4, title: 'Proposal Submission', description: 'Submit initial project proposal', priority: 'low' as const, assignee: 'Student', assigneeId: 'student-1', dueDate: '2024-02-10' },
-    ],
-  }
+  const handleOpenTasks = (project: any) => {
+    // Build assignees list from project members and fetched studentMap
+    const assignees: any[] = []
+    try {
+      const members = project.members || []
+      for (const m of members) {
+        const sid = m.studentId
+        const s = (studentMap as Record<string, any>)?.[sid]
+        // Normalize id to string so Select components receive consistent string values
+        assignees.push({ id: String(sid ?? ''), name: s?.name || `Student ${sid}` })
+      }
+    } catch (err) {
+      // fallback: empty
+    }
 
-  const handleOpenTasks = (projectId: number) => {
+    // Ensure we pass the real project id (UUID)
+    console.debug('Opening tasks for project id:', project.id, 'assignees=', assignees)
     open({
-      id: 'expand-tasks-modal',
+      id: `tasks-expand-${project.id}`,
       type: 'expand-tasks',
       level: 1,
       props: {
-        tasks: mockTasks,
-        onTasksUpdate: (updatedTasks: any) => {
-          console.log('[v0] Tasks updated:', updatedTasks)
-        },
+        title: project.title,
+        projectId: project.id,
+        assignees,
       },
     })
   }
@@ -244,7 +275,7 @@ export default function TeacherProjectsPage() {
 
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleOpenTasks(project.id)}
+                      onClick={() => handleOpenTasks(project)}
                       className="flex-1"
                       size="sm"
                     >

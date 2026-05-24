@@ -1,7 +1,7 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { X, Calendar, User, Trash2, Clock, AlertCircle } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, Calendar, User, Trash2, AlertCircle, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,7 +18,7 @@ import { motion } from 'framer-motion'
 import { getTaskPermissions, type UserRole } from '@/lib/permissions/kanban-permissions'
 
 interface Task {
-  id: number
+  id: string | number
   title: string
   description: string
   priority: 'low' | 'medium' | 'high'
@@ -30,13 +30,14 @@ interface Task {
 interface EditTaskModalContentProps {
   onClose: () => void
   task: Task | null
-  onUpdate: (taskId: number, updates: Partial<Task>) => void
-  onDelete: (taskId: number) => void
+  onUpdate: (taskId: string | number, updates: Partial<Task>) => void
+  onDelete: (taskId: string | number) => void
   userRole: UserRole
   userId: string
+  assignees?: { id: string; name: string }[]
 }
 
-export function EditTaskModalContent({ onClose, task, onUpdate, onDelete, userRole, userId }: EditTaskModalContentProps) {
+export function EditTaskModalContent({ onClose, task, onUpdate, onDelete, userRole, userId, assignees }: EditTaskModalContentProps) {
   const permissions = task ? getTaskPermissions(userRole, userId, task.assigneeId) : {
     canEdit: false,
     canDelete: false,
@@ -47,8 +48,8 @@ export function EditTaskModalContent({ onClose, task, onUpdate, onDelete, userRo
     title: '',
     description: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
-    assignee: '',
-    assigneeId: '',
+    assignee: 'Unassigned',
+    assigneeId: 'UNASSIGNED',
     dueDate: '',
   })
 
@@ -58,8 +59,8 @@ export function EditTaskModalContent({ onClose, task, onUpdate, onDelete, userRo
         title: task.title,
         description: task.description,
         priority: task.priority,
-        assignee: task.assignee,
-        assigneeId: task.assigneeId,
+        assignee: task.assignee || 'Unassigned',
+        assigneeId: task.assigneeId || 'UNASSIGNED',
         dueDate: task.dueDate,
       })
     }
@@ -139,7 +140,7 @@ export function EditTaskModalContent({ onClose, task, onUpdate, onDelete, userRo
 
       {!permissions.canEdit && (
         <div className="mx-4 sm:mx-6 mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <p className="text-sm text-blue-800 dark:text-blue-300">
             You can only view this task. Only supervisors or assigned students can edit tasks.
           </p>
@@ -230,16 +231,17 @@ export function EditTaskModalContent({ onClose, task, onUpdate, onDelete, userRo
             Assignee
           </Label>
           <Select
-            value={formData.assigneeId}
+            value={formData.assigneeId || 'UNASSIGNED'}
             onValueChange={(value) => {
-              const assigneeMap: Record<string, string> = {
-                'std001': 'Ahmed Ben Ali',
-                'tch001': 'Dr. Fatima Zahra',
+              if (value === 'UNASSIGNED') {
+                setFormData({ ...formData, assigneeId: 'UNASSIGNED', assignee: 'Unassigned' })
+                return
               }
+              const selected = (assignees || []).find(a => a.id === value)
               setFormData({ 
                 ...formData, 
                 assigneeId: value,
-                assignee: assigneeMap[value] || 'Unknown'
+                assignee: selected?.name || 'Unknown'
               })
             }}
             disabled={!permissions.canAssign}
@@ -248,8 +250,10 @@ export function EditTaskModalContent({ onClose, task, onUpdate, onDelete, userRo
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="std001">Ahmed Ben Ali</SelectItem>
-              <SelectItem value="tch001">Dr. Fatima Zahra</SelectItem>
+              <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+              {(assignees || []).map(a => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -303,3 +307,4 @@ export function EditTaskModalContent({ onClose, task, onUpdate, onDelete, userRo
     </motion.div>
   )
 }
+    

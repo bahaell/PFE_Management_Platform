@@ -16,6 +16,8 @@ import { ProjectKanban } from '@/components/collaboration/project-kanban'
 import { DocumentVersionsPanel } from '@/components/collaboration/document-versions-panel'
 import { ActivityTimeline } from '@/components/collaboration/activity-timeline'
 import { ProjectsService } from '@/services/service_projects'
+import { TeachersService } from '@/services/service_teachers'
+import { StudentsService } from '@/services/service_students'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import type { ProjectBasic } from '@/models/project.model'
 
@@ -34,6 +36,7 @@ function buildProjectParticipants(project: ProjectBasic) {
     online: false,
   })) ?? []
 
+  // Return ids and sensible defaults. Real names will be loaded via React Query below.
   return {
     teacher: {
       id: supervisorId,
@@ -96,12 +99,39 @@ export default function TeacherProjectPage() {
 
   const participants = buildProjectParticipants(project)
 
+  // Fetch teacher and student profiles so we can display real names and avatars
+  const { data: teacherProfile } = useQuery({
+    queryKey: ['teacher', participants.teacher.id],
+    queryFn: () => TeachersService.getTeacherById(String(participants.teacher.id)),
+    enabled: !!participants.teacher.id,
+  })
+
+  const { data: studentProfile } = useQuery({
+    queryKey: ['student', participants.student.id],
+    queryFn: () => StudentsService.getStudentById(String(participants.student.id)),
+    enabled: !!participants.student.id,
+  })
+
+  const participantsWithProfiles = {
+    teacher: {
+      ...participants.teacher,
+      name: teacherProfile?.name ?? participants.teacher.name,
+      avatar: teacherProfile?.name ? initials(teacherProfile.name) : participants.teacher.avatar,
+    },
+    student: {
+      ...participants.student,
+      name: studentProfile?.name ?? participants.student.name,
+      avatar: studentProfile?.name ? initials(studentProfile.name) : participants.student.avatar,
+    },
+    jury: participants.jury,
+  }
+
   return (
     <div className="flex flex-col h-screen overflow-y-auto">
       <div className="shrink-0 px-4 sm:px-6 pt-4 pb-2">
         <div className="flex items-start justify-between gap-4">
-          <PageHeader
-            title={`${project.title} - ${participants.student.name}`}
+            <PageHeader
+            title={`${project.title} - ${participantsWithProfiles.student.name}`}
             description={project.description}
           />
           
@@ -119,8 +149,8 @@ export default function TeacherProjectPage() {
                 <div className="mt-4">
                   <ProjectInfoSidebar
                     project={project}
-                    teacher={participants.teacher}
-                    student={participants.student}
+                    teacher={participantsWithProfiles.teacher}
+                    student={participantsWithProfiles.student}
                   />
                 </div>
               </SheetContent>
@@ -138,9 +168,9 @@ export default function TeacherProjectPage() {
                 </SheetHeader>
                 <div className="mt-4">
                   <ParticipantsPanel
-                    teacher={participants.teacher}
-                    student={participants.student}
-                    jury={participants.jury}
+                    teacher={participantsWithProfiles.teacher}
+                    student={participantsWithProfiles.student}
+                    jury={participantsWithProfiles.jury}
                   />
                 </div>
               </SheetContent>
@@ -163,8 +193,8 @@ export default function TeacherProjectPage() {
               <div className="p-4">
                 <ProjectInfoSidebar
                   project={project}
-                  teacher={participants.teacher}
-                  student={participants.student}
+                  teacher={participantsWithProfiles.teacher}
+                  student={participantsWithProfiles.student}
                 />
               </div>
             </CollapsibleSidebar>
@@ -265,9 +295,9 @@ export default function TeacherProjectPage() {
             >
               <div className="p-4">
                 <ParticipantsPanel
-                  teacher={participants.teacher}
-                  student={participants.student}
-                  jury={participants.jury}
+                  teacher={participantsWithProfiles.teacher}
+                  student={participantsWithProfiles.student}
+                  jury={participantsWithProfiles.jury}
                 />
               </div>
             </CollapsibleSidebar>

@@ -124,10 +124,24 @@ export default function TeacherSubjectsPage() {
     setIsApplicantsOpen(true)
   }
 
+  const updateSubjectMutation = useMutation({
+    mutationFn: (subject: Subject) => SubjectsService.updateSubject(subject.id, {
+      title: subject.title,
+      description: subject.description,
+      technologies: subject.technologies,
+      domain: subject.domain,
+      level: subject.level,
+      maxStudents: subject.maxStudents,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-subjects', currentUser?.id] })
+      setIsDetailsOpen(false)
+    }
+  })
+
   const handleSaveChanges = () => {
     if (editFormData) {
-      console.log('Saving subject:', editFormData)
-      setIsDetailsOpen(false)
+      updateSubjectMutation.mutate(editFormData)
     }
   }
 
@@ -412,11 +426,11 @@ export default function TeacherSubjectsPage() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDetailsOpen(false)} disabled={updateSubjectMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleSaveChanges}>
-              Save Changes
+            <Button onClick={handleSaveChanges} disabled={updateSubjectMutation.isPending}>
+              {updateSubjectMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

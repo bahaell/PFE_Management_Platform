@@ -18,7 +18,7 @@ import { motion } from 'framer-motion'
 import { getTaskPermissions, type UserRole } from '@/lib/permissions/kanban-permissions'
 
 interface Task {
-  id: number
+  id: string | number
   title: string
   description: string
   priority: 'low' | 'medium' | 'high'
@@ -33,17 +33,21 @@ interface AddTaskModalContentProps {
   column?: string
   userRole: UserRole
   userId: string
+  assignees?: { id: string; name: string }[]
 }
 
-export function AddTaskModalContent({ onClose, onAdd, column = 'todo', userRole, userId }: AddTaskModalContentProps) {
+export function AddTaskModalContent({ onClose, onAdd, column = 'todo', userRole, userId, assignees }: AddTaskModalContentProps) {
   const permissions = getTaskPermissions(userRole, userId)
+
+  const defaultAssigneeId = (assignees && assignees.length > 0) ? assignees[0].id : 'UNASSIGNED'
+  const defaultAssigneeName = (assignees && assignees.length > 0) ? assignees[0].name : 'Unassigned'
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
-    assignee: 'Ahmed Ben Ali',
-    assigneeId: 'std001',
+    assignee: defaultAssigneeName,
+    assigneeId: defaultAssigneeId,
     dueDate: '',
     column: column,
   })
@@ -88,7 +92,7 @@ export function AddTaskModalContent({ onClose, onAdd, column = 'todo', userRole,
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed right-0 top-0 h-full w-full sm:w-[500px] bg-card border-l border-border shadow-2xl overflow-hidden flex flex-col"
+      className="fixed right-0 top-0 h-full w-full sm:w-125 bg-card border-l border-border shadow-2xl overflow-hidden flex flex-col"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
@@ -197,14 +201,15 @@ export function AddTaskModalContent({ onClose, onAdd, column = 'todo', userRole,
           <Select
             value={formData.assigneeId}
             onValueChange={(value) => {
-              const assigneeMap: Record<string, string> = {
-                'std001': 'Ahmed Ben Ali',
-                'tch001': 'Dr. Fatima Zahra',
+              if (value === 'UNASSIGNED') {
+                setFormData({ ...formData, assigneeId: value, assignee: 'Unassigned' })
+                return
               }
+              const selected = (assignees || []).find(a => a.id === value)
               setFormData({ 
                 ...formData, 
                 assigneeId: value,
-                assignee: assigneeMap[value] || 'Unknown'
+                assignee: selected?.name || 'Unknown'
               })
             }}
             disabled={!permissions.canAssign}
@@ -213,8 +218,10 @@ export function AddTaskModalContent({ onClose, onAdd, column = 'todo', userRole,
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="std001">Ahmed Ben Ali</SelectItem>
-              <SelectItem value="tch001">Dr. Fatima Zahra</SelectItem>
+                <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+                {(assignees || []).map(a => (
+                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>

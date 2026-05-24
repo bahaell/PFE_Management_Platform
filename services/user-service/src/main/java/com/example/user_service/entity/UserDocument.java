@@ -43,6 +43,10 @@ public class UserDocument {
     @JoinColumn(name = "coordinator_id", nullable = false)
     private User coordinator;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "teacher_id")
+    private User teacher;
+
     public UserDocument() {
     }
 
@@ -112,5 +116,13 @@ public class UserDocument {
 
     public void setCoordinator(User coordinator) {
         this.coordinator = coordinator;
+    }
+
+    public User getTeacher() {
+        return teacher;
+    }
+
+    public void setTeacher(User teacher) {
+        this.teacher = teacher;
     }
 }

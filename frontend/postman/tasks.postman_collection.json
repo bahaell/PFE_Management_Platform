@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "Tasks API - Projects Service",
+    "_postman_id": "tasks-collection",
+    "description": "Simple collection to test Task CRUD endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_JWT_TOKEN_HERE"
+    },
+    {
+      "key": "projectId",
+      "value": "22222222-2222-2222-2222-222222222222"
+    },
+    {
+      "key": "assigneeId",
+      "value": "11111111-1111-1111-1111-111111111111"
+    },
+    {
+      "key": "taskId",
+      "value": "33333333-3333-3333-3333-333333333333"
+    }
+  ],
+  "item": [
+    {
+      "name": "Create Task",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Implement login page\",\n  \"description\": \"Create UI and backend integration for login\",\n  \"status\": \"TODO\",\n  \"priority\": \"HIGH\",\n  \"assigneeId\": \"{{assigneeId}}\",\n  \"dueDate\": \"2026-06-01T00:00:00\",\n  \"projectId\": \"{{projectId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/tasks"
+      }
+    },
+    {
+      "name": "Get Task by ID",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "Get Tasks by Project",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": "{{baseUrl}}/api/tasks/project/{{projectId}}"
+      }
+    },
+    {
+      "name": "Get Tasks by Assignee",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": "{{baseUrl}}/api/tasks/assignee/{{assigneeId}}"
+      }
+    },
+    {
+      "name": "Update Task",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Implement login page (rev)\",\n  \"description\": \"Add validation and remember-me option\",\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": \"MEDIUM\",\n  \"assigneeId\": \"{{assigneeId}}\",\n  \"dueDate\": \"2026-06-02T00:00:00\",\n  \"projectId\": \"{{projectId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "Update Task Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{}" },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}/status?status=DONE"
+      }
+    },
+    {
+      "name": "Delete Task",
+      "request": {
+        "method": "DELETE",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    }
+  ]
+}

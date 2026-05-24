@@ -12,5 +12,7 @@ public interface UserDocumentRepository extends JpaRepository<UserDocument, Long
 
     List<UserDocument> findByCoordinatorIdOrderByCreatedAtDesc(String coordinatorId);
 
+    List<UserDocument> findByTeacherIdOrderByCreatedAtDesc(String teacherId);
+
     Optional<UserDocument> findByIdAndCoordinatorId(Long id, String coordinatorId);
 }

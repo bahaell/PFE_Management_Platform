@@ -6,9 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { FreeSubjectForm } from "./FreeSubjectForm"
-import { RecommendationPanel } from "./RecommendationPanel"
-import { generateSupervisorRecommendations } from "@/services/recommendationService"
 import { submitFreeSubjectRequest, getStudentRequests } from "@/services/freeSubjectService"
+import { TeachersService } from '@/services/service_teachers'
 import type { TeacherRecommendation } from "@/models/recommendation.model"
 import type { FreeSubjectRequest } from "@/models/freeSubject.model"
 import { CheckCircle2, AlertCircle } from "lucide-react"
@@ -16,7 +15,7 @@ import { useAuth } from "@/providers/auth-provider"
 
 export default function FreeSubjectPage() {
   const { user } = useAuth()
-  const [recommendations, setRecommendations] = useState<TeacherRecommendation[]>([])
+  const [teachers, setTeachers] = useState<{ id: string; name: string }[]>([])
   const [selectedTeacher, setSelectedTeacher] = useState<{ id: string; name: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
@@ -29,25 +28,14 @@ export default function FreeSubjectPage() {
     getStudentRequests(studentId)
       .then(setStudentRequests)
       .catch(() => setErrorMessage("Failed to load your existing requests."))
-  }, [studentId])
 
-  const handleGenerateRecommendations = async (formData: any) => {
-    setIsLoading(true)
-    setErrorMessage("")
-    try {
-      const recs = await generateSupervisorRecommendations({
-        studentId,
-        subjectDescription: formData.subjectDescription,
-        companyDescription: formData.companyDescription,
-        keywords: formData.keywords,
+    // load teachers for selection
+    TeachersService.getAllTeachers()
+      .then((list) => setTeachers(list.map(t => ({ id: t.id, name: `${t.firstName ?? t.name ?? t.id}` }))))
+      .catch(() => {
+        // non-blocking
       })
-      setRecommendations(recs)
-    } catch (error) {
-      setErrorMessage("Failed to generate recommendations. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [studentId])
 
   const handleSubmitRequest = async (formData: any) => {
     if (!studentId) {
@@ -55,8 +43,8 @@ export default function FreeSubjectPage() {
       return
     }
 
-    if (!selectedTeacher && recommendations.length === 0) {
-      setErrorMessage("Please generate recommendations and select a teacher first")
+    if (!selectedTeacher) {
+      setErrorMessage("Please select a teacher from the list before submitting.")
       return
     }
 
@@ -91,7 +79,6 @@ export default function FreeSubjectPage() {
       })
 
       setSuccessMessage(`Request submitted successfully! ID: ${newRequest.id}`)
-      setRecommendations([])
       setSelectedTeacher(null)
 
       const requests = await getStudentRequests(studentId)
@@ -132,33 +119,14 @@ export default function FreeSubjectPage() {
       {/* Main Form */}
       <FreeSubjectForm
         onSubmit={handleSubmitRequest}
-        onGenerateRecommendations={handleGenerateRecommendations}
         isLoading={isLoading}
+        teachers={teachers}
+        selectedTeacher={selectedTeacher}
+        onSelectTeacher={(id, name) => setSelectedTeacher({ id, name })}
       />
 
       {/* Recommendations */}
-      {recommendations.length > 0 && (
-        <>
-          <RecommendationPanel
-            recommendations={recommendations}
-            onSelectTeacher={(teacherId, teacherName) => {
-              setSelectedTeacher({ id: teacherId, name: teacherName })
-            }}
-            isLoading={isLoading}
-          />
-
-          {selectedTeacher && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-              <Alert className="border-blue-500/50 bg-blue-50 dark:bg-blue-950">
-                <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-700 dark:text-blue-400">
-                  Selected supervisor: <span className="font-semibold">{selectedTeacher.name}</span>
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-        </>
-      )}
+      {/* teacher selection handled inside the form */}
 
       {/* Previous Requests */}
       {studentRequests.length > 0 && (

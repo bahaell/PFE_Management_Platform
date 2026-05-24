@@ -63,6 +63,8 @@ public interface UserService {
 
     List<UserDocumentDto> getCurrentStudentDocuments();
 
+    List<UserDocumentDto> getCurrentTeacherDocuments();
+
     List<UserDocumentDto> getCoordinatorManagedDocuments(String studentId);
 
     UserDocumentDto createCoordinatorDocument(UserDocumentDto request);

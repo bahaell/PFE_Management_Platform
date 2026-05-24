@@ -91,8 +91,8 @@ export function ProjectInfoSidebar({
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="bg-card rounded-lg border border-border p-4">
+      {/* Quick Stats 
+       <div className="bg-card rounded-lg border border-border p-4">
         <h3 className="text-sm font-semibold text-foreground mb-3">Quick Stats</h3>
         <div className="space-y-2">
           <div className="flex justify-between items-center">
@@ -109,6 +109,8 @@ export function ProjectInfoSidebar({
           </div>
         </div>
       </div>
+      */}
+     
     </div>
   )
 }

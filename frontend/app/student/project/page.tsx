@@ -190,7 +190,7 @@ export default function ProjectPage() {
                       <div className="space-y-3 sm:space-y-4">
                         <div>
                           <p className="text-sm sm:text-base text-muted-foreground">Current Phase</p>
-                          <p className="font-semibold text-foreground">Phase 2: Development</p>
+                          <p className="font-semibold text-foreground">{project.phase ?? 'N/A'}</p>
                         </div>
                         <div>
                           <p className="text-sm sm:text-base text-muted-foreground">Completion Rate</p>
@@ -198,7 +198,7 @@ export default function ProjectPage() {
                         </div>
                         <div>
                           <p className="text-sm sm:text-base text-muted-foreground">Last Update</p>
-                          <p className="font-semibold text-foreground">3 hours ago</p>
+                          <p className="font-semibold text-foreground">{(project.updatedAt ?? project.createdAt) ? new Date((project.updatedAt ?? project.createdAt) as string).toLocaleString() : '—'}</p>
                         </div>
                       </div>
                     </div>

@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @RestController
-@RequestMapping({"/api/free-subjects", "/api/projects/free-subjects"})
+@RequestMapping({ "/api/free-subjects", "/api/projects/free-subjects" })
 @RequiredArgsConstructor
 public class FreeSubjectProposalController {
 
@@ -55,8 +55,7 @@ public class FreeSubjectProposalController {
     @GetMapping("/by-supervisor/{supervisorId}")
     public ResponseEntity<List<FreeSubjectProposalResponse>> getBySupervisor(@PathVariable String supervisorId) {
         return ResponseEntity.ok(
-            repository.findByPreferredSupervisorId(supervisorId).stream().map(this::toDto).toList()
-        );
+                repository.findByPreferredSupervisorId(supervisorId).stream().map(this::toDto).toList());
     }
 
     @GetMapping
@@ -90,7 +89,8 @@ public class FreeSubjectProposalController {
             throw new BadRequestException("Student already has an active external subject proposal.");
         }
 
-        if (!blacklisted && request.getPreferredSupervisorId() != null && !request.getPreferredSupervisorId().isBlank()) {
+        if (!blacklisted && request.getPreferredSupervisorId() != null
+                && !request.getPreferredSupervisorId().isBlank()) {
             long activeLoad = projectSupervisorRepository.countByTeacherIdAndProject_StatusIn(
                     request.getPreferredSupervisorId(),
                     Set.of(ProjectStatus.PENDING, ProjectStatus.APPROVED, ProjectStatus.IN_PROGRESS));
@@ -188,7 +188,8 @@ public class FreeSubjectProposalController {
                 .phase(ProjectPhase.PROPOSAL)
                 .progress(0)
                 .academicYear(proposal.getAcademicYear())
-                .requiredSkills(proposal.getTechnologies() != null ? proposal.getTechnologies() : new HashSet<>())
+                // .requiredSkills(proposal.getTechnologies() != null ? new
+                // HashSet<>(proposal.getTechnologies()): new HashSet<>())
                 .build();
 
         Project saved = projectRepository.save(project);

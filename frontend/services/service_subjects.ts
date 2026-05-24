@@ -15,6 +15,9 @@ export interface Subject {
   academicYear: string
   teacherId?: string
   companyName?: string
+  domain?: string
+  level?: string
+  maxStudents?: number | null
   createdAt?: string
 }
 
@@ -38,6 +41,9 @@ interface BackendSubject {
   academicYear: string
   teacherId?: string
   companyName?: string
+  domain?: string
+  level?: string
+  maxStudents?: number | null
   createdAt?: string
 }
 
@@ -66,6 +72,9 @@ function mapSubject(subject: BackendSubject): Subject {
     academicYear: subject.academicYear,
     teacherId: subject.teacherId,
     companyName: subject.companyName,
+    domain: subject.domain,
+    level: subject.level,
+    maxStudents: subject.maxStudents ?? null,
     createdAt: subject.createdAt,
   }
 }
@@ -105,6 +114,9 @@ export const SubjectsService = {
     status?: SubjectStatus
     academicYear?: string
     companyName?: string
+    domain?: string
+    level?: string
+    maxStudents?: number
   }): Promise<Subject> {
     const user = getAuthState()
     const created = await apiClient.post<BackendSubject>('/api/subjects', {
@@ -116,8 +128,40 @@ export const SubjectsService = {
       academicYear: subject.academicYear ?? currentAcademicYear(),
       teacherId: user?.id,
       companyName: subject.companyName,
+      domain: subject.domain,
+      level: subject.level,
+      maxStudents: subject.maxStudents,
     }, { headers: authHeaders('TEACHER') })
     return mapSubject(created)
+  },
+
+  async updateSubject(
+    id: string,
+    subject: {
+      title?: string
+      description?: string
+      technologies?: string[]
+      domain?: string
+      level?: string
+      maxStudents?: number | null
+    }
+  ): Promise<Subject> {
+    const updated = await apiClient.put<BackendSubject>(
+      `/api/subjects/${id}`,
+      {
+        title: subject.title ?? '',
+        description: subject.description ?? '',
+        technologies: subject.technologies ?? [],
+        type: 'INTERNAL',
+        status: 'PENDING',
+        academicYear: currentAcademicYear(),
+        domain: subject.domain,
+        level: subject.level,
+        maxStudents: subject.maxStudents,
+      },
+      { headers: authHeaders('TEACHER') }
+    )
+    return mapSubject(updated)
   },
 
   async updateSubjectStatus(id: string, status: SubjectStatus): Promise<Subject> {
@@ -160,6 +204,13 @@ export const SubjectsService = {
       `/api/subjects/applications/${applicationId}/status?status=${encodeURIComponent(status)}`,
       {},
       { headers: authHeaders('TEACHER') },
+    )
+  },
+
+  async cancelApplication(applicationId: string): Promise<void> {
+    return apiClient.delete<void>(
+      `/api/subjects/applications/${applicationId}`,
+      { headers: authHeaders('STUDENT') },
     )
   },
 }

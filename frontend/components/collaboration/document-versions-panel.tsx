@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState, useRef } from 'react'
 import { Download, RotateCcw, FileText, Upload, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { DocumentsService } from '@/services/service_documents'
+import { toast } from '@/hooks/use-toast'
+import type { ProjectDocument } from '@/models/document.model'
 
 interface DocumentVersion {
   id: number
@@ -15,13 +18,63 @@ interface DocumentVersion {
   type: string
 }
 
-export function DocumentVersionsPanel() {
-  const [documents, setDocuments] = useState<DocumentVersion[]>([
-    { id: 1, name: 'Project Proposal v3', version: 3, uploadedBy: 'Ahmed Mohamed', uploadedAt: '3 hours ago', size: '1.2 MB', type: 'PDF' },
-    { id: 2, name: 'Project Proposal v2', version: 2, uploadedBy: 'Ahmed Mohamed', uploadedAt: '2 days ago', size: '1.1 MB', type: 'PDF' },
-    { id: 3, name: 'Project Proposal v1', version: 1, uploadedBy: 'Ahmed Mohamed', uploadedAt: '1 week ago', size: '0.9 MB', type: 'PDF' },
-    { id: 4, name: 'Design Document v2', version: 2, uploadedBy: 'Ahmed Mohamed', uploadedAt: '3 days ago', size: '2.5 MB', type: 'DOCX' },
-  ])
+export function DocumentVersionsPanel({ projectId }: { projectId?: string | number }) {
+  const [documents, setDocuments] = useState<DocumentVersion[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const loadDocuments = useCallback(async (projId?: string | number) => {
+    if (!projId) return
+    try {
+      const docs = await DocumentsService.getDocuments(String(projId))
+      // map to local DocumentVersion shape
+      const mapped = docs.map((d: ProjectDocument, idx: number) => ({
+        id: typeof d.id === 'number' ? d.id : idx,
+        name: d.title ?? d.name,
+        version: d.version ?? 1,
+        uploadedBy: d.uploadedBy ?? 'Unknown',
+        uploadedAt: d.uploadedAt ?? d.createdAt ?? '',
+        size: '—',
+        type: d.fileType ?? d.type ?? 'file',
+      }))
+      setDocuments(mapped)
+    } catch (err) {
+      console.error('Failed to load documents', err)
+    }
+  }, [])
+
+  // initial load if projectId provided
+  if (projectId && documents.length === 0) {
+    loadDocuments(projectId)
+  }
+
+  async function handleFileInComponent(file: File) {
+    if (!projectId) {
+      toast({ title: 'No project selected', description: 'Cannot upload without a project.', variant: 'destructive' })
+      return
+    }
+    try {
+      setIsUploading(true)
+      const created = await uploadFileAndCreate(projectId, file)
+      // update local list
+      const newDoc: DocumentVersion = {
+        id: typeof created.id === 'number' ? created.id : documents.length,
+        name: created.title ?? created.name,
+        version: created.version ?? 1,
+        uploadedBy: created.uploadedBy ?? 'Me',
+        uploadedAt: created.createdAt ?? created.uploadedAt ?? new Date().toISOString(),
+        size: '—',
+        type: created.fileType ?? created.type ?? 'file',
+      }
+      setDocuments((prev) => [newDoc, ...prev])
+      toast({ title: 'Uploaded', description: `${file.name} uploaded successfully.` })
+    } catch (err) {
+      console.error('Upload failed', err)
+      toast({ title: 'Upload failed', description: (err as any)?.message || 'Error uploading file', variant: 'destructive' })
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   const getFileIcon = (type: string) => {
     return <FileText className="w-5 h-5 text-blue-500" />
@@ -32,11 +85,33 @@ export function DocumentVersionsPanel() {
       <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Document Versions</h3>
       
       {/* Upload Area */}
-      <div className="border-2 border-dashed border-border rounded-lg p-4 sm:p-6 mb-4 sm:mb-6 text-center hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer group">
+      <div
+        onClick={() => fileInputRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={async (e) => {
+          e.preventDefault()
+          const file = e.dataTransfer?.files?.[0]
+          if (file) await handleFileInComponent(file)
+        }}
+        className="border-2 border-dashed border-border rounded-lg p-4 sm:p-6 mb-4 sm:mb-6 text-center hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer group"
+      >
         <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mx-auto mb-2 group-hover:text-primary transition-colors" />
         <p className="text-xs sm:text-sm font-medium text-foreground mb-1">Upload new version</p>
         <p className="text-xs text-muted-foreground mb-3 sm:mb-4">Drag and drop or click to select</p>
-        <Button variant="outline" size="sm" className="w-full sm:w-auto">Choose File</Button>
+        <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}>
+          {isUploading ? 'Uploading...' : 'Choose File'}
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0]
+            if (file) await handleFileInComponent(file)
+            // reset value so same file can be picked again
+            if (fileInputRef.current) fileInputRef.current.value = ''
+          }}
+        />
       </div>
 
       {/* Documents List */}
@@ -50,7 +125,7 @@ export function DocumentVersionsPanel() {
                   <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
                   {idx === 0 && <Badge variant="default" className="text-xs shrink-0">Current</Badge>}
                 </div>
-                <p className="text-xs text-muted-foreground break-words sm:break-normal">{doc.uploadedBy} • {doc.uploadedAt} • {doc.size}</p>
+                <p className="text-xs text-muted-foreground wrap-break-word sm:break-normal">{doc.uploadedBy} • {doc.uploadedAt} • {doc.size}</p>
               </div>
             </div>
             <div className="flex gap-1 ml-auto sm:ml-2">
@@ -73,4 +148,26 @@ export function DocumentVersionsPanel() {
       </div>
     </div>
   )
+}
+
+async function uploadFileAndCreate(projectId: string | number, file: File) {
+  // NOTE: In this implementation we don't have an upload bucket helper.
+  // We'll create an object URL for preview and send the file metadata as fileUrl.
+  // Replace with real upload logic (S3/MinIO) in a production setup.
+  const fileUrl = URL.createObjectURL(file)
+  const payload = {
+    title: file.name,
+    description: '',
+    fileUrl,
+    fileType: file.type,
+    uploadedBy: 'Me',
+  }
+  const created = await DocumentsService.addDocument(String(projectId), payload)
+  return created
+}
+
+async function handleFile(file: File) {
+  // This function exists only to satisfy external calls when file handlers are used outside component scope.
+  // Real upload logic is defined inside the component where projectId and state are available.
+  return Promise.resolve(null)
 }

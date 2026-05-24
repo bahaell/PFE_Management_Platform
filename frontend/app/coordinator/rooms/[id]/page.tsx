@@ -152,7 +152,7 @@ export default function RoomDetailsPage() {
             />
           </Card>
 
-          {/* Quick Stats */}
+          {/* Quick Stats 
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Quick Stats</h2>
             <div className="space-y-3">
@@ -172,6 +172,8 @@ export default function RoomDetailsPage() {
               </div>
             </div>
           </Card>
+          */}
+          
         </div>
       </div>
     </div>

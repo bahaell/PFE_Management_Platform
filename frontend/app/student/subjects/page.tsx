@@ -76,7 +76,7 @@ export default function SubjectsPage() {
         title="Available Subjects"
         description="Choose from validated subjects"
       />
-
+{/*
       <div className="mb-6 sm:mb-8">
         <RecommendedSubjectsPanel />
       </div>
@@ -89,6 +89,7 @@ export default function SubjectsPage() {
           { name: 'React', studentLevel: 5, requiredLevel: 8 },
         ]} />
       </div>
+      */}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <div className="flex-1 relative">

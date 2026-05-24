@@ -11,6 +11,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/providers/auth-provider'
 import { getTaskPermissions, canDragTask } from '@/lib/permissions/kanban-permissions'
 import { TasksService } from '@/services/service_tasks'
+import { ProjectsService } from '@/services/service_projects'
 
 interface Task {
   id: string | number
@@ -39,7 +40,7 @@ function normalizeTask(task: any): Task {
     description: task.description ?? '',
     priority: task.priority === 'HIGH' ? 'high' : task.priority === 'MEDIUM' ? 'medium' : task.priority ?? 'low',
     assignee: task.assignee ?? 'Unassigned',
-    assigneeId: task.assigneeId ?? '',
+    assigneeId: String(task.assigneeId ?? ''),
     dueDate: task.dueDate ?? new Date().toISOString().slice(0, 10),
   }
 }
@@ -69,10 +70,25 @@ export function ProjectKanban({ projectId }: ProjectKanbanProps) {
     done: [],
   })
 
+  const normalizedProjectId = projectId ? String(projectId) : undefined
+
   const { data: apiTasks = [], isLoading: tasksLoading, isError } = useQuery({
-    queryKey: ['project-tasks', projectId],
-    queryFn: () => TasksService.getTasksByProject(projectId!),
+    // Normalize projectId to a string to avoid passing objects/number types into the
+    // query key or TasksService. Backend expects a UUID string.
+    queryKey: ['project-tasks', normalizedProjectId],
+    queryFn: () => {
+      // Temporary debug trace - remove after verification
+      try { console.debug('[ProjectKanban] queryFn called, projectId =', normalizedProjectId) } catch {}
+      return TasksService.getTasksByProject(normalizedProjectId!)
+    },
+    enabled: Boolean(normalizedProjectId),
+  })
+
+  const { data: project, isLoading: projectLoading } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: () => ProjectsService.getProjectById(projectId!),
     enabled: Boolean(projectId),
+    retry: false,
   })
 
   useEffect(() => {
@@ -105,7 +121,7 @@ export function ProjectKanban({ projectId }: ProjectKanbanProps) {
     return { text: `${daysLeft}d left`, color: 'text-muted-foreground' }
   }
 
-  const invalidateTasks = () => queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId] })
+  const invalidateTasks = () => queryClient.invalidateQueries({ queryKey: ['project-tasks', projectId ? String(projectId) : projectId] })
 
   const handleDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result
@@ -171,7 +187,7 @@ export function ProjectKanban({ projectId }: ProjectKanbanProps) {
       void TasksService.createTask({
         ...newTask,
         status: taskStatusFromColumn(column as keyof Tasks),
-        projectId,
+        projectId: String(projectId),
       }).then(invalidateTasks)
     }
   }
@@ -195,7 +211,7 @@ export function ProjectKanban({ projectId }: ProjectKanbanProps) {
     if (projectId) {
       const task = Object.values(updatedTasks).flat().find((item) => item.id === taskId)
       if (task) {
-        void TasksService.updateTask(taskId, { ...task, ...updates, projectId }).then(invalidateTasks)
+        void TasksService.updateTask(taskId, { ...task, ...updates, projectId: String(projectId) }).then(invalidateTasks)
       }
     }
   }
@@ -226,6 +242,10 @@ export function ProjectKanban({ projectId }: ProjectKanbanProps) {
         onDelete: handleDeleteTask,
         userRole: user?.role || 'student',
         userId: user?.id || 'std001',
+        assignees: [
+          ...(project?.members?.map((m: any) => ({ id: String(m.studentId), name: `Student ${m.studentId}` })) || []),
+          ...(project?.supervisors?.map((s: any) => ({ id: String(s.teacherId), name: `Teacher ${s.teacherId}` })) || []),
+        ],
       },
     })
   }
@@ -240,6 +260,10 @@ export function ProjectKanban({ projectId }: ProjectKanbanProps) {
         onAdd: handleAddTask,
         userRole: user?.role || 'student',
         userId: user?.id || 'std001',
+        assignees: [
+          ...(project?.members?.map((m: any) => ({ id: String(m.studentId), name: `Student ${m.studentId}` })) || []),
+          ...(project?.supervisors?.map((s: any) => ({ id: String(s.teacherId), name: `Teacher ${s.teacherId}` })) || []),
+        ],
       },
     })
   }
@@ -252,6 +276,13 @@ export function ProjectKanban({ projectId }: ProjectKanbanProps) {
       props: {
         tasks,
         onTasksUpdate: setTasks,
+        onAddTask: handleAddTask,
+        onUpdateTask: handleUpdateTask,
+        onDeleteTask: handleDeleteTask,
+        assignees: [
+          ...(project?.members?.map((m: any) => ({ id: String(m.studentId), name: `Student ${m.studentId}` })) || []),
+          ...(project?.supervisors?.map((s: any) => ({ id: String(s.teacherId), name: `Teacher ${s.teacherId}` })) || []),
+        ],
       },
     })
   }

@@ -18,6 +18,7 @@ export const UserDocumentsService = {
     fileName: string
     mimeType?: string
     studentId: string
+    teacherId?: string
   }): Promise<UserDocument> {
     return apiClient.post<UserDocument>('/api/users/documents', payload)
   },
@@ -31,6 +32,7 @@ export const UserDocumentsService = {
       fileName: string
       mimeType: string
       studentId: string
+      teacherId: string
     }>
   ): Promise<UserDocument> {
     return apiClient.put<UserDocument>(`/api/users/documents/${id}`, updates)
@@ -38,5 +40,9 @@ export const UserDocumentsService = {
 
   async deleteCoordinatorDocument(id: number): Promise<void> {
     await apiClient.delete<void>(`/api/users/documents/${id}`)
+  },
+
+  async getMyTeacherDocuments(): Promise<UserDocument[]> {
+    return apiClient.get<UserDocument[]>('/api/users/me/teaching-documents')
   },
 }

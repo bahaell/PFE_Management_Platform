@@ -1,6 +1,8 @@
-'use client'
+ 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { TasksService } from '@/services/service_tasks'
 import { X, Plus, GripVertical, Maximize2 } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { Button } from '@/components/ui/button'
@@ -11,7 +13,7 @@ import { getTaskPermissions, canDragTask } from '@/lib/permissions/kanban-permis
 import { useModalManager } from '@/hooks/use-modal-manager'
 
 interface Task {
-  id: number
+  id: string | number
   title: string
   description: string
   priority: 'low' | 'medium' | 'high'
@@ -27,24 +29,76 @@ interface Tasks {
 }
 
 interface TasksExpansionModalContentProps {
-  tasks: Tasks
+  // When projectId is provided, the modal will fetch and manage tasks from backend
+  projectId?: string | number
+  tasks?: Tasks
   onTasksUpdate?: (tasks: Tasks) => void
   onClose: () => void
+  assignees?: { id: string; name: string }[]
 }
 
 export function TasksExpansionModalContent({
+  projectId,
   tasks: initialTasks,
   onTasksUpdate,
   onClose,
+  assignees,
 }: TasksExpansionModalContentProps) {
   const { user } = useAuth()
   const { open } = useModalManager()
-  
-  const [tasks, setTasks] = useState<Tasks>(initialTasks)
+
+  const queryClient = useQueryClient()
+  const normalizedId = projectId ? String(projectId) : undefined
+
+  const { data: backendTasks = [], isLoading: tasksLoading, isError } = useQuery({
+    queryKey: ['project-tasks', normalizedId],
+    queryFn: () => normalizedId ? TasksService.getTasksByProject(normalizedId) : Promise.resolve([]),
+    enabled: Boolean(normalizedId),
+  })
+
+  const [tasks, setTasks] = useState<Tasks>(() => initialTasks ?? { todo: [], inProgress: [], done: [] })
+
+  function normalizeTask(task: any): Task {
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description ?? '',
+      priority: (task.priority || 'low').toLowerCase() as 'low' | 'medium' | 'high',
+      assignee: task.assignee ?? 'Unassigned',
+      assigneeId: String(task.assigneeId ?? ''),
+      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    }
+  }
+
+  function groupTasks(items: any[]): Tasks {
+    return {
+      todo: items.filter((t) => (t.status || '').toLowerCase() === 'todo' || (t.status || '').toLowerCase() === 'todo').map(normalizeTask),
+      inProgress: items.filter((t) => (t.status || '').toLowerCase() === 'in_progress' || (t.status || '').toLowerCase() === 'inprogress' || (t.status || '').toLowerCase() === 'in-progress').map(normalizeTask),
+      done: items.filter((t) => (t.status || '').toLowerCase() === 'done').map(normalizeTask),
+    }
+  }
 
   useEffect(() => {
-    setTasks(initialTasks)
-  }, [initialTasks])
+    // If we have a projectId fetch result prefer backend tasks
+    if (normalizedId) {
+      setTasks(groupTasks(backendTasks as any[]))
+      return
+    }
+
+    // Only update local state when the incoming tasks data is meaningfully different
+    if (!initialTasks) return
+    try {
+      const incoming = JSON.stringify(initialTasks)
+      const current = JSON.stringify(tasks)
+      if (incoming !== current) {
+        setTasks(initialTasks)
+      }
+    } catch (err) {
+      // Fallback: if stringify fails, set tasks directly
+      setTasks(initialTasks)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTasks, backendTasks, normalizedId])
 
   const columns = [
     { key: 'todo', title: 'To Do', color: 'border-red-300 bg-red-50 dark:bg-red-950/20' },
@@ -114,10 +168,23 @@ export function TasksExpansionModalContent({
       }
       setTasks(updatedTasks)
       onTasksUpdate?.(updatedTasks)
+      // Persist status change to backend when projectId is provided
+      const moved = destCol[destination.index]
+      if (normalizedId) {
+        try { console.debug('[TasksExpansionModalContent] updateTaskStatus called for', moved.id, 'newStatus=', destColumn) } catch {}
+        void TasksService.updateTaskStatus(moved.id, destColumn === 'inProgress' ? 'inProgress' : destColumn === 'done' ? 'done' : 'todo')
+          .then(() => queryClient.invalidateQueries({ queryKey: ['project-tasks', normalizedId] }))
+      }
     }
   }
 
   const handleAddTask = (task: Omit<Task, 'id'>, column: string) => {
+    if (normalizedId) {
+      try { console.debug('[TasksExpansionModalContent] createTask called, projectId =', normalizedId, 'payload=', { ...task, status: column }) } catch {}
+      void TasksService.createTask({ ...task, projectId: normalizedId, status: column as any }).then(() => queryClient.invalidateQueries({ queryKey: ['project-tasks', normalizedId] }))
+      return
+    }
+
     const newTask = {
       ...task,
       id: Date.now(),
@@ -131,7 +198,7 @@ export function TasksExpansionModalContent({
     onTasksUpdate?.(updatedTasks)
   }
 
-  const handleUpdateTask = (taskId: number, updates: Partial<Task>) => {
+  const handleUpdateTask = (taskId: string | number, updates: Partial<Task>) => {
     const updatedTasks = { ...tasks }
     
     Object.keys(updatedTasks).forEach((column) => {
@@ -147,9 +214,13 @@ export function TasksExpansionModalContent({
 
     setTasks(updatedTasks)
     onTasksUpdate?.(updatedTasks)
+    if (normalizedId) {
+      try { console.debug('[TasksExpansionModalContent] updateTask called, taskId =', taskId, 'updates=', updates) } catch {}
+      void TasksService.updateTask(taskId, { ...updates, projectId: normalizedId }).then(() => queryClient.invalidateQueries({ queryKey: ['project-tasks', normalizedId] }))
+    }
   }
 
-  const handleDeleteTask = (taskId: number) => {
+  const handleDeleteTask = (taskId: string | number) => {
     const updatedTasks = { ...tasks }
     
     Object.keys(updatedTasks).forEach((column) => {
@@ -159,6 +230,10 @@ export function TasksExpansionModalContent({
 
     setTasks(updatedTasks)
     onTasksUpdate?.(updatedTasks)
+    if (normalizedId) {
+      try { console.debug('[TasksExpansionModalContent] deleteTask called, taskId =', taskId) } catch {}
+      void TasksService.deleteTask(taskId).then(() => queryClient.invalidateQueries({ queryKey: ['project-tasks', normalizedId] }))
+    }
   }
 
   const handleTaskClick = (task: Task) => {
@@ -172,6 +247,7 @@ export function TasksExpansionModalContent({
         onDelete: handleDeleteTask,
         userRole: user?.role,
         userId: user?.id,
+        assignees,
       },
     })
   }
@@ -186,6 +262,7 @@ export function TasksExpansionModalContent({
         onAdd: handleAddTask,
         userRole: user?.role,
         userId: user?.id,
+        assignees,
       },
     })
   }
@@ -221,7 +298,7 @@ export function TasksExpansionModalContent({
               <div key={col.key} className="flex flex-col min-h-[500px]">
                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
                   <h4 className="font-semibold text-foreground">{col.title}</h4>
-                  <Badge variant="secondary">{tasks[col.key as keyof Tasks]?.length || 0}</Badge>
+                  <Badge variant="secondary">{(tasks && tasks[col.key as keyof Tasks] ? tasks[col.key as keyof Tasks].length : 0) || 0}</Badge>
                 </div>
 
                 <Droppable droppableId={col.key}>

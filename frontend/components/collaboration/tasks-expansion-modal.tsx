@@ -13,9 +13,11 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/providers/auth-provider'
 import { getTaskPermissions, canDragTask } from '@/lib/permissions/kanban-permissions'
 import { cn } from '@/lib/utils'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { TasksService } from '@/services/service_tasks'
 
 interface Task {
-  id: number
+  id: string | number
   title: string
   description: string
   priority: 'low' | 'medium' | 'high'
@@ -33,27 +35,67 @@ interface Tasks {
 interface TasksExpansionModalProps {
   isOpen: boolean
   onClose: () => void
-  tasks: Tasks
+  projectId?: string | number
   onTasksUpdate?: (tasks: Tasks) => void
+  onAddTask?: (task: Omit<Task, 'id'>, column: string) => void
+  onUpdateTask?: (taskId: number, updates: Partial<Task>) => void
+  onDeleteTask?: (taskId: number) => void
+  assignees?: { id: string; name: string }[]
+}
+
+function normalizeTask(task: any): Task {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description ?? '',
+    priority: task.priority === 'HIGH' ? 'high' : task.priority === 'MEDIUM' ? 'medium' : task.priority ?? 'low',
+    assignee: task.assignee ?? 'Unassigned',
+    assigneeId: task.assigneeId ?? '',
+    dueDate: task.dueDate ?? new Date().toISOString().slice(0, 10),
+  }
+}
+
+function groupTasks(items: any[]): Tasks {
+  return {
+    todo: items.filter((task) => task.status === 'todo' || task.status === 'TODO').map(normalizeTask),
+    inProgress: items.filter((task) => task.status === 'inProgress' || task.status === 'IN_PROGRESS').map(normalizeTask),
+    done: items.filter((task) => task.status === 'done' || task.status === 'DONE').map(normalizeTask),
+  }
 }
 
 export function TasksExpansionModal({
   isOpen,
   onClose,
-  tasks: initialTasks,
+  projectId,
   onTasksUpdate,
+  onAddTask,
+  onUpdateTask,
+  onDeleteTask,
+  assignees,
 }: TasksExpansionModalProps) {
   const { user } = useAuth()
-  
-  const [tasks, setTasks] = useState<Tasks>(initialTasks)
+  const queryClient = useQueryClient()
+
+  const normalizedId = projectId ? String(projectId) : undefined
+
+  const { data: backendTasks = [], isLoading: tasksLoading, isError } = useQuery({
+    queryKey: ['project-tasks', normalizedId],
+    queryFn: () => {
+      try { console.debug('[TasksExpansionModal] queryFn called, projectId =', normalizedId, 'isOpen =', isOpen) } catch {}
+      return normalizedId ? TasksService.getTasksByProject(normalizedId) : Promise.resolve([])
+    },
+    enabled: Boolean(normalizedId && isOpen),
+  })
+
+  const [tasks, setTasks] = useState<Tasks>(groupTasks(backendTasks))
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false)
   const [addTaskColumn, setAddTaskColumn] = useState<string>('todo')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
 
   useEffect(() => {
-    setTasks(initialTasks)
-  }, [initialTasks])
+    setTasks(groupTasks(backendTasks))
+  }, [backendTasks])
 
   const columns = [
     { key: 'todo', title: 'To Do', color: 'border-red-300 bg-red-50 dark:bg-red-950/20' },
@@ -125,21 +167,25 @@ export function TasksExpansionModal({
       }
       setTasks(updatedTasks)
       onTasksUpdate?.(updatedTasks)
+      // Persist status change to backend
+      const moved = destCol[destination.index]
+      if (normalizedId) {
+        try { console.debug('[TasksExpansionModal] updateTaskStatus called for', moved.id, 'newStatus=', destColumn) } catch {}
+        void TasksService.updateTaskStatus(moved.id, destColumn === 'inProgress' ? 'inProgress' : destColumn === 'done' ? 'done' : 'todo')
+          .then(() => queryClient.invalidateQueries({ queryKey: ['project-tasks', normalizedId] }))
+      }
     }
   }
 
   const handleAddTask = (task: Omit<Task, 'id'>, column: string) => {
-    const newTask = {
-      ...task,
-      id: Date.now(),
+    if (onAddTask) {
+      onAddTask(task, column)
+      return
     }
-
-    const updatedTasks = {
-      ...tasks,
-      [column]: [...tasks[column as keyof Tasks], newTask],
+    if (normalizedId) {
+      try { console.debug('[TasksExpansionModal] createTask called, projectId =', normalizedId, 'payload=', task) } catch {}
+      void TasksService.createTask({ ...task, projectId: normalizedId }).then(() => queryClient.invalidateQueries({ queryKey: ['project-tasks', normalizedId] }))
     }
-    setTasks(updatedTasks)
-    onTasksUpdate?.(updatedTasks)
   }
 
   const handleUpdateTask = (taskId: number, updates: Partial<Task>) => {
@@ -158,6 +204,14 @@ export function TasksExpansionModal({
 
     setTasks(updatedTasks)
     onTasksUpdate?.(updatedTasks)
+    if (onUpdateTask) {
+      onUpdateTask(taskId, updates)
+      return
+    }
+    if (normalizedId) {
+      try { console.debug('[TasksExpansionModal] updateTask called, taskId =', taskId, 'updates=', updates) } catch {}
+      void TasksService.updateTask(taskId, { ...updates, projectId: normalizedId }).then(() => queryClient.invalidateQueries({ queryKey: ['project-tasks', normalizedId] }))
+    }
   }
 
   const handleDeleteTask = (taskId: number) => {
@@ -172,6 +226,14 @@ export function TasksExpansionModal({
     onTasksUpdate?.(updatedTasks)
     setIsEditPanelOpen(false)
     setSelectedTask(null)
+    if (onDeleteTask) {
+      onDeleteTask(taskId)
+      return
+    }
+    if (normalizedId) {
+      try { console.debug('[TasksExpansionModal] deleteTask called, taskId =', taskId) } catch {}
+      void TasksService.deleteTask(taskId).then(() => queryClient.invalidateQueries({ queryKey: ['project-tasks', normalizedId] }))
+    }
   }
 
   const handleTaskClick = (task: Task) => {
@@ -339,6 +401,7 @@ export function TasksExpansionModal({
           column={addTaskColumn}
           userRole={user.role}
           userId={user.id}
+          assignees={assignees}
         />
       )}
 
@@ -351,6 +414,7 @@ export function TasksExpansionModal({
           onDelete={handleDeleteTask}
           userRole={user.role}
           userId={user.id}
+          assignees={assignees}
         />
       )}
     </>

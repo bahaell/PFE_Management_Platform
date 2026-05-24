@@ -242,7 +242,7 @@ export function RequestReviewModal({ request, open, onOpenChange, onStatusChange
                 </Card>
               </motion.div>
 
-              {/* AI Recommendation */}
+              {/* AI Recommendation 
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
                 <Card className="border-blue-500/20 bg-blue-50 dark:bg-blue-950/30">
                   <CardHeader>
@@ -279,6 +279,8 @@ export function RequestReviewModal({ request, open, onOpenChange, onStatusChange
                   </CardContent>
                 </Card>
               </motion.div>
+              */}
+              
             </div>
           </div>
 

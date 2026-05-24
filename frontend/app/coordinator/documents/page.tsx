@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/page-header"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Loader2 } from "lucide-react"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Plus, Loader2, Pencil } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { TemplateTable } from "@/components/academic/template-table"
@@ -17,8 +18,10 @@ import { AcademicTemplatesService } from "@/services/service_academic_templates"
 import { AcademicRequestsService } from "@/services/service_academic_requests"
 import { UserDocumentsService } from "@/services/service_user_documents"
 import { StudentsService } from "@/services/service_students"
+import { TeachersService } from "@/services/service_teachers"
 import { uploadPdfToCloudinary } from "@/lib/cloudinary"
 import type { AdministrativeDocument } from "@/models/academic-document.model"
+import type { UserDocument } from "@/models/user-document.model"
 
 export default function CoordinatorDocumentsPage() {
   const router = useRouter()
@@ -31,10 +34,18 @@ export default function CoordinatorDocumentsPage() {
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null)
   const [initialTemplateId, setInitialTemplateId] = useState<string>("")
   const [studentId, setStudentId] = useState("")
+  const [teacherId, setTeacherId] = useState("")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [isUploadingPdf, setIsUploadingPdf] = useState(false)
+  const [editingDoc, setEditingDoc] = useState<UserDocument | null>(null)
+  const [editStudentId, setEditStudentId] = useState("")
+  const [editTeacherId, setEditTeacherId] = useState("")
+  const [editTitle, setEditTitle] = useState("")
+  const [editDescription, setEditDescription] = useState("")
+  const [editPdfFile, setEditPdfFile] = useState<File | null>(null)
+  const [isUpdatingDoc, setIsUpdatingDoc] = useState(false)
 
   const { data: allRequests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ["academic-requests"],
@@ -49,6 +60,11 @@ export default function CoordinatorDocumentsPage() {
   const { data: students = [] } = useQuery({
     queryKey: ["students", "documents"],
     queryFn: () => StudentsService.getAllStudents(),
+  })
+
+  const { data: teachers = [] } = useQuery({
+    queryKey: ["teachers", "documents"],
+    queryFn: () => TeachersService.getAllTeachers(),
   })
 
   const { data: coordinatorDocs = [], isLoading: docsLoading } = useQuery({
@@ -106,6 +122,7 @@ export default function CoordinatorDocumentsPage() {
 
       await UserDocumentsService.createCoordinatorDocument({
         studentId: request.studentId,
+        teacherId: request.teacherId,
         title: `${template.name} - ${request.studentName}`,
         description: `Generated from template ${template.name}`,
         fileUrl,
@@ -149,6 +166,7 @@ export default function CoordinatorDocumentsPage() {
       id: `manual-${Date.now()}`,
       documentType: template.type,
       studentId: selectedStudent.id,
+      teacherId: teacherId || undefined,
       studentName: selectedStudent.name || selectedStudent.email || selectedStudent.id,
       status: "accepted",
       requestedAt: new Date().toISOString(),
@@ -173,12 +191,15 @@ export default function CoordinatorDocumentsPage() {
       const fileUrl = await uploadPdfToCloudinary(pdfFile)
       await UserDocumentsService.createCoordinatorDocument({
         studentId,
+        teacherId: teacherId || undefined,
         title,
         description,
         fileUrl,
         fileName: pdfFile.name,
         mimeType: "application/pdf",
       })
+      setStudentId("")
+      setTeacherId("")
       setTitle("")
       setDescription("")
       setPdfFile(null)
@@ -205,6 +226,47 @@ export default function CoordinatorDocumentsPage() {
       toast({ title: "Deleted", description: "Document removed successfully." })
     } catch {
       toast({ title: "Delete failed", description: "Could not delete document.", variant: "destructive" })
+    }
+  }
+
+  const openEditCoordinatorDoc = (doc: UserDocument) => {
+    setEditingDoc(doc)
+    setEditStudentId(doc.studentId)
+    setEditTeacherId(doc.teacherId ?? "")
+    setEditTitle(doc.title)
+    setEditDescription(doc.description ?? "")
+    setEditPdfFile(null)
+  }
+
+  const handleUpdateCoordinatorDoc = async () => {
+    if (!editingDoc || !editStudentId || !editTitle) {
+      toast({
+        title: "Missing data",
+        description: "Please select student and title.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setIsUpdatingDoc(true)
+      const fileUrl = editPdfFile ? await uploadPdfToCloudinary(editPdfFile) : editingDoc.fileUrl
+      await UserDocumentsService.updateCoordinatorDocument(editingDoc.id, {
+        studentId: editStudentId,
+        teacherId: editTeacherId,
+        title: editTitle,
+        description: editDescription,
+        fileUrl,
+        fileName: editPdfFile?.name ?? editingDoc.fileName,
+        mimeType: editPdfFile?.type || editingDoc.mimeType,
+      })
+      setEditingDoc(null)
+      queryClient.invalidateQueries({ queryKey: ["coordinator-user-documents"] })
+      toast({ title: "Updated", description: "Document updated successfully." })
+    } catch {
+      toast({ title: "Update failed", description: "Could not update document.", variant: "destructive" })
+    } finally {
+      setIsUpdatingDoc(false)
     }
   }
 
@@ -258,12 +320,15 @@ export default function CoordinatorDocumentsPage() {
                   <div className="min-w-0">
                     <p className="font-medium truncate">{doc.title}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {doc.studentName}
+                      {doc.studentName}{doc.teacherName ? ` • ${doc.teacherName}` : ""}
                     </p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => window.open(doc.fileUrl, "_blank")}>
                       Open
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => openEditCoordinatorDoc(doc)}>
+                      <Pencil className="w-4 h-4" />
                     </Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDeleteCoordinatorDoc(doc.id)}>
                       Delete
@@ -287,6 +352,18 @@ export default function CoordinatorDocumentsPage() {
               {students.map((student: any) => (
                 <option key={student.id} value={student.id}>
                   {student.name || student.email || student.id}
+                </option>
+              ))}
+            </select>
+            <select
+              value={teacherId}
+              onChange={(e) => setTeacherId(e.target.value)}
+              className="w-full border border-border bg-background rounded-md px-3 py-2"
+            >
+              <option value="">Select teacher (optional)</option>
+              {teachers.map((teacher: any) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.name || teacher.email || teacher.id}
                 </option>
               ))}
             </select>
@@ -326,12 +403,15 @@ export default function CoordinatorDocumentsPage() {
                   <div className="min-w-0">
                     <p className="font-medium truncate">{doc.title}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {doc.studentName}
+                      {doc.studentName}{doc.teacherName ? ` • ${doc.teacherName}` : ""}
                     </p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => window.open(doc.fileUrl, "_blank")}>
                       Open
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => openEditCoordinatorDoc(doc)}>
+                      <Pencil className="w-4 h-4" />
                     </Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDeleteCoordinatorDoc(doc.id)}>
                       Delete
@@ -420,6 +500,70 @@ export default function CoordinatorDocumentsPage() {
           )}
         </Card>
       </div>
+
+      <Dialog open={!!editingDoc} onOpenChange={(open) => !open && setEditingDoc(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Academic Document</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-3">
+            <select
+              value={editStudentId}
+              onChange={(e) => setEditStudentId(e.target.value)}
+              className="w-full border border-border bg-background rounded-md px-3 py-2"
+            >
+              <option value="">Select student</option>
+              {students.map((student: any) => (
+                <option key={student.id} value={student.id}>
+                  {student.name || student.email || student.id}
+                </option>
+              ))}
+            </select>
+            <select
+              value={editTeacherId}
+              onChange={(e) => setEditTeacherId(e.target.value)}
+              className="w-full border border-border bg-background rounded-md px-3 py-2"
+            >
+              <option value="">Select teacher (optional)</option>
+              {teachers.map((teacher: any) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.name || teacher.email || teacher.id}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Document title"
+              className="w-full border border-border bg-background rounded-md px-3 py-2"
+            />
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Description (optional)"
+              className="w-full border border-border bg-background rounded-md px-3 py-2"
+              rows={3}
+            />
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setEditPdfFile(e.target.files?.[0] || null)}
+              className="w-full"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingDoc(null)} disabled={isUpdatingDoc}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateCoordinatorDoc} disabled={isUpdatingDoc}>
+              {isUpdatingDoc ? "Saving..." : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <DocumentGenerationModal
         open={isGeneratorOpen}

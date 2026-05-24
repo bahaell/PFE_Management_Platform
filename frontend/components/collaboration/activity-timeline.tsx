@@ -22,10 +22,15 @@ function formatTimestamp(value?: string) {
 }
 
 export function ActivityTimeline({ projectId }: ActivityTimelineProps) {
+  const normalizedId = projectId ? String(projectId) : undefined
+
   const { data: tasks = [], isLoading, isError } = useQuery({
-    queryKey: ['project-task-activity', projectId],
-    queryFn: () => TasksService.getTasksByProject(projectId!),
-    enabled: Boolean(projectId),
+    queryKey: ['project-task-activity', normalizedId],
+    queryFn: () => {
+      try { console.debug('[ActivityTimeline] queryFn called, projectId =', normalizedId) } catch {}
+      return TasksService.getTasksByProject(normalizedId!)
+    },
+    enabled: Boolean(normalizedId),
   })
 
   const activities: Activity[] = tasks.map((task) => ({

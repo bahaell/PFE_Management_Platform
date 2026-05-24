@@ -8,6 +8,8 @@ export interface UserDocument {
   createdAt: string
   studentId: string
   studentName: string
+  teacherId?: string
+  teacherName?: string
   coordinatorId: string
   coordinatorName: string
 }
